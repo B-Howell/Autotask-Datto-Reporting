@@ -30,7 +30,7 @@ that would re-show columns the user deliberately hid.
 - `react` (`useMemo`) and the `GridColDef` type from `@mui/x-data-grid`.
 - [deviceReportStore](<../../../store/Reporting Store - deviceReportStore.md>) for
   `visibleFields` and `setVisibleFields`.
-- [deviceDataStore](<../../../store/Reporting Store - deviceDataStore.md>) for the `DeviceRow` type.
+- [sheetRows](<Reporting Device Report - sheetRows.md>) for the `DeviceRow` type.
 
 ## Used By
 

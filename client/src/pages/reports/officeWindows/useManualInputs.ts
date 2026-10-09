@@ -27,10 +27,17 @@ const useManualInputs = () => {
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Product names for Office vs OS don't collide, so one map backs both
-  // tables; each cell reads its own product name.
-  const officeAvailable = useMemo(() => availableValuesOf(values), [values]);
+  // tables; each cell reads its own product name. The derived values key on
+  // the entries they depend on, not the whole map, so a licence keystroke
+  // leaves their references alone and the grouped Office rows stay put.
+  const availableJson = JSON.stringify(availableValuesOf(values));
+  const officeAvailable = useMemo(() => JSON.parse(availableJson) as ManualInputs, [availableJson]);
   // An agency that has never been configured shows every subscription.
-  const visibleSkus = useMemo(() => visibleSkusOf(values), [values]);
+  const savedSkus = values[VISIBLE_SKUS_KEY];
+  const visibleSkus = useMemo(
+    () => visibleSkusOf(savedSkus === undefined ? {} : { [VISIBLE_SKUS_KEY]: savedSkus }),
+    [savedSkus]
+  );
 
   const save = (fieldKey: string, value: string) => {
     if (!agencyKey) return;

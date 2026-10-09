@@ -1,7 +1,7 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
 import type { GridColDef, GridPaginationModel } from '@mui/x-data-grid';
 import AppDataGrid from './AppDataGrid';
-import type { DeviceRow } from '@/store/deviceDataStore';
+import type { DeviceRow } from '@/pages/reports/deviceReports/sheetRows';
 
 const PAGE_SIZE = 100;
 

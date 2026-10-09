@@ -27,8 +27,8 @@ Module constants: `END_USER_TYPES` (`Desktop`, `Laptop`, `Tablet`) and the type 
 - `@mui/x-data-grid` types
 - [devices API](<../api/Reporting API - devices.md>) for `fetchDeviceSheet`, `deviceLogsUrl`, `updateDevices`
 - [API types](<../api/Reporting API - types.md>) for `DeviceChange`, `EffectiveAgency`, `SheetCell`
-- [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) for `mergeSheets` and the `MemberSheet` type
-- [deviceDataStore](<../store/Reporting Store - deviceDataStore.md>) and its `DeviceRow`, `EditableCols`, `EditedCells` types
+- [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) for `mergeSheets` and the `MemberSheet`, `DeviceRow` and `EditableCols` types
+- [deviceDataStore](<../store/Reporting Store - deviceDataStore.md>) and its `EditedCells` type
 - [toastStore](<../store/Reporting Store - toastStore.md>)
 - [agencyGroups util](<../utils/Reporting Util - agencyGroups.md>) for `membersOf`, `valueFor`
 - [reportJob util](<../utils/Reporting Util - reportJob.md>) for `errorMessage`

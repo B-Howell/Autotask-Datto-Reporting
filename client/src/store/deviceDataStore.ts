@@ -5,10 +5,6 @@ import type { DeviceRow, EditableCols } from '@/pages/reports/deviceReports/shee
 import { applyUpdater } from './reportDataStore';
 import type { Updater } from './reportDataStore';
 
-// The row and editable-column shapes are defined with the sheet merger that
-// produces them; they are re-exported here for the grid and its components.
-export type { DeviceRow, EditableCols };
-
 /** Edited cells keyed as `${rowId}-${field}`. */
 export type EditedCells = Record<string, boolean>;
 

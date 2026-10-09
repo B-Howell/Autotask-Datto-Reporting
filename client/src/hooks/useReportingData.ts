@@ -2,9 +2,9 @@ import type { GridCellParams, GridColDef, GridRenderCellParams } from '@mui/x-da
 import { devicesApi } from '@/api';
 import type { DeviceChange, EffectiveAgency, SheetCell } from '@/api';
 import { mergeSheets } from '@/pages/reports/deviceReports/sheetRows';
-import type { MemberSheet } from '@/pages/reports/deviceReports/sheetRows';
+import type { DeviceRow, EditableCols, MemberSheet } from '@/pages/reports/deviceReports/sheetRows';
 import useDeviceDataStore from '@/store/deviceDataStore';
-import type { DeviceRow, EditableCols, EditedCells } from '@/store/deviceDataStore';
+import type { EditedCells } from '@/store/deviceDataStore';
 import useToastStore from '@/store/toastStore';
 import { membersOf, valueFor } from '@/utils/agencyGroups';
 import { errorMessage } from '@/utils/reportJob';

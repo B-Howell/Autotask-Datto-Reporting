@@ -62,9 +62,10 @@ Local state: `startMonth: Dayjs | null` (from `defaultStartMonth`), `settingsOpe
   detail, so switching view mode does not recompute it.
 - Export takes the hook's `workbookInput` (built by
   [workbookInput](<annualUtilization/Reporting Annual Utilization - workbookInput.md>)) and
-  needs `utilData` for the filename. If that input has no raw entries, because their load failed
-  inside the job, the page fetches them with `fetchUtilizationEntries(start, end)` once more and
-  substitutes them, so the workbook always has the raw sheet. Metadata: `agencyName: 'All Agencies'`, `reportType: 'annual_utilization'`.
+  needs `utilData` for the filename. If the hook's `entriesFor` is null, the entries load failed
+  inside the job, so the page fetches them with `fetchUtilizationEntries(start, end)` once more
+  and substitutes them; the workbook always has the raw sheet. A period with genuinely zero
+  entries has a range key and is not refetched on every export. Metadata: `agencyName: 'All Agencies'`, `reportType: 'annual_utilization'`.
 - The toolbar summary reads `<selected> of <all> agencies` and `hrs(grandTotal)` hours, with a
   gear button that opens the settings dialog (view mode, rates, company selection).
 - There is no `ReportProgress` here; progress for this report is shown by the running-report

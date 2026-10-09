@@ -47,10 +47,13 @@ const AnnualUtilization = () => {
   const exportExcel = async (save: boolean) => {
     const input = report.workbookInput;
     if (!utilData || !input) return;
-    // The raw sheet is part of the report; if its load failed, try once more here.
-    const raw = input.entries.length
-      ? input.entries
-      : (await utilizationApi.fetchUtilizationEntries(utilData.start, utilData.end)).entries || [];
+    // The raw sheet is part of the report; a null range key means its load
+    // failed inside the job, so try once more here. A period with no entries
+    // has a key and is not refetched.
+    const raw =
+      report.entriesFor === null
+        ? (await utilizationApi.fetchUtilizationEntries(utilData.start, utilData.end)).entries || []
+        : input.entries;
     const filename = annualWorkbookFilename(utilData);
     const blob = await buildAnnualWorkbook({ ...input, entries: raw });
     await deliverBlob({

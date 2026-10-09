@@ -1,5 +1,5 @@
 import type { GridColDef } from '@mui/x-data-grid';
-import type { DeviceRow } from '@/store/deviceDataStore';
+import type { DeviceRow } from './sheetRows';
 import { parseUsDate } from '@/utils/dates';
 import {
   XLSX_ROW_BORDER,

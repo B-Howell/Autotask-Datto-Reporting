@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
-import type { DeviceRow } from '@/store/deviceDataStore';
+import type { DeviceRow } from '@/pages/reports/deviceReports/sheetRows';
 
 interface PostDataProps {
   columns: GridColDef<DeviceRow>[];

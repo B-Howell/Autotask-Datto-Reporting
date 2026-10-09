@@ -26,7 +26,7 @@ The device report page composes several pieces (toolbar, chooser, missing-fields
 - `@mui/material` (`Box`, `CircularProgress`, `Typography`)
 - `@mui/x-data-grid` types
 - [AppDataGrid](<Reporting Component - AppDataGrid.md>)
-- [deviceDataStore](<../store/Reporting Store - deviceDataStore.md>) for the `DeviceRow` type
+- [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) for the `DeviceRow` type
 
 ## Used By
 

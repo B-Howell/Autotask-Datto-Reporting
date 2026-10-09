@@ -4,7 +4,6 @@ import type { Rates } from '@/pages/reports/annualUtilization/departments';
 import { applyUpdater } from './reportDataStore';
 import type { ReportDataState, Updater } from './reportDataStore';
 
-export type { Rates };
 export type ViewMode = 'table' | 'spreadsheet';
 
 const SELECTED_KEY = 'annualUtil_selectedCompanies';

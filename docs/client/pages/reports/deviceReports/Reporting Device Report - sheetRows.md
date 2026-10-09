@@ -25,7 +25,7 @@ The device report arrives as one positional sheet per agency (a header row and b
 ## Used By
 
 - [useReportingData](<../../../hooks/Reporting Hook - useReportingData.md>) (`mergeSheets`, `MemberSheet`).
-- [deviceDataStore](<../../../store/Reporting Store - deviceDataStore.md>) re-exports `DeviceRow` and `EditableCols` for the grid, [DeviceSpreadsheet](<../../../components/Reporting Component - DeviceSpreadsheet.md>), [PostData](<../../../components/Reporting Component - PostData.md>), [useVisibleColumns](<Reporting Device Report - useVisibleColumns.md>) and [excelExport](<Reporting Device Report - excelExport.md>).
+- [deviceDataStore](<../../../store/Reporting Store - deviceDataStore.md>) (`DeviceRow`, `EditableCols` for its state), and [DeviceSpreadsheet](<../../../components/Reporting Component - DeviceSpreadsheet.md>), [PostData](<../../../components/Reporting Component - PostData.md>), [useVisibleColumns](<Reporting Device Report - useVisibleColumns.md>) and [excelExport](<Reporting Device Report - excelExport.md>) (`DeviceRow`).
 - [client/src/pages/reports/deviceReports/sheetRows.test.ts](../../../../../client/src/pages/reports/deviceReports/sheetRows.test.ts).
 
 ## Key Behavior
@@ -38,7 +38,7 @@ The device report arrives as one positional sheet per agency (a header row and b
 
 ## Cleanup Notes
 
-- `DeviceRow` is defined here but the grid components still import it through the store's re-export; pointing them here would let the store drop its page import.
+- None noted.
 
 ## Source
 

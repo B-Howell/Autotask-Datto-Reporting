@@ -14,8 +14,8 @@ Returns:
 |---|---|
 | `agencyKey` | The agency currently loaded, or `null` before the first Generate. |
 | `values` | The saved `ManualInputs` map: licence counts under the product name, Available counts under `available::<product>`, the plan list as JSON under `VISIBLE_SKUS_KEY`. Both tables read their licence figures from it. |
-| `officeAvailable` | `availableValuesOf(values)`, memoised: the Available map keyed by SKU. |
-| `visibleSkus` | `visibleSkusOf(values)`, memoised: ticked Office 365 plans in canonical order. |
+| `officeAvailable` | `availableValuesOf(values)`, memoised on the serialised `available::` entries: the Available map keyed by SKU. |
+| `visibleSkus` | `visibleSkusOf` of the saved plan string alone, memoised on that string: ticked Office 365 plans in canonical order. |
 | `loadFor(key)` | Switch to an agency: reset state, then fetch its saved values. |
 | `setOfficeLicense(name, value)`, `setOsLicense(name, value)` | Update and save under the bare product name. |
 | `setOfficeAvailable(name, value)` | Update and save under `availableKey(name)`. |
@@ -40,6 +40,7 @@ Returns:
 - Save round trip: when a timer fires it sends `PUT /api/manual-inputs` with `{ agency_key, report_type: 'office_windows', field_key, value }`. The server upserts that single row (`INSERT ... ON CONFLICT DO UPDATE` on agency, report type and field). Failures are logged, not surfaced; the on-screen value is already updated, so the user sees no error.
 - `save` is a no-op while `agencyKey` is null, and the key is captured when `save` is called, so a timer that fires after the user switches agency still writes to the agency the edit was made on.
 - Plan changes are saved as `JSON.stringify(list)`; an empty list is stored as `[]`, which is how "every box unticked" survives a reload. `visibleSkus` is parsed back from that string, so the list is always in `M365_DESKTOP_SKUS` order however the boxes were ticked.
+- The derived values key on the entries they depend on rather than on the whole map: `visibleSkus` on the plan string and `officeAvailable` on a JSON string of the `available::` entries. A licence keystroke changes `values` but neither key, so both references survive it and the page's `officeRows` memo (grouped on `visibleSkus`) is not recomputed.
 
 ## Cleanup Notes
 

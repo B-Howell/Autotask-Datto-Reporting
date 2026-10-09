@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { GridColDef } from '@mui/x-data-grid';
-import type { DeviceRow } from '@/store/deviceDataStore';
 import useDeviceReportStore from '@/store/deviceReportStore';
+import type { DeviceRow } from './sheetRows';
 
 type DeviceColumn = GridColDef<DeviceRow>;
 

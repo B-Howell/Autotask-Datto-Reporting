@@ -13,7 +13,8 @@ import {
   Typography,
 } from '@mui/material';
 import { SettingsDialog } from '@/components/report';
-import type { Rates, ViewMode } from '@/store/annualUtilizationStore';
+import type { ViewMode } from '@/store/annualUtilizationStore';
+import type { Rates } from './departments';
 import useTenantStore from '@/store/tenantStore';
 
 interface ViewModeFieldProps {

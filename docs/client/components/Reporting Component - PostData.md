@@ -17,7 +17,7 @@ The point of the editable device grid is to fill in Primary User or Role, Purcha
 
 - `@mui/material` table components
 - `@mui/x-data-grid` types
-- [deviceDataStore](<../store/Reporting Store - deviceDataStore.md>) for the `DeviceRow` type
+- [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) for the `DeviceRow` type
 
 ## Used By
 

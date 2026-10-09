@@ -27,7 +27,7 @@ Internal components: `ViewModeField` (radio group), `RateFields` (one text field
 - `@mui/material` form controls, `List`, `Checkbox`, `Radio`, `TextField`, `Button`.
 - [SettingsDialog](<../../../components/report/Reporting Report Component - SettingsDialog.md>) as the dialog shell (title "Report Settings", `maxWidth="xs"`).
 - [tenantStore](<../../../store/Reporting Store - tenantStore.md>) for `tenant.ratedDepartments`, subscribed inside `RateFields` so the list follows a tenant load that lands after the dialog's first render.
-- `Rates`, `ViewMode` types from [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>).
+- `ViewMode` type from [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>); `Rates` type from [departments](<Reporting Annual Utilization - departments.md>).
 
 ## Used By
 

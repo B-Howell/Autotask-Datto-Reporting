@@ -27,7 +27,7 @@ The server reports hours by billing tier (the role a time entry was booked under
 
 - [summary](<Reporting Annual Utilization - summary.md>) (`CATEGORY_ALIASES`, `normalizeCategory`, `RatedDepartment`, `Rates`)
 - [workbookInput](<Reporting Annual Utilization - workbookInput.md>) (`RatedDepartment`, `Rates`)
-- [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>) re-exports `Rates` for the settings dialog
+- [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>) (`Rates`, the type of its `rates` state) and [ReportSettingsDialog](<Reporting Annual Utilization - ReportSettingsDialog.md>) (`Rates`)
 - [useAnnualReport](<Reporting Annual Utilization - useAnnualReport.md>) (`departmentsIn`, `withDefaultRates`, each given the list it subscribes to from the [tenantStore](<../../../store/Reporting Store - tenantStore.md>))
 - [excelExport](<Reporting Annual Utilization - excelExport.md>) (`RatedDepartment`)
 - [client/src/pages/reports/annualUtilization/departments.test.ts](../../../../../client/src/pages/reports/annualUtilization/departments.test.ts)

@@ -26,7 +26,7 @@ Not created by the `reportDataStore` factory; it has a bespoke shape and no `err
 | `setRows`, `setAllRows`, `setLogs`, `setEditedCells` | updater setters | Accept a value or `prev => next`. |
 | other setters | plain | `setColumns`, `setLoading`, `setSelectedCompany`, `setPage`, `setMissingFilter`, `setEditableCols`. |
 
-Exported types: `EditedCells`, defined here, plus `DeviceRow` (`id`, `rowNumber`, `company`, `autotaskId`, and `col0..colN` cells) and `EditableCols`, re-exported from [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) where the merger that produces them lives.
+Exported types: `EditedCells`. The `DeviceRow` (`id`, `rowNumber`, `company`, `autotaskId`, and `col0..colN` cells) and `EditableCols` types the state holds are defined in [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>), where the merger that produces them lives; consumers import them from there, not from the store.
 
 ## Uses
 
@@ -38,10 +38,7 @@ Exported types: `EditedCells`, defined here, plus `DeviceRow` (`id`, `rowNumber`
 
 ## Used By
 
-- [useReportingData](<../hooks/Reporting Hook - useReportingData.md>), the only writer
-- [DeviceSpreadsheet](<../components/Reporting Component - DeviceSpreadsheet.md>) and [PostData](<../components/Reporting Component - PostData.md>) for the `DeviceRow` type
-- [deviceReports excelExport](<../pages/reports/deviceReports/Reporting Device Report - excelExport.md>)
-- [useVisibleColumns](<../pages/reports/deviceReports/Reporting Device Report - useVisibleColumns.md>)
+- [useReportingData](<../hooks/Reporting Hook - useReportingData.md>), the only writer and, apart from the `EditedCells` type, the only reader; the grid components take the row type from sheetRows.
 
 ## Key Behavior
 

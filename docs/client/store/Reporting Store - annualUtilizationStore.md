@@ -24,7 +24,7 @@ Not created by the factory. It implements `ReportDataState<UtilizationReport>` m
 | `setSelectedCompanies`, `setRates`, `setViewMode` | setters | yes | Write through to `localStorage`, then update state. |
 | `setEntries`, `setEntriesFor`, `setTab` | setters | none | Plain replacements. |
 
-Exports: the `ViewMode` type, the `Rates` type re-exported from [departments](<../pages/reports/annualUtilization/Reporting Annual Utilization - departments.md>), and the default store hook.
+Exports: the `ViewMode` type and the default store hook. The `Rates` type of the `rates` state is defined in [departments](<../pages/reports/annualUtilization/Reporting Annual Utilization - departments.md>) and imported from there by every consumer.
 
 ## Uses
 
@@ -38,7 +38,7 @@ Exports: the `ViewMode` type, the `Rates` type re-exported from [departments](<.
 
 - [AnnualUtilization page](<../pages/reports/Reporting Page - AnnualUtilization.md>)
 - [useAnnualReport](<../pages/reports/annualUtilization/Reporting Annual Utilization - useAnnualReport.md>), which passes this store to `useUtilizationData` and writes `entries` from inside the job
-- [ReportSettingsDialog](<../pages/reports/annualUtilization/Reporting Annual Utilization - ReportSettingsDialog.md>), which also takes the `Rates` type from here
+- [ReportSettingsDialog](<../pages/reports/annualUtilization/Reporting Annual Utilization - ReportSettingsDialog.md>) for the `ViewMode` type
 
 ## Key Behavior
 
