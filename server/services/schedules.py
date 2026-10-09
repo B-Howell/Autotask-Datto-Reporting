@@ -63,6 +63,8 @@ def next_run_after(now, day_of_month, hour, tz):
 
 
 def _recipients(values, required):
+    if isinstance(values, str):
+        values = [values]
     cleaned = []
     for value in values or []:
         address = str(value).strip().lower()
@@ -81,9 +83,12 @@ def _whole_number(schedule, key, default):
     if isinstance(value, bool) or value is None:
         raise ValueError(f"{key} must be a whole number")
     try:
-        return int(value)
+        number = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{key} must be a whole number") from exc
+    if not number.is_integer():
+        raise ValueError(f"{key} must be a whole number")
+    return int(number)
 
 
 def _validated(schedule):

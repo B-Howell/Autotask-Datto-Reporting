@@ -95,6 +95,23 @@ def test_non_integer_day_or_hour_is_a_clear_error(temp_db):
         schedules.create(_schedule(preset["id"], hour=None))
 
 
+def test_a_fractional_day_or_hour_is_refused(temp_db):
+    preset = _sla_preset()
+    with pytest.raises(ValueError, match="day_of_month must be a whole number"):
+        schedules.create(_schedule(preset["id"], day_of_month=7.5))
+    with pytest.raises(ValueError, match="hour must be a whole number"):
+        schedules.create(_schedule(preset["id"], hour="7.5"))
+    assert schedules.create(_schedule(preset["id"], day_of_month=7.0))["day_of_month"] == 7
+
+
+def test_a_bare_string_recipient_is_one_address_not_a_list_of_characters(temp_db):
+    preset = _sla_preset()
+    created = schedules.create(_schedule(preset["id"], recipients_to="A@example.com"))
+    assert created["recipients_to"] == ["a@example.com"]
+    with pytest.raises(ValueError, match="Not an email address: nonsense"):
+        schedules.create(_schedule(preset["id"], recipients_to="nonsense"))
+
+
 def test_bad_schedule_timezone_setting_names_the_setting(temp_db, monkeypatch):
     import dataclasses
 
