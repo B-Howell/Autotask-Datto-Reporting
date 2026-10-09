@@ -1,0 +1,11 @@
+# Run the stack on generated demo data with no vendor accounts:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build
+#
+# The server seeds its cache before serving, so the first start takes about a
+# minute while the generators run; later starts find the cache already full.
+services:
+  server:
+    environment:
+      DEMO_MODE: "1"
+    command: ["sh", "-c", "python -m demo.seed && uvicorn main:app --host 0.0.0.0 --port 8000"]

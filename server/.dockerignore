@@ -1,0 +1,30 @@
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local virtualenv / installed packages — deps come from requirements.txt
+Lib/
+Scripts/
+Include/
+bin/
+pyvenv.cfg
+.venv/
+venv/
+
+# Dev-only tooling deps (CI installs these; the image doesn't need them)
+requirements-dev.txt
+pyproject.toml
+
+# Runtime data — seeded on first boot, persisted via a docker volume
+data/
+
+# Secrets — must be mounted at runtime, never baked in
+.env
+.env.*
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store

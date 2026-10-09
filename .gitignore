@@ -1,0 +1,56 @@
+# dependencies
+/client/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# misc
+.DS_Store
+
+# secrets / env files
+.env
+.env.*
+!.env.example
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# server
+/server/__pycache__
+**/__pycache__/
+*.pyc
+
+# python virtualenv / locally-installed packages
+# NOTE: do NOT use a bare "Scripts" pattern — on case-insensitive Windows git
+# it matches the server/scripts SOURCE dir and silently un-tracks our code.
+/server/Lib/
+/server/Include/
+/server/pyvenv.cfg
+/server/Scripts/*.exe
+/server/Scripts/[Aa]ctivate*
+/server/Scripts/deactivate*
+.venv/
+venv/
+
+# runtime data (seeded from code; persisted via docker volume in prod)
+/server/data
+
+# local editor / tooling config
+/.vscode
+/.idea
+*.code-workspace
+
+# build output
+/client/dist
+/client/coverage
+
+# SQLite files outside the data dir (e.g. from tests)
+*.db
+*.db-wal
+*.db-shm
+
+# screenshot tooling output
+/tools/.playwright

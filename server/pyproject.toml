@@ -1,0 +1,43 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["__pycache__"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I import-sorting, B bugbear, UP pyupgrade
+select = ["E", "W", "F", "I", "B", "UP"]
+# E501 (line too long) is handled by the formatter; B008 fires on FastAPI's
+# Depends()/Query() default-arg pattern which is idiomatic and intended.
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.isort]
+# Pin our local modules as first-party so import grouping is identical in CI
+# (where there's no local venv) and on dev machines.
+known-first-party = [
+    "config",
+    "core",
+    "demo",
+    "integrations",
+    "report_rules",
+    "repositories",
+    "routers",
+    "services",
+]
+
+[tool.bandit]
+exclude_dirs = [
+    "tests",
+    "__pycache__",
+    "Lib",
+    "lib",
+    "lib64",
+    "Scripts",
+    "bin",
+    ".venv",
+    "venv",
+    "env",
+    "site-packages",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

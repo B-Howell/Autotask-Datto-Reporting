@@ -1,0 +1,43 @@
+# Production stack. Put real credentials in ./server/.env (never committed),
+# then:
+#
+#   docker compose up -d --build
+#
+# The client container serves the built React app on port 80 and proxies
+# /api/* to the server container over the compose network; the server is not
+# published to the host. Replace the image names with your registry's to
+# build in CI and `docker compose pull` on the host instead.
+
+services:
+  server:
+    build: ./server
+    image: autotask-datto-reporting/server:latest
+    container_name: reporting-server
+    restart: unless-stopped
+    env_file:
+      - ./server/.env
+    expose:
+      - "8000"
+    volumes:
+      # The SQLite database, agency list and saved reports survive redeploys.
+      - reporting-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health', timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  client:
+    build: ./client
+    image: autotask-datto-reporting/client:latest
+    container_name: reporting-client
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      # Change the left side (e.g. 8080:80) if port 80 is taken on the host.
+      - "80:80"
+
+volumes:
+  reporting-data:
