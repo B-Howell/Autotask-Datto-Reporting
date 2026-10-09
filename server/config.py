@@ -50,6 +50,17 @@ class Settings:
     sync_interval_hours: float
     data_dir: str
 
+    # Scheduled delivery. The renderer is the Node service that turns report
+    # data into files (xlsx, docx, pdf) outside the browser. The delivery URL
+    # is the HTTP trigger of the Power Automate flow that sends the mail; the
+    # URL carries its own signature, so it is a secret and is never logged.
+    # The timezone is the IANA zone a schedule's day of month and hour are
+    # read in. The poll interval is how often due schedules are checked.
+    renderer_url: str
+    delivery_webhook_url: str
+    schedule_timezone: str
+    schedule_poll_seconds: int
+
 
 def _required(name, demo_mode):
     value = os.environ.get(name, "")
@@ -82,6 +93,10 @@ def load_settings():
         ),
         sync_interval_hours=float(os.environ.get("SYNC_INTERVAL_HOURS", "24")),
         data_dir=os.environ.get("DATA_DIR", os.path.join(SERVER_DIR, "data")),
+        renderer_url=os.environ.get("RENDERER_URL", "http://localhost:3100").rstrip("/"),
+        delivery_webhook_url=os.environ.get("DELIVERY_WEBHOOK_URL", ""),
+        schedule_timezone=os.environ.get("SCHEDULE_TIMEZONE", "UTC"),
+        schedule_poll_seconds=int(os.environ.get("SCHEDULE_POLL_SECONDS", "60")),
     )
 
 

@@ -24,6 +24,10 @@ The pytest suite under `server/tests/`. Each file targets one layer and is named
 
 - [server/tests/test_aggregates.py](../../../server/tests/test_aggregates.py) checks the arithmetic in the report services: ticket breakdowns sum to the ticket count, first-call resolution counts only phone tickets closed the same day by the taker, business-hours calculations skip nights and weekends, the SLA pivot grand total matches the ticket list, utilization totals reconcile, and period labels name the presets. Active.
 
+## Configuration
+
+- [server/tests/test_config.py](../../../server/tests/test_config.py) calls `load_settings()` in [config](<../Reporting Server - config.md>) directly, with the scheduled-delivery variables removed from the environment and then set, to prove the defaults (`http://localhost:3100`, an empty delivery URL, `UTC`, a 60 second poll) and that `RENDERER_URL` loses its trailing slash. Active.
+
 ## Core primitives
 
 - [server/tests/test_core.py](../../../server/tests/test_core.py) covers the log buffer cursor surviving eviction and clear, cooperative cancellation raising at the next log line (see [jobs](<../core/Reporting Core - jobs.md>)), Office product name classification, primary-Office selection preferring a specific plan and then the newest edition, and storage sizes rounding up to the marketing size. Active.
