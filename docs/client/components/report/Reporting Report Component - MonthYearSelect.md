@@ -30,7 +30,7 @@ The ticket and SLA reports are scoped to a calendar month. This component render
 ## Key Behavior
 
 - Month values are the names from `MONTH_NAMES`; converting a name to a month number is the page's job.
-- The year list comes from `reportYears(new Date(), firstYear)` evaluated at render, where `firstYear` is a tenant store subscription, so it follows both the current date and the deployment's first report year, including when the settings arrive after the first paint.
+- The year list comes from `reportYears(firstYear)` evaluated at render, where `firstYear` is a tenant store subscription, so it follows both the current date and the deployment's first report year, including when the settings arrive after the first paint.
 - The year select's string value is converted with `Number` before the callback.
 - Small size, 130 px and 100 px minimum widths.
 

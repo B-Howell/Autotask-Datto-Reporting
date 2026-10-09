@@ -40,7 +40,7 @@ function App() {
     tenantApi
       .fetchTenant()
       .then(useTenantStore.getState().setTenant)
-      .catch(() => undefined);
+      .catch((err) => console.error('Failed to load tenant settings:', err));
   }, []);
 
   return (

@@ -12,7 +12,7 @@
 |---|---|---|
 | `MONTH_NAMES` | `readonly ['January', ..., 'December']` | Index 0 is January; add one for a server `month`. |
 | `MonthName` | type | Union of the twelve names. |
-| `reportYears` | `(now = new Date(), first = firstReportYear()) => number[]` | `first` through next year, ascending; `first` defaults to the tenant's `firstReportYear` (2024 until the settings load). |
+| `reportYears` | `(firstYear: number, now = new Date()) => number[]` | `firstYear` through next year, ascending. The caller passes the tenant's `firstReportYear`; a floor later than next year is clamped to next year. |
 | `fileDateStamp` | `(now = new Date()) => string` | `M-D-YY`, for example `10-9-26`. |
 | `longDate` | `(now = new Date()) => string` | `October 9, 2026`, en-US long form. |
 | `parseUsDate` | `(value: unknown) => Date \| null` | `M/D/YYYY` or `MM/DD/YYYY` to a local `Date`; `null` for anything else. |
@@ -20,11 +20,11 @@
 
 ## Uses
 
-- [tenantStore](<../store/Reporting Store - tenantStore.md>) for the default `firstReportYear`.
+- Nothing; this file has no imports.
 
 ## Used By
 
-- [MonthYearSelect](<../components/report/Reporting Report Component - MonthYearSelect.md>) (`MONTH_NAMES`, `MonthName`, `reportYears`, passing the first year it subscribes to).
+- [MonthYearSelect](<../components/report/Reporting Report Component - MonthYearSelect.md>) (`MONTH_NAMES`, `MonthName`, `reportYears`, passing the `firstReportYear` it subscribes to from the [tenantStore](<../store/Reporting Store - tenantStore.md>)).
 - [SlaPerformance](<../pages/reports/Reporting Page - SlaPerformance.md>) and [Tickets](<../pages/reports/Reporting Page - Tickets.md>) pages (`MONTH_NAMES`, `MonthName`).
 - Export builders: [deviceReports excelExport](<../pages/reports/deviceReports/Reporting Device Report - excelExport.md>) and [slaPerformance excelExport](<../pages/reports/slaPerformance/Reporting SLA - excelExport.md>) (`parseUsDate`), [patchManagement pdfExport](<../pages/reports/patchManagement/Reporting Patch Management - pdfExport.md>) and [officeWindows reportRows](<../pages/reports/officeWindows/Reporting Office Windows - reportRows.md>) (`fileDateStamp`), [officeWindows wordExport](<../pages/reports/officeWindows/Reporting Office Windows - wordExport.md>) (`longDate`).
 - [DeviceReports](<../pages/reports/Reporting Page - DeviceReports.md>) and [HddTickets](<../pages/reports/Reporting Page - HddTickets.md>) pages (`fileDateStamp`).
@@ -34,12 +34,13 @@
 
 ## Key Behavior
 
-- `reportYears` starts at the tenant's first reporting year and always includes next year so a December report can be prepared ahead. The floor is a default parameter read from the store at call time; a React caller that wants to follow a late-arriving tenant load subscribes to the value and passes it in, which is what `MonthYearSelect` does.
+- `reportYears` starts at the tenant's first reporting year and always includes next year so a December report can be prepared ahead. The floor is a required parameter rather than a store read, so this module stays import-free and the caller decides how to follow a late-arriving tenant load: `MonthYearSelect` subscribes to the store and passes the value in.
+- The floor is clamped to next year, so a `tenant.json` whose `firstReportYear` is in the future still produces a one-entry list rather than an empty picker.
 - `fileDateStamp` is not zero-padded (`1-5-26`, not `01-05-26`), so filenames do not sort chronologically as strings; it matters because saved reports de-duplicate on the exact filename.
 - `parseUsDate` builds the date with the local-time constructor, so a date-only value stays on the intended calendar day in the user's zone.
 - `parseUsDate` is used by the Excel exports to write real date cells instead of strings, so Excel can sort and filter them.
 - `formatDateTime` returns the input unchanged when `Date` cannot parse it, which surfaces a bad server timestamp on screen rather than hiding it.
-- `reportYears`, `fileDateStamp` and `longDate` take an optional `now` so tests can pin the date.
+- `reportYears`, `fileDateStamp` and `longDate` take an optional `now` so tests can pin the date; for `reportYears` it is the second argument.
 
 ## Cleanup Notes
 

@@ -1,17 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import useTenantStore, { TENANT_DEFAULTS } from '@/store/tenantStore';
+import { describe, expect, it } from 'vitest';
 import { fileDateStamp, parseUsDate, reportYears } from './dates';
 
-afterEach(() => useTenantStore.setState({ tenant: TENANT_DEFAULTS, loaded: false }));
-
 describe('reportYears', () => {
-  it('runs from the given first year through next year', () => {
-    expect(reportYears(new Date(2026, 9, 9), 2022)).toEqual([2022, 2023, 2024, 2025, 2026, 2027]);
+  it('runs from the first year through next year', () => {
+    expect(reportYears(2022, new Date(2026, 9, 9))).toEqual([2022, 2023, 2024, 2025, 2026, 2027]);
   });
 
-  it('starts at the tenant first report year when none is given', () => {
-    useTenantStore.getState().setTenant({ ...TENANT_DEFAULTS, firstReportYear: 2025 });
-    expect(reportYears(new Date(2026, 9, 9))).toEqual([2025, 2026, 2027]);
+  it('still offers next year when the first year is in the future', () => {
+    expect(reportYears(2030, new Date(2026, 9, 9))).toEqual([2027]);
   });
 });
 

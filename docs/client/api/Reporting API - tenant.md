@@ -27,7 +27,7 @@ Logo files are not fetched through this module. The store builds `/api/tenant/lo
 
 - No `AbortSignal` is offered; this is one small, fast call that is not tracked as a job.
 - The response always carries every key. The server lays the file over its defaults before answering, so the client never has to merge, and `tenantStore.setTenant` can replace its state wholesale.
-- A failed fetch is not an error the user sees. `App` swallows it and the store keeps [its defaults](<../store/Reporting Store - tenantStore.md>), which are identical to the server's `DEFAULTS`, so a server built before this route existed, or an unreachable one, gives the same behaviour the client had when these values were constants.
+- A failed fetch is not an error the user sees. `App` logs it to the console and the store keeps [its defaults](<../store/Reporting Store - tenantStore.md>), which are identical to the server's `DEFAULTS`, so a server built before this route existed, or an unreachable one, gives the same behaviour the client had when these values were constants.
 - The settings are fetched once per page load. An edit to `data/tenant.json` is served on the server's next request but reaches an open tab only after a reload.
 - The server route and file shape are described in the [tenant router](<../../server/routers/Reporting Router - tenant.md>) and [tenant service](<../../server/services/Reporting Service - tenant.md>) pages.
 

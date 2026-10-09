@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import dayjs from 'dayjs';
 import { Typography } from '@mui/material';
 import {
   ErrorBanner,
@@ -19,7 +18,7 @@ import { defaultQuarterKey, quarterChoices } from './agencyUtilization/quarters'
 
 const AgencyUtilization = () => {
   const earliestYear = useTenantStore((s) => s.tenant.earliestQuarterYear);
-  const choices = useMemo(() => quarterChoices(dayjs(), earliestYear), [earliestYear]);
+  const choices = useMemo(() => quarterChoices(earliestYear), [earliestYear]);
   const [quarterKey, setQuarterKey] = useState<string>(defaultQuarterKey);
   const selected = choices.find((c) => c.key === quarterKey) || choices[0];
 

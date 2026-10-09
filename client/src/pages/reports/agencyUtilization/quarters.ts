@@ -1,6 +1,5 @@
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import useTenantStore from '@/store/tenantStore';
 
 export interface QuarterChoice {
   key: string;
@@ -16,8 +15,6 @@ const MONTHS_OF: Record<number, string> = {
   3: 'Jul – Sep',
   4: 'Oct – Dec',
 };
-const earliestQuarterYear = (): number => useTenantStore.getState().tenant.earliestQuarterYear;
-
 const iso = (d: Dayjs): string => d.format('YYYY-MM-DD');
 
 const quarterRange = (year: number, q: number) => {
@@ -26,19 +23,17 @@ const quarterRange = (year: number, q: number) => {
 };
 
 /**
- * One entry per quarter, newest first, back to the earliest year (the tenant's
- * floor unless one is given). A quarter is picked as one thing rather than from
- * separate quarter and year dropdowns, and future quarters are left out since
- * they can only come back empty.
+ * One entry per quarter, newest first, back to the tenant's earliest year. A
+ * quarter is picked as one thing rather than from separate quarter and year
+ * dropdowns, and future quarters are left out since they can only come back
+ * empty. The floor is clamped to the current year so the list is never empty.
  */
-export const quarterChoices = (
-  now: Dayjs = dayjs(),
-  earliestYear: number = earliestQuarterYear()
-): QuarterChoice[] => {
+export const quarterChoices = (earliestYear: number, now: Dayjs = dayjs()): QuarterChoice[] => {
   const out: QuarterChoice[] = [];
   const thisYear = now.year();
   const thisQuarter = Math.floor(now.month() / 3) + 1;
-  for (let y = thisYear; y >= earliestYear; y -= 1) {
+  const floor = Math.min(earliestYear, thisYear);
+  for (let y = thisYear; y >= floor; y -= 1) {
     for (let q = 4; q >= 1; q -= 1) {
       if (y === thisYear && q > thisQuarter) continue;
       const inProgress = y === thisYear && q === thisQuarter;

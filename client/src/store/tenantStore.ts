@@ -34,4 +34,8 @@ const useTenantStore = create<TenantState>()((set, get) => ({
   },
 }));
 
+/** Back to the defaults, as if nothing had been fetched; for tests. */
+export const resetTenantStore = (): void =>
+  useTenantStore.setState({ tenant: TENANT_DEFAULTS, loaded: false });
+
 export default useTenantStore;

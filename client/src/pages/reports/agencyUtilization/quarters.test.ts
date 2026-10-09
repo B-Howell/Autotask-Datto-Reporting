@@ -1,13 +1,10 @@
 import dayjs from 'dayjs';
-import { afterEach, describe, expect, it } from 'vitest';
-import useTenantStore, { TENANT_DEFAULTS } from '@/store/tenantStore';
+import { describe, expect, it } from 'vitest';
 import { defaultQuarterKey, quarterChoices } from './quarters';
 
-afterEach(() => useTenantStore.setState({ tenant: TENANT_DEFAULTS, loaded: false }));
-
 describe('quarterChoices', () => {
-  it('walks back from the current quarter to the given earliest year, newest first', () => {
-    const keys = quarterChoices(dayjs('2026-10-09'), 2025).map((c) => c.key);
+  it('walks back from the current quarter to the earliest year, newest first', () => {
+    const keys = quarterChoices(2025, dayjs('2026-10-09')).map((c) => c.key);
     expect(keys).toEqual([
       '2026-Q4',
       '2026-Q3',
@@ -21,15 +18,14 @@ describe('quarterChoices', () => {
   });
 
   it('marks only the current quarter as in progress and gives inclusive date ranges', () => {
-    const [current, previous] = quarterChoices(dayjs('2026-10-09'), 2026);
+    const [current, previous] = quarterChoices(2026, dayjs('2026-10-09'));
     expect(current).toMatchObject({ key: '2026-Q4', start: '2026-10-01', end: '2026-12-31' });
     expect(current!.detail).toContain('in progress');
     expect(previous!.detail).not.toContain('in progress');
   });
 
-  it('floors at the tenant earliest quarter year when none is given', () => {
-    useTenantStore.getState().setTenant({ ...TENANT_DEFAULTS, earliestQuarterYear: 2026 });
-    expect(quarterChoices(dayjs('2026-10-09')).map((c) => c.key)).toEqual([
+  it('still offers the current year when the earliest year is in the future', () => {
+    expect(quarterChoices(2030, dayjs('2026-10-09')).map((c) => c.key)).toEqual([
       '2026-Q4',
       '2026-Q3',
       '2026-Q2',

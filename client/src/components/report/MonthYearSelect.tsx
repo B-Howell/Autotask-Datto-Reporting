@@ -36,7 +36,7 @@ const MonthYearSelect = ({ month, year, onMonthChange, onYearChange }: MonthYear
         size="small"
         sx={{ minWidth: 100 }}
       >
-        {reportYears(new Date(), firstYear).map((y) => (
+        {reportYears(firstYear).map((y) => (
           <MenuItem key={y} value={y}>
             {y}
           </MenuItem>

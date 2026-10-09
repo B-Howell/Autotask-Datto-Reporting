@@ -1,5 +1,3 @@
-import useTenantStore from '@/store/tenantStore';
-
 export const MONTH_NAMES = [
   'January',
   'February',
@@ -17,11 +15,13 @@ export const MONTH_NAMES = [
 
 export type MonthName = (typeof MONTH_NAMES)[number];
 
-const firstReportYear = (): number => useTenantStore.getState().tenant.firstReportYear;
-
-/** Years offered in month/year pickers: the first reporting year (the tenant's unless given) through next year. */
-export function reportYears(now = new Date(), first = firstReportYear()): number[] {
+/**
+ * Years offered in month/year pickers: the tenant's first reporting year through
+ * next year. The floor is clamped to next year so the list is never empty.
+ */
+export function reportYears(firstYear: number, now = new Date()): number[] {
   const last = now.getFullYear() + 1;
+  const first = Math.min(firstYear, last);
   return Array.from({ length: last - first + 1 }, (_, i) => first + i);
 }
 

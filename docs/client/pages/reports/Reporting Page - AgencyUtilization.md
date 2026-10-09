@@ -27,7 +27,7 @@ arrive after the first render.
 
 - [useUtilizationData](<../../hooks/Reporting Hook - useUtilizationData.md>)
 - [agencyUtilizationStore](<../../store/Reporting Store - agencyUtilizationStore.md>)
-- [tenantStore](<../../store/Reporting Store - tenantStore.md>) for `earliestQuarterYear`; `dayjs` for the `now` argument
+- [tenantStore](<../../store/Reporting Store - tenantStore.md>) for `earliestQuarterYear`
 - [QuarterSelect](<agencyUtilization/Reporting Agency Utilization - QuarterSelect.md>),
   [UtilizationTable](<agencyUtilization/Reporting Agency Utilization - UtilizationTable.md>),
   [excelExport](<agencyUtilization/Reporting Agency Utilization - excelExport.md>),

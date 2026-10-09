@@ -1,9 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { UtilizationReport } from '@/api';
-import useTenantStore, { TENANT_DEFAULTS } from '@/store/tenantStore';
+import { TENANT_DEFAULTS } from '@/store/tenantStore';
 import { departmentsIn, normalizeCategory, withDefaultRates } from './departments';
-
-afterEach(() => useTenantStore.setState({ tenant: TENANT_DEFAULTS, loaded: false }));
 
 const report = (categories: string[]): UtilizationReport => ({
   categories,
@@ -32,26 +30,19 @@ describe('departmentsIn', () => {
   });
 
   it('folds the Level 0 alias onto Administration and gives nothing for no data', () => {
+    const defaults = TENANT_DEFAULTS.ratedDepartments;
     expect(normalizeCategory('Level 0 - Administration')).toBe('Administration');
-    expect(departmentsIn(report(['Level 0 - Administration'])).map((d) => d.department)).toEqual([
-      'Administration',
-    ]);
-    expect(departmentsIn(null)).toEqual([]);
+    expect(
+      departmentsIn(report(['Level 0 - Administration']), defaults).map((d) => d.department)
+    ).toEqual(['Administration']);
+    expect(departmentsIn(null, defaults)).toEqual([]);
   });
 });
 
 describe('withDefaultRates', () => {
-  it('lays the overrides over the given standard rates', () => {
+  it('lays the overrides over the standard rates of the given departments', () => {
     const departments = [{ department: 'Help Desk', rate: 75 }];
     expect(withDefaultRates({ 'Help Desk': '80' }, departments)).toEqual({ 'Help Desk': '80' });
     expect(withDefaultRates({}, departments)).toEqual({ 'Help Desk': 75 });
-  });
-
-  it('uses the tenant departments when none are given', () => {
-    useTenantStore.getState().setTenant({
-      ...TENANT_DEFAULTS,
-      ratedDepartments: [{ department: 'Field Tech', rate: 95 }],
-    });
-    expect(withDefaultRates({})).toEqual({ 'Field Tech': 95 });
   });
 });
