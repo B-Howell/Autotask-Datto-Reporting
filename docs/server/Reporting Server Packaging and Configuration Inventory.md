@@ -20,7 +20,7 @@ The non-code files that build, configure and lint the FastAPI server, plus the p
 
 ## Lint, security and test configuration
 
-- [server/pyproject.toml](../../server/pyproject.toml) configures three tools in one place. Ruff: 100 column lines, Python 3.11 target, the pycodestyle, pyflakes, isort, bugbear and pyupgrade rule sets, with E501 left to the formatter and B008 ignored because FastAPI's `Depends()` and `Query()` defaults are idiomatic. The isort section pins the local packages as first-party so import grouping is identical in CI, which has no virtualenv, and on a dev machine. Bandit excludes tests and any local virtualenv. Pytest is pointed at `tests/`. Active.
+- [server/pyproject.toml](../../server/pyproject.toml) configures three tools in one place. Ruff: 100 column lines, Python 3.11 target, the pycodestyle, pyflakes, isort, bugbear and pyupgrade rule sets, with E501 left to the formatter and B008 ignored because FastAPI's `Depends()` and `Query()` defaults are idiomatic. The isort section pins the local packages as first-party so import grouping is identical in CI, which has no virtualenv, and on a dev machine. Bandit excludes tests and any local virtualenv. Pytest is pointed at `tests/` and adds the server directory to the import path, because plain `pytest` (which CI runs) does not do so the way `python -m pytest` does. Active.
 
 ## Environment template
 
