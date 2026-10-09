@@ -11,11 +11,11 @@ These credentials are read by `server/integrations/datto.py`, which exchanges th
 1. Navigate to **Setup → Global Settings → Access Control**
 2. Turn on the **Enable API Access** toggle
 3. Navigate to **Setup → Users** and click the username you want to enable API access for
-4. Click **Generate API Keys** — an **API Key** and **API Secret Key** will be displayed
+4. Click **Generate API Keys**; an **API Key** and **API Secret Key** will be displayed
 5. **Copy both values immediately.** The API Secret Key is hidden after you navigate away and cannot be retrieved again
 6. Click **Save User**
 
-> If you lose the secret, return to the same user page and click **Generate API Keys** again — this invalidates any previously generated keys.
+> If you lose the secret, return to the same user page and click **Generate API Keys** again, which invalidates any previously generated keys.
 
 ---
 

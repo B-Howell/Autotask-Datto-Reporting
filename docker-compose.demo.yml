@@ -2,8 +2,8 @@
 #
 #   docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build
 #
-# The server seeds its cache before serving, so the first start takes about a
-# minute while the generators run; later starts find the cache already full.
+# The server seeds its cache before serving, so each start takes about a
+# minute while the generators run.
 services:
   server:
     environment:

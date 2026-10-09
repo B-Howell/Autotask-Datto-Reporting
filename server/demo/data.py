@@ -533,7 +533,7 @@ def sla(year, month, logger):
 
 
 def utilization(start, end, logger):
-    """Returns (rows, entries) like agency_utilization.fetch_raw(with_entries=True)."""
+    """Returns (rows, entries) like services.utilization.fetch_rows(with_entries=True)."""
     from report_rules import ROLE_TO_TIER
     from services.utilization import PHASES, parse_date
 
@@ -607,7 +607,7 @@ def utilization(start, end, logger):
 
 
 def fetch_for(report_type, scope, logger):
-    """Return demo rows for a snapshot scope, as the real fetch_raw would."""
+    """Return demo rows for a snapshot scope, as the real service fetch would."""
     if report_type == "devices":
         return devices(scope["company_id"], scope["site_id"], logger)
     if report_type == "office_windows":
