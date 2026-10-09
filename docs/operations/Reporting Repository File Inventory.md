@@ -10,7 +10,7 @@ The files at the repository root that are neither application code nor deploymen
 
 ## Reader-facing
 
-- [README.md](../../README.md) is the front door for a hiring manager or a new engineer: the problem it solves (25 clients, roughly 1,700 devices, about 35 reports a month), what each report answers, screenshots, the architecture diagram and the design decisions behind it, and the three ways to run it. It links to the architecture write-up in [architecture](../architecture.md) for the detail. Active.
+- [README.md](../../README.md) is the front door for a hiring manager or a new engineer: the problem it solves (25 clients, roughly 1,700 devices, about 35 reports a month), what each report answers, screenshots, the architecture diagram and the design decisions behind it, and the three ways to run it. It links to the architecture write-up in [architecture](../architecture.md) for the detail and, for anyone running it for an organisation, to the [fork and upstream workflow](<Reporting Fork and Upstream Workflow.md>). Active.
 - [LICENSE](../../LICENSE) is the MIT licence, copyright Brett Howell. Active.
 
 ## Tooling pins

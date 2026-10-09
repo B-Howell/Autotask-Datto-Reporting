@@ -142,6 +142,11 @@ The server seeds its cache on first start; the app is at http://localhost.
    `docker-compose.yml` mounts a volume at the server's data directory so the
    database, agency list and saved reports survive redeploys.
 
+Running this for an organisation? Keep the deployment as a private fork and
+follow [the fork workflow](docs/operations/Reporting%20Fork%20and%20Upstream%20Workflow.md):
+every deployment-specific value has an untracked home, so upstream merges
+never conflict.
+
 ### Development
 
 ```bash

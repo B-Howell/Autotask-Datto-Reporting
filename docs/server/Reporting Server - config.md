@@ -50,7 +50,7 @@ Functions: `_flag(name, default)` parses booleans, `_required(name, demo_mode)` 
 
 ## Cleanup Notes
 
-- `server/.env.example` documents the credentials and `DEMO_MODE` but not `DATTO_MAX_WORKERS`, `DATTO_MIN_REQUEST_INTERVAL`, `DATTO_TIMEOUT`, `CORS_ORIGINS`, `SYNC_INTERVAL_HOURS` or `DATA_DIR`; those are discoverable only from this module.
+- `server/.env.example` documents the credentials and `DEMO_MODE` but not `DATTO_MAX_WORKERS`, `DATTO_MIN_REQUEST_INTERVAL`, `DATTO_TIMEOUT`, `CORS_ORIGINS` or `SYNC_INTERVAL_HOURS`; those are discoverable only from this module. `DATA_DIR` is mentioned there in the closing note on deployment files.
 - `datto_token_url` is always derivable from `datto_api_base`; carrying both as settings is redundant.
 
 ## Source
