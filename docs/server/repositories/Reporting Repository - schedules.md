@@ -18,6 +18,7 @@ Like presets, these are user data and history with no upstream copy, so they are
 | `update(schedule_id, changes)` | Updates only the real columns present in `changes`, encoding lists and the flag, and bumps `updated_at`; no usable keys is a no-op. |
 | `get(schedule_id)` | One decoded row or None. |
 | `list_schedules()` | Every row ordered by id. |
+| `list_for_preset(preset_id)` | The schedules referencing one preset, ordered by id; the presets service uses it to refuse deleting a preset that is still scheduled. |
 | `due(now_iso)` | Enabled rows with a non-null `next_run_at` at or before `now_iso`, soonest first. |
 | `delete(schedule_id)` | Deletes the schedule's runs and then the schedule. |
 | `insert_run(schedule_id, trigger)` | Opens a run with status `running` and `started_at` now; `trigger` is free text such as `manual` or `scheduled`. Returns the run id. |
@@ -34,11 +35,12 @@ A decoded schedule row carries the table columns with the two recipient lists pa
 ## Used By
 
 - [server/tests/test_schedule_repositories.py](../../../server/tests/test_schedule_repositories.py).
+- [presets service](<../services/Reporting Service - presets.md>) (`list_for_preset`, to refuse deleting a scheduled preset).
 - The schedules service and the scheduler loop that the scheduled-delivery branch adds next; they are the intended writers of `next_run_at` and the `last_*` columns.
 
 ## Key Behavior
 
-- `next_run_at`, `last_run_at`, `started_at` and `finished_at` are ISO-8601 UTC strings with an explicit offset, the format `sqlite.iso_now()` produces. `due()` compares `next_run_at <= ?` as text, which is correct only because every writer uses that one format. A writer that stored a naive timestamp or a different zone would silently break the ordering and the due check; the schedules service is the only code that should compute `next_run_at`.
+- `next_run_at`, `last_run_at`, `started_at` and `finished_at` are ISO-8601 UTC strings with an explicit offset, the format `sqlite.iso_now()` produces. `due()` compares `next_run_at <= ?` as text, which is correct only because every writer uses that one format. A writer that stored a naive timestamp or a different zone would silently break the ordering and the due check; the schedules service is the only code that should compute `next_run_at`. Writers must emit the offset as `+00:00`, never `Z`: `Z` sorts after every digit, so a `Z` row would compare as later than any `+00:00` instant with the same clock time. Mixing second and microsecond precision is safe, because at the first differing position a second-precision value has `+` where a fractional one has `.`, and `+` sorts before `.`; so a `12:00:00+00:00` row is due at `12:00:00.000001+00:00` and a `12:00:00.000001+00:00` row is not yet due at `12:00:00+00:00`.
 - `due()` skips disabled schedules and schedules whose `next_run_at` is `NULL`, so pausing a schedule or clearing its next run both take it out of the poll without deleting anything.
 - Recipient lists default to `[]` at both ends: `None` is written as `[]`, and an empty or null column decodes to `[]`.
 - `enabled` is stored as `1` or `0` and decoded to a bool, so a caller can compare with `is True` rather than against an integer.

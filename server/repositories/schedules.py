@@ -84,6 +84,15 @@ def list_schedules():
     return [_decode(r) for r in sqlite.query("SELECT * FROM report_schedules ORDER BY id")]
 
 
+def list_for_preset(preset_id):
+    return [
+        _decode(r)
+        for r in sqlite.query(
+            "SELECT * FROM report_schedules WHERE preset_id = ? ORDER BY id", (preset_id,)
+        )
+    ]
+
+
 def due(now_iso):
     """Enabled schedules whose next run is at or before `now_iso`, soonest first."""
     return [

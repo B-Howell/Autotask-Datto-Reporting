@@ -37,11 +37,11 @@ A decoded row carries the table columns with `options` already parsed from JSON 
 - Column names in the `UPDATE` statement are interpolated into the SQL, but only from the `COLUMNS` allow-list; every value is a bound parameter. Bandit reports the f-string as B608 at medium severity and medium confidence; CI gates bandit at high for both, and the server carries no suppression comments, so the comment above the statement is the record of why it is safe.
 - `agency_key` is `TEXT` for the same reason as `manual_inputs.agency_key`: it holds either a single agency id (`"1000"`) or a group key (`group:<name>`), and it is `NULL` for reports that are not scoped to an agency.
 - Ordering by `name` is SQLite's default binary collation, so upper-case names sort before lower-case ones.
-- Deleting a preset does not touch schedules that reference it; the service layer is expected to refuse or cascade that, and the schema has no foreign key enforcing it.
+- `delete` here does not look at schedules; the [presets service](<../services/Reporting Service - presets.md>) refuses to delete a preset while any schedule references it (it asks the [schedules repository](<Reporting Repository - schedules.md>) with `list_for_preset`), so callers must go through the service. The schema has no foreign key enforcing this.
 
 ## Cleanup Notes
 
-- `report_schedules.preset_id` has no `FOREIGN KEY` constraint even though `PRAGMA foreign_keys=ON` is set on the connection, so an orphaned schedule is possible if a preset is deleted directly through this module.
+- `report_schedules.preset_id` has no `FOREIGN KEY` constraint even though `PRAGMA foreign_keys=ON` is set on the connection, so a direct call to this module's `delete` can still orphan a schedule; only the service check prevents it.
 
 ## Source
 

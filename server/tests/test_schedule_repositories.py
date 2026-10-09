@@ -108,6 +108,59 @@ def test_schedule_update_encodes_json_and_flags(temp_db):
     assert [s["id"] for s in schedules.list_schedules()] == [sid]
 
 
+def test_due_compares_a_microsecond_now_against_second_precision_rows(temp_db):
+    pid = presets.insert(
+        {"name": "p", "report_type": "sla", "agency_key": None, "agency_name": "", "options": {}}
+    )
+    sid = schedules.insert(_schedule(pid, "2026-11-01T12:00:00+00:00"))
+
+    assert [s["id"] for s in schedules.due(now_iso="2026-11-01T12:00:00.000001+00:00")] == [sid]
+    assert schedules.due(now_iso="2026-11-01T11:59:59.999999+00:00") == []
+
+
+def test_list_for_preset_returns_only_that_presets_schedules(temp_db):
+    first = presets.insert(
+        {"name": "a", "report_type": "sla", "agency_key": None, "agency_name": "", "options": {}}
+    )
+    second = presets.insert(
+        {"name": "b", "report_type": "sla", "agency_key": None, "agency_name": "", "options": {}}
+    )
+    s1 = schedules.insert(_schedule(first, None))
+    s2 = schedules.insert(_schedule(first, None))
+    schedules.insert(_schedule(second, None))
+
+    assert [s["id"] for s in schedules.list_for_preset(first)] == [s1, s2]
+    assert schedules.list_for_preset(first + second) == []
+
+
+def test_cache_version_bump_keeps_presets_schedules_and_runs(temp_db):
+    sqlite = temp_db
+    pid = presets.insert(
+        {"name": "p", "report_type": "sla", "agency_key": None, "agency_name": "", "options": {}}
+    )
+    sid = schedules.insert(_schedule(pid, None))
+    rid = schedules.insert_run(sid, trigger="manual")
+    sqlite.replace_scope(
+        "device_rows",
+        {"company_id": 1, "site_id": "s"},
+        [{"name": "pc-1", "synced_at": sqlite.iso_now()}],
+    )
+    assert sqlite.query("SELECT COUNT(*) AS n FROM device_rows")[0]["n"] == 1
+
+    conn = sqlite.get_conn()
+    conn.execute("UPDATE cache_meta SET value = '1' WHERE key = 'version'")
+    sqlite._discard_stale_cache(conn)
+    conn.commit()
+
+    assert sqlite.query("SELECT COUNT(*) AS n FROM device_rows")[0]["n"] == 0
+    assert presets.get(pid) is not None
+    assert schedules.get(sid) is not None
+    assert [r["id"] for r in schedules.list_runs(sid)] == [rid]
+    assert sqlite.query("SELECT value FROM cache_meta WHERE key = 'version'")[0]["value"] == str(
+        sqlite.CACHE_VERSION
+    )
+
+
 def test_list_runs_without_a_schedule_returns_newest_first_across_schedules(temp_db):
     pid = presets.insert(
         {"name": "p", "report_type": "sla", "agency_key": None, "agency_name": "", "options": {}}
