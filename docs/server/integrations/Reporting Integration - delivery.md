@@ -20,6 +20,7 @@ The server never talks to Exchange and never holds a mailbox password. Delivery 
 
 - `requests`, `base64`, `urllib.parse.urlsplit`.
 - [config](<../Reporting Server - config.md>) for `delivery_webhook_url`.
+- The [Power Automate delivery flow](<../../operations/Reporting Power Automate Delivery Flow.md>), the other end of the POST; its trigger schema is the shape `message` builds.
 
 ## Used By
 
@@ -28,12 +29,12 @@ The server never talks to Exchange and never holds a mailbox password. Delivery 
 
 ## Key Behavior
 
-- The message is the contract with the flow's HTTP trigger, not a convenience shape: the trigger's request body schema names exactly `to`, `cc`, `subject`, `body` and `attachments[].name`, `contentType`, `contentBytes`, and the flow's send action reads each by that name. Renaming a key here breaks every deployment's flow silently (the mail goes out with blanks), so the schema lives in the operations doc and `message` is tested against the literal dict.
+- The message is the contract with the flow's HTTP trigger, not a convenience shape: the trigger's request body schema names exactly `to`, `cc`, `subject`, `body` and `attachments[].name`, `contentType`, `contentBytes`, and the flow's send action reads each by that name. Renaming a key here breaks every deployment's flow silently (the mail goes out with blanks), so the schema lives in the [flow recipe](<../../operations/Reporting Power Automate Delivery Flow.md>) and `message` is tested against the literal dict.
 - `to` and `cc` are copied with `list()`, so a tuple from a stored row is sent as a JSON array and `cc=None` becomes `[]`; the flow's `join` expression needs an array in both fields.
 - Attachment bytes are base64 in the body because the trigger has no multipart support. A 20 MB workbook is about 27 MB of JSON, inside the trigger's limit; the content type travels with each attachment so Outlook names and opens the file correctly.
 - An empty `DELIVERY_WEBHOOK_URL` raises before any request is made, with a message pointing at `server/.env.example`; this is the expected state on a fresh install and the scheduled reports page shows it as "delivery not configured".
 - The webhook URL carries its own signature in the query string, so it is treated as a password: it is never logged, and the unreachable-flow error carries only the URL's host and the exception's class name, because `requests` quotes the full URL (signature included) in its connection error text. The non-2xx error carries the status and the first 500 characters of the flow's response body, which never contains the URL.
-- Any 2xx is success. The flow answers 202 as soon as it accepts the request; whether the email was actually sent is visible only in the flow's run history, which is why the operations doc calls that history the audit trail.
+- Any 2xx is success. The flow answers 202 as soon as it accepts the request; whether the email was actually sent is visible only in the flow's run history, which is why the [flow recipe](<../../operations/Reporting Power Automate Delivery Flow.md>) calls that history the audit trail.
 - `settings` is read at call time through the module's name, so a test can swap the URL with `dataclasses.replace`.
 
 ## Cleanup Notes

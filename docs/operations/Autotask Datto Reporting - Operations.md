@@ -20,6 +20,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Demo Compose Override.md](<Reporting Demo Compose Override.md>)
 - [Reporting Docker Compose Stack.md](<Reporting Docker Compose Stack.md>)
 - [Reporting Fork and Upstream Workflow.md](<Reporting Fork and Upstream Workflow.md>)
+- [Reporting Power Automate Delivery Flow.md](<Reporting Power Automate Delivery Flow.md>)
 - [Reporting Repository File Inventory.md](<Reporting Repository File Inventory.md>)
 - [Reporting Screenshot Capture.md](<Reporting Screenshot Capture.md>)
 
