@@ -19,7 +19,7 @@ The one design decision is that the `build` script typechecks before bundling. V
 | `lint` | `eslint . --max-warnings=0` | ESLint over the whole client; a single warning fails the run. |
 | `format` / `format:check` | `prettier --write .` / `prettier --check .` | Apply or verify formatting. CI uses the check form. |
 | `test` / `test:watch` | `vitest run` / `vitest` | One-shot or watch-mode unit tests under jsdom (the renderer test opts into the Node environment). |
-| `renderer` | `tsx renderer/server.ts` | Starts the [renderer service](<renderer/Reporting Renderer - server.md>) that runs the exporters under Node for scheduled deliveries; port from `RENDERER_PORT`, default 3100. |
+| `renderer` | `tsx renderer/server.ts` | Starts the [renderer service](<renderer/Reporting Renderer - server.md>) that runs the exporters under Node for scheduled deliveries; host from `RENDERER_HOST` (default `127.0.0.1`), port from `RENDERER_PORT` (default 3100). |
 
 ### Runtime dependencies and why each is there
 
@@ -40,7 +40,7 @@ The one design decision is that the `build` script typechecks before bundling. V
 - `eslint`, `@eslint/js`, `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`, `globals`: the flat ESLint config in `eslint.config.js`.
 - `prettier`: formatting.
 - `vitest`, `jsdom`, `@testing-library/react`, `@testing-library/jest-dom`: unit tests with a DOM and the jest-dom matchers registered by `src/test/setup.ts`.
-- `tsx`, `@types/node`: run the renderer's TypeScript directly under Node without a build step, and type the Node APIs (`http`, `fs`, `Buffer`) it uses. Both are dev dependencies because the renderer is a developer-started service, not part of the shipped bundle.
+- `tsx`, `@types/node` (pinned to the 20 line to match the `node:20` runtime image): run the renderer's TypeScript directly under Node without a build step, and type the Node APIs (`http`, `fs`, `Buffer`) it uses. Both are dev dependencies because the renderer is a separate process started by its own `npm run renderer` (locally or in its container) and called by the reporting server; it is not part of the shipped browser bundle, which is all the production `dependencies` feed.
 
 ## Uses
 

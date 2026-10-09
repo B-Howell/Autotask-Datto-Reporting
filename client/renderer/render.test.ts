@@ -169,6 +169,8 @@ describe('render', () => {
     });
     expect(result.contentType).toContain(XLSX);
     expect(magic(result, 2)).toEqual(PK);
+    const wb = await readWorkbook(result);
+    expect(wb.getWorksheet('Report')?.rowCount).toBe(1 + tickets.length);
   });
 
   it('renders the quarterly utilization workbook', async () => {
@@ -191,6 +193,8 @@ describe('render', () => {
     });
     expect(result.contentType).toContain(XLSX);
     expect(magic(result, 2)).toEqual(PK);
+    const wb = await readWorkbook(result);
+    expect(wb.getWorksheet('Summary')).toBeDefined();
   });
 
   it('renders the HDD tickets workbook', async () => {

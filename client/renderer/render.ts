@@ -56,7 +56,9 @@ type Handler = (req: RenderRequest) => Promise<RenderResult>;
 
 // The one place a request's untyped `data` and `options` take on their
 // per-report shapes. The server sends JSON it produced itself, so this is a
-// contract, not a validation; a mismatched payload fails inside the builder.
+// contract, not a validation: the HTTP layer checks only that `data` is an
+// object, and a payload of the wrong shape fails inside the builder and is
+// reported as a 500.
 const handler =
   <D, O>(build: (data: D, options: O, req: RenderRequest) => Promise<RenderResult>): Handler =>
   (req) =>
