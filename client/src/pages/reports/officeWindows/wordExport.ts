@@ -11,10 +11,8 @@ import {
   TextRun,
   WidthType,
 } from 'docx';
-import { getAgencyLogoUrl, loadImageDimensions } from '@/utils/agencyLogos';
-import type { ImageDimensions } from '@/utils/agencyLogos';
-import { OFFICE_ICON, WINDOWS_ICON, fetchAssetBytes } from '@/utils/assets';
 import { longDate } from '@/utils/dates';
+import type { ReportAssets, ReportImage } from '@/utils/reportImages';
 import { reportTitle } from './reportRows';
 import type { ReportRow } from './reportRows';
 
@@ -136,12 +134,12 @@ const dataRow = (
   return new TableRow({ children: cells });
 };
 
-const sectionTitle = (title: string, iconBuffer: ArrayBuffer | null) => {
+const sectionTitle = (title: string, icon: ReportImage | null) => {
   const children: (ImageRun | TextRun)[] = [];
-  if (iconBuffer) {
+  if (icon) {
     children.push(
       new ImageRun({
-        data: iconBuffer,
+        data: icon.bytes,
         transformation: { width: ICON_PT, height: ICON_PT },
         type: 'png',
       })
@@ -157,7 +155,7 @@ const sectionTitle = (title: string, iconBuffer: ArrayBuffer | null) => {
 const buildTable = (
   title: string,
   rows: ReportRow[],
-  iconBuffer: ArrayBuffer | null,
+  icon: ReportImage | null,
   showLicenses: boolean,
   withAvailable: boolean
 ) => {
@@ -168,7 +166,7 @@ const buildTable = (
     withAvailable,
   };
   return [
-    sectionTitle(title, iconBuffer),
+    sectionTitle(title, icon),
     new Table({
       rows: [headerRow(layout), ...rows.map((row, i) => dataRow(row, i, layout))],
       width: percent(100),
@@ -177,34 +175,22 @@ const buildTable = (
   ];
 };
 
-interface AgencyLogo {
-  buffer: ArrayBuffer;
-  dims: ImageDimensions;
-}
-
-const loadAgencyLogo = async (agencyName: string): Promise<AgencyLogo | null> => {
-  const url = getAgencyLogoUrl(agencyName);
-  if (!url) return null;
-  const [buffer, dims] = await Promise.all([fetchAssetBytes(url), loadImageDimensions(url)]);
-  return buffer && dims ? { buffer, dims } : null;
-};
-
-const logoParagraph = ({ buffer, dims }: AgencyLogo) => {
-  const height = Math.min(MAX_LOGO_HEIGHT, dims.height);
+const logoParagraph = (logo: ReportImage) => {
+  const height = Math.min(MAX_LOGO_HEIGHT, logo.height);
   return new Paragraph({
     alignment: AlignmentType.CENTER,
     spacing: { after: 120 },
     children: [
       new ImageRun({
-        data: buffer,
+        data: logo.bytes,
         type: 'png',
-        transformation: { width: Math.round(height * (dims.width / dims.height)), height },
+        transformation: { width: Math.round(height * (logo.width / logo.height)), height },
       }),
     ],
   });
 };
 
-const titleBlock = (agencyName: string, logo: AgencyLogo | null) => [
+const titleBlock = (agencyName: string, logo: ReportImage | null) => [
   ...(logo ? [logoParagraph(logo)] : []),
   new Paragraph({ text: reportTitle(agencyName), style: 'headerTitle' }),
   new Paragraph({
@@ -219,27 +205,31 @@ export interface OfficeWindowsDocxInput {
   officeRows: ReportRow[];
   osRows: ReportRow[];
   showLicenses: boolean;
+  /** Icons and logo already loaded; any missing image is left out of the document. */
+  assets: ReportAssets;
 }
 
-export const buildOfficeWindowsDocx = async ({
+export const buildOfficeWindowsDocx = ({
   agencyName,
   officeRows,
   osRows,
   showLicenses,
+  assets,
 }: OfficeWindowsDocxInput): Promise<Blob> => {
-  const [officeIcon, windowsIcon, logo] = await Promise.all([
-    fetchAssetBytes(OFFICE_ICON),
-    fetchAssetBytes(WINDOWS_ICON),
-    loadAgencyLogo(agencyName),
-  ]);
   const doc = new Document({
     styles: DOC_STYLES,
     sections: [
       {
         children: [
-          ...titleBlock(agencyName, logo),
-          ...buildTable('Office', officeRows, officeIcon, showLicenses, true),
-          ...buildTable('Windows Installs', osRows, windowsIcon, showLicenses, false),
+          ...titleBlock(agencyName, assets.logo ?? null),
+          ...buildTable('Office', officeRows, assets.officeIcon ?? null, showLicenses, true),
+          ...buildTable(
+            'Windows Installs',
+            osRows,
+            assets.windowsIcon ?? null,
+            showLicenses,
+            false
+          ),
         ],
       },
     ],

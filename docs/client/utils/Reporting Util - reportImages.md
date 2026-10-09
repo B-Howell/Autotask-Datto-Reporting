@@ -27,7 +27,8 @@ Dimensions are read straight from the PNG header rather than by loading the file
 
 ## Used By
 
-- Nothing yet. The export builders still fetch their own icons and logo; the next change hands them `ReportAssets` from `loadBrowserAssets` instead.
+- Export callers that need images in the browser: [useOfficeWindowsExports](<../pages/reports/officeWindows/Reporting Office Windows - useOfficeWindowsExports.md>) and the [PatchManagement page](<../pages/reports/Reporting Page - PatchManagement.md>) call `loadBrowserAssets`.
+- Export builders that embed them: [Office Windows wordExport](<../pages/reports/officeWindows/Reporting Office Windows - wordExport.md>), [Office Windows pdfExport](<../pages/reports/officeWindows/Reporting Office Windows - pdfExport.md>) and [Patch Management pdfExport](<../pages/reports/patchManagement/Reporting Patch Management - pdfExport.md>) take `ReportAssets`; [pdf util](<Reporting Util - pdf.md>) `drawReportHeader` takes a `ReportImage`.
 
 ## Key Behavior
 

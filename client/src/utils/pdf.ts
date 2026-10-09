@@ -1,7 +1,6 @@
 import type { jsPDF } from 'jspdf';
-import { getAgencyLogoUrl } from './agencyLogos';
 import { longDate } from './dates';
-import { loadCompressedImage } from './pdfImage';
+import type { ReportImage } from './reportImages';
 
 export const PDF_MARGIN = 40;
 /** The blue used for headers in every export format. */
@@ -16,25 +15,21 @@ export async function loadPdfLibraries() {
   return { JsPDF, autoTable };
 }
 
-/** Y position where the page content should start, after the logo, title and date. */
-export async function drawReportHeader(
-  doc: jsPDF,
-  agencyName: string,
-  title: string
-): Promise<number> {
+/**
+ * Draws the optional logo, the title and the date; returns the Y position where
+ * the page content should start. The logo is supplied by the caller so this
+ * runs anywhere jsPDF does.
+ */
+export function drawReportHeader(doc: jsPDF, title: string, logo: ReportImage | null): number {
   const pageWidth = doc.internal.pageSize.getWidth();
   let y = PDF_MARGIN;
 
-  const logoUrl = getAgencyLogoUrl(agencyName);
-  if (logoUrl) {
-    const logo = await loadCompressedImage(logoUrl, { maxHeightPx: 120 });
-    if (logo) {
-      const maxLogoHeight = 50;
-      const h = Math.min(maxLogoHeight, logo.height);
-      const w = h * (logo.width / logo.height);
-      doc.addImage(logo.dataUrl, logo.format, (pageWidth - w) / 2, y, w, h, undefined, 'FAST');
-      y += h + 14;
-    }
+  if (logo) {
+    const maxLogoHeight = 50;
+    const h = Math.min(maxLogoHeight, logo.height);
+    const w = h * (logo.width / logo.height);
+    doc.addImage(logo.dataUrl, logo.format, (pageWidth - w) / 2, y, w, h, undefined, 'FAST');
+    y += h + 14;
   }
 
   // Shrink long titles a little, then wrap, so an agency name never runs off the page.

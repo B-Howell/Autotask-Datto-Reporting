@@ -12,6 +12,7 @@ import type { DonutSlice } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
 import usePatchManagementData from '@/hooks/usePatchManagementData';
 import { resolveAgencyValue } from '@/utils/agencyGroups';
+import { loadBrowserAssets } from '@/utils/reportImages';
 import PatchSummaryCard from './patchManagement/PatchSummaryCard';
 import ReportMeta from './patchManagement/ReportMeta';
 import WorkstationTable from './patchManagement/WorkstationTable';
@@ -55,8 +56,18 @@ const PatchManagement = () => {
   // Export downloads and keeps a copy in the app; Save to app only keeps the copy.
   const exportPdf = async (download: boolean) => {
     if (!generatedAgency) return;
-    const chart = await captureSvgAsPng(chartRef.current);
-    const built = await buildPatchPdf({ agency: generatedAgency, summary, devices, total, chart });
+    const [chart, assets] = await Promise.all([
+      captureSvgAsPng(chartRef.current),
+      loadBrowserAssets(generatedAgency.name),
+    ]);
+    const built = await buildPatchPdf({
+      agency: generatedAgency,
+      summary,
+      devices,
+      total,
+      chart,
+      assets,
+    });
     if (download) built.doc.save(built.filename);
     await savePatchPdf(built, generatedAgency);
   };

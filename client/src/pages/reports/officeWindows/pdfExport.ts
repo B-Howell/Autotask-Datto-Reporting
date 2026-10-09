@@ -1,6 +1,5 @@
 import type { jsPDF } from 'jspdf';
 import type { CellHookData, Styles, UserOptions } from 'jspdf-autotable';
-import { OFFICE_ICON, WINDOWS_ICON, fetchAssetDataUrl } from '@/utils/assets';
 import {
   PDF_ACCENT,
   PDF_BAND,
@@ -9,6 +8,7 @@ import {
   lastTableBottom,
   loadPdfLibraries,
 } from '@/utils/pdf';
+import type { ReportAssets } from '@/utils/reportImages';
 import { reportFilename, reportTitle } from './reportRows';
 import type { ReportRow } from './reportRows';
 
@@ -72,6 +72,8 @@ export interface OfficeWindowsPdfInput {
   officeRows: ReportRow[];
   osRows: ReportRow[];
   showLicenses: boolean;
+  /** Icons and logo already loaded; any missing image is left out of the document. */
+  assets: ReportAssets;
 }
 
 /** Same content and styling as the Word export. */
@@ -80,17 +82,14 @@ export const buildOfficeWindowsPdf = async ({
   officeRows,
   osRows,
   showLicenses,
+  assets,
 }: OfficeWindowsPdfInput): Promise<{ doc: jsPDF; filename: string }> => {
-  const [{ JsPDF, autoTable }, officeIcon, windowsIcon] = await Promise.all([
-    loadPdfLibraries(),
-    fetchAssetDataUrl(OFFICE_ICON),
-    fetchAssetDataUrl(WINDOWS_ICON),
-  ]);
+  const { JsPDF, autoTable } = await loadPdfLibraries();
   // compress: true Flate-compresses all PDF streams, which keeps the file small.
   const doc = new JsPDF({ unit: 'pt', format: 'letter', compress: true });
-  let y = await drawReportHeader(doc, agencyName, reportTitle(agencyName));
+  let y = drawReportHeader(doc, reportTitle(agencyName), assets.logo ?? null);
 
-  drawSectionTitle(doc, 'Office', y, officeIcon);
+  drawSectionTitle(doc, 'Office', y, assets.officeIcon?.dataUrl ?? null);
   const office = headAndBody(officeRows, showLicenses, true);
   autoTable(doc, {
     startY: y + TITLE_TO_TABLE,
@@ -104,7 +103,7 @@ export const buildOfficeWindowsPdf = async ({
   });
 
   y = lastTableBottom(doc) + TABLE_TO_NEXT_TITLE;
-  drawSectionTitle(doc, 'Windows Installs', y, windowsIcon);
+  drawSectionTitle(doc, 'Windows Installs', y, assets.windowsIcon?.dataUrl ?? null);
   const os = headAndBody(osRows, showLicenses, false);
   autoTable(doc, { startY: y + TITLE_TO_TABLE, ...os, ...tableStyle(os.head[0].length) });
 

@@ -36,6 +36,7 @@ Export: "Export to PDF" and "Save to app", named
   [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>),
   [DonutChart](<../../components/report/Reporting Report Component - DonutChart.md>) (the `DonutSlice` type)
 - [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`resolveAgencyValue`)
+- [reportImages](<../../utils/Reporting Util - reportImages.md>) (`loadBrowserAssets`)
 
 ## Used By
 
@@ -52,8 +53,9 @@ Export: "Export to PDF" and "Save to app", named
   with zero devices shows an `EmptyState` naming the agency.
 - Export semantics differ from the xlsx pages: `exportPdf(true)` downloads with
   `doc.save(filename)` and then also saves to the app; `exportPdf(false)` (Save to app) only
-  saves. Both first call `captureSvgAsPng(chartRef.current)` and `buildPatchPdf` with the
-  agency, summary, devices, total and chart image. Saving goes through `savePatchPdf`.
+  saves. Both first run `captureSvgAsPng(chartRef.current)` and
+  `loadBrowserAssets(agency.name)` in parallel, then call `buildPatchPdf` with the agency,
+  summary, devices, total, chart image and assets. Saving goes through `savePatchPdf`.
 - `ReportProgress` shows a 20-line log tail with the caption "Loading patch data".
 
 ## Cleanup Notes

@@ -10,6 +10,7 @@ import {
   hexToRgb,
   loadPdfLibraries,
 } from '@/utils/pdf';
+import type { ReportAssets } from '@/utils/reportImages';
 import { saveReportBlob } from '@/utils/saveReport';
 import type { ChartPng } from './chartCapture';
 import { formatReboot } from './formatters';
@@ -27,6 +28,8 @@ export interface PatchPdfInput {
   total: number;
   /** The on-screen donut, already rasterised; null draws the legend alone. */
   chart: ChartPng | null;
+  /** The agency logo, already loaded; the header goes without one when missing. */
+  assets: ReportAssets;
 }
 
 export interface BuiltPdf {
@@ -125,16 +128,17 @@ export async function buildPatchPdf({
   devices,
   total,
   chart,
+  assets,
 }: PatchPdfInput): Promise<BuiltPdf> {
   const { JsPDF, autoTable } = await loadPdfLibraries();
   // compress Flate-encodes every stream, which turns a multi-MB file into a few hundred KB.
   const doc = new JsPDF({ unit: 'pt', format: 'letter', compress: true });
   const agencyName = agency.name;
 
-  const headerBottom = await drawReportHeader(
+  const headerBottom = drawReportHeader(
     doc,
-    agencyName,
-    `${agencyName} Patch Management Summary Report`
+    `${agencyName} Patch Management Summary Report`,
+    assets.logo ?? null
   );
   const chartTop = drawSectionLabel(doc, headerBottom);
   if (chart) drawDonut(doc, chart, total, chartTop);

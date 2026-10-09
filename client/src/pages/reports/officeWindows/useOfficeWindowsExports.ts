@@ -1,3 +1,4 @@
+import { loadBrowserAssets } from '@/utils/reportImages';
 import { deliverBlob } from '@/utils/saveReport';
 import { buildOfficeWindowsPdf } from './pdfExport';
 import { REPORT_TYPE, buildReportRows, reportFilename } from './reportRows';
@@ -19,18 +20,24 @@ const meta = (agencyName: string, filename: string, format: 'docx' | 'pdf') => (
 
 /** Word and PDF exports of the tables on screen; every export also keeps a copy in the app. */
 const useOfficeWindowsExports = ({ agencyName, showLicenses, ...rows }: ExportSources) => {
-  const input = (name: string) => ({ agencyName: name, showLicenses, ...buildReportRows(rows) });
+  // Rows and images are gathered here so the builders stay free of fetching.
+  const input = async (name: string) => ({
+    agencyName: name,
+    showLicenses,
+    assets: await loadBrowserAssets(name),
+    ...buildReportRows(rows),
+  });
 
   const exportToWord = async (save: boolean) => {
     if (!agencyName) return;
     const filename = reportFilename(agencyName, 'docx');
-    const blob = await buildOfficeWindowsDocx(input(agencyName));
+    const blob = await buildOfficeWindowsDocx(await input(agencyName));
     await deliverBlob({ blob, filename, save, meta: meta(agencyName, filename, 'docx') });
   };
 
   const exportToPdf = async () => {
     if (!agencyName) return;
-    const { doc, filename } = await buildOfficeWindowsPdf(input(agencyName));
+    const { doc, filename } = await buildOfficeWindowsPdf(await input(agencyName));
     await deliverBlob({
       blob: doc.output('blob'),
       filename,

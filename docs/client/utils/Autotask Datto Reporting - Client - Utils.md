@@ -22,7 +22,6 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Util - dates.md](<Reporting Util - dates.md>)
 - [Reporting Util - excel.md](<Reporting Util - excel.md>)
 - [Reporting Util - pdf.md](<Reporting Util - pdf.md>)
-- [Reporting Util - pdfImage.md](<Reporting Util - pdfImage.md>)
 - [Reporting Util - reportImages.md](<Reporting Util - reportImages.md>)
 - [Reporting Util - reportJob.md](<Reporting Util - reportJob.md>)
 - [Reporting Util - saveReport.md](<Reporting Util - saveReport.md>)

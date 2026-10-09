@@ -4,18 +4,17 @@
 
 ## Purpose
 
-The Word file is the document account managers send to clients, so it is the reference layout that the PDF export copies. This module is a pure builder in the page layer: it takes the agency name, the prepared report rows and the licence-column flag and returns a Blob. Fetching the icons and logo, styling, and the column arithmetic all live here; delivery is handled by [useOfficeWindowsExports](<Reporting Office Windows - useOfficeWindowsExports.md>).
+The Word file is the document account managers send to clients, so it is the reference layout that the PDF export copies. This module is a pure builder in the page layer: it takes the agency name, the prepared report rows, the licence-column flag and the images to embed, and returns a Blob. Styling and the column arithmetic live here; loading the icons and logo is the caller's job through the reportImages util, and delivery is handled by [useOfficeWindowsExports](<Reporting Office Windows - useOfficeWindowsExports.md>).
 
 ## Interface
 
-- `buildOfficeWindowsDocx({ agencyName, officeRows, osRows, showLicenses }): Promise<Blob>`.
-- `OfficeWindowsDocxInput` is the exported input type; rows are `ReportRow[]`.
+- `buildOfficeWindowsDocx({ agencyName, officeRows, osRows, showLicenses, assets }): Promise<Blob>`.
+- `OfficeWindowsDocxInput` is the exported input type; rows are `ReportRow[]` and `assets` is a `ReportAssets` (`officeIcon`, `windowsIcon`, `logo`, each optional).
 
 ## Uses
 
 - `docx` (`Document`, `Packer`, `Paragraph`, `TextRun`, `ImageRun`, `Table`, `TableRow`, `TableCell`, `AlignmentType`, `ShadingType`, `WidthType`).
-- [agencyLogos util](<../../../utils/Reporting Util - agencyLogos.md>) (`getAgencyLogoUrl`, `loadImageDimensions`).
-- [assets util](<../../../utils/Reporting Util - assets.md>) (`OFFICE_ICON`, `WINDOWS_ICON`, `fetchAssetBytes`).
+- [reportImages util](<../../../utils/Reporting Util - reportImages.md>) for the `ReportAssets` and `ReportImage` types (type only).
 - `longDate` from [dates util](<../../../utils/Reporting Util - dates.md>); `reportTitle` and `ReportRow` from [reportRows](<Reporting Office Windows - reportRows.md>).
 
 ## Used By
@@ -29,7 +28,8 @@ The Word file is the document account managers send to clients, so it is the ref
 - Header row: white bold 11pt text on the dark blue `1D4ED8` fill, marked `tableHeader` so Word repeats it on page breaks. Body rows alternate `F8FAFC` and white starting with the shaded fill on the first row. Every cell has 120 twips of padding on all sides.
 - Office 365 group rows are bold in the Product and Installs cells only. Child rows are indented by prefixing the name with two spaces, because Word tables have no per-cell indent in this API. `installs` prints through `String(row.installs ?? '')` so child rows are blank.
 - The licence and available cells print the stored text verbatim, or an empty string.
-- Icons and the logo are fetched in parallel before the document is built. A missing icon drops the image run from the section title; a missing logo drops the logo paragraph. Neither is an error. The logo loads its bytes and its natural dimensions in parallel and is skipped if either fails.
+- Images come from `assets`: `officeIcon` and `windowsIcon` become the 14pt image runs in the section titles and `logo` the logo paragraph, each read from the image's `bytes`, with the logo's `width` and `height` giving the aspect ratio. A missing or null entry drops that image and nothing else changes, so `assets: {}` yields a document with no pictures; the unit test proves that still produces a valid zip.
+- The builder does no I/O of its own, which is what lets the same code run under Node as well as in the browser.
 - Fonts are Calibri throughout; sizes in the style table are half-points (32 = 16pt, 24 = 12pt, 22 = 11pt).
 
 ## Cleanup Notes
