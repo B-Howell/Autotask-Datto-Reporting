@@ -11,7 +11,8 @@ The build, lint, test and static files around the React client. Behavior lives i
 ## Container image
 
 - [client/Dockerfile](../../client/Dockerfile) is a two-stage build: `node:20-alpine` runs `npm ci` and `npm run build`, then `nginx:alpine` serves the `dist/` output with the project's [nginx configuration](<Reporting Client - nginx.md>) copied over the default site. Dependencies are installed from the lockfile in their own layer so source edits do not reinstall. Active.
-- [client/.dockerignore](../../client/.dockerignore) keeps `node_modules`, `dist`, coverage, git metadata, editor settings and any `.env` file out of the build context. Active, declarative.
+- [client/Dockerfile.renderer](../../client/Dockerfile.renderer) is the single-stage image for the [renderer server](<renderer/Reporting Renderer - server.md>): `node:20-alpine`, `npm ci` from the lockfile in its own layer, then the whole client tree copied in and started with `npx tsx renderer/server.ts`. There is no build step because `tsx` runs the TypeScript directly, and the full tree is needed because the renderer imports the exporters from `src/` and reads the product icons from `public/`. The image sets `RENDERER_HOST=0.0.0.0` and `RENDERER_PORT=3100` so the server container can reach it over the compose network, and `EXPOSE 3100` documents the port. Dev dependencies are installed on purpose: `tsx` is one of them. Active.
+- [client/.dockerignore](../../client/.dockerignore) keeps `node_modules`, `dist`, coverage, git metadata, editor settings and any `.env` file out of the build context, for both client images. It needs no renderer-specific entries: `renderer/`, `src/`, `public/`, the package files and `tsconfig.json` are all in the context already. Active, declarative.
 
 ## Compiler, linter and formatter
 

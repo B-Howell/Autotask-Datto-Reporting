@@ -4,9 +4,11 @@
 #   docker compose up -d --build
 #
 # The client container serves the built React app on port 80 and proxies
-# /api/* to the server container over the compose network; the server is not
-# published to the host. Replace the image names with your registry's to
-# build in CI and `docker compose pull` on the host instead.
+# /api/* to the server container over the compose network; the server and the
+# renderer are not published to the host. The renderer runs the client's
+# exporters under Node so the server can produce report files for scheduled
+# deliveries without a browser. Replace the image names with your registry's
+# to build in CI and `docker compose pull` on the host instead.
 
 services:
   server:
@@ -16,6 +18,10 @@ services:
     restart: unless-stopped
     env_file:
       - ./server/.env
+    environment:
+      RENDERER_URL: http://renderer:3100
+    depends_on:
+      - renderer
     expose:
       - "8000"
     volumes:
@@ -27,6 +33,16 @@ services:
       timeout: 10s
       retries: 3
       start_period: 15s
+
+  renderer:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.renderer
+    image: autotask-datto-reporting/renderer:latest
+    container_name: reporting-renderer
+    restart: unless-stopped
+    expose:
+      - "3100"
 
   client:
     build: ./client

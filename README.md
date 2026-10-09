@@ -59,10 +59,13 @@ flowchart LR
     Browser["React client<br/>Vite, TypeScript, MUI"]
     Nginx["nginx<br/>static files, /api proxy"]
     API["FastAPI server<br/>routers, services, repositories"]
+    Renderer["Node renderer<br/>the client's exporters, no browser"]
+    Files["Report files<br/>xlsx, docx, pdf"]
     DB[("SQLite<br/>snapshot tables")]
     AT["Autotask PSA REST"]
     DT["Datto RMM REST"]
     Browser -- "HTTP + SSE" --> Nginx --> API
+    API -- "JSON" --> Renderer --> Files
     API <--> DB
     API --> AT
     API --> DT
@@ -95,7 +98,7 @@ The design decisions that matter, and why I made them:
   the whole application runs, and can be demonstrated, with no accounts.
 - **CI gates every push.** Ruff, Bandit, pip-audit and pytest on the server;
   ESLint, Prettier, `tsc`, Vitest and a production build on the client; then
-  a Docker build of both images.
+  a Docker build of all three images.
 
 The full write-up, including the life of a request, each layer, the cache
 design, failure modes and trade-offs, is in
@@ -106,7 +109,7 @@ design, failure modes and trade-offs, is in
 - Server: Python 3.11, FastAPI, uvicorn, sse-starlette, SQLite (stdlib), requests
 - Client: React 19, TypeScript (strict), Vite, Material UI 7 with DataGrid and Charts, React Router 7, Zustand
 - Exports: exceljs, docx, jsPDF with autotable
-- Tooling: Ruff, Bandit, pip-audit, pytest; ESLint, Prettier, Vitest; GitHub Actions; Docker Compose
+- Tooling: Ruff, Bandit, pip-audit, pytest; ESLint, Prettier, Vitest, tsx; GitHub Actions; Docker Compose
 
 ## Getting started
 
@@ -160,6 +163,10 @@ python main.py
 cd client
 npm install
 npm run dev
+
+# renderer, http://localhost:3100
+cd client
+npm run renderer
 ```
 
 Checks: `ruff check . && pytest` in `server/`; `npm run lint && npm run
@@ -188,6 +195,7 @@ client/
   src/components/    app shell and shared report components
   src/pages/         route components and their page-specific folders
   src/utils/         dates, Excel and PDF styling, agency groups
+  renderer/          the exporters under Node, an HTTP service for scheduled reports
 docs/                architecture write-up, screenshots, API notes
 tools/               screenshot capture
 ```

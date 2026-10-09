@@ -432,11 +432,13 @@ services themselves contain no tenant knowledge.
 
 ## 13. Deployment
 
-Two images. The client image is a two-stage build: Node builds the Vite
+Three images. The client image is a two-stage build: Node builds the Vite
 bundle, nginx serves it and proxies `/api` to the server container over the
 compose network. The server image is `python:3.11-slim` running uvicorn. The
-compose file mounts a volume at the server's data directory so the SQLite
-file, the agency list and saved reports survive redeploys. A compose override
+renderer image is `node:20-alpine` running the client's exporters through
+`tsx`, reachable by the server as `http://renderer:3100` and never published
+to the host. The compose file mounts a volume at the server's data directory
+so the SQLite file, the agency list and saved reports survive redeploys. A compose override
 runs the whole stack in demo mode with a one-command seed.
 
 The server refreshes every snapshot on a schedule (24 hours by default) and on
@@ -448,7 +450,7 @@ follows.
 
 CI runs on every push and pull request: Ruff lint and format, Bandit and
 pip-audit on the server; ESLint, Prettier, `tsc --noEmit`, Vitest and a
-production build on the client; and a Docker build of both images. Nothing is
+production build on the client; and a Docker build of all three images. Nothing is
 published from CI; deployment is `docker compose up -d --build` on the host,
 or a `pull` of images built elsewhere once the compose file names a registry.
 

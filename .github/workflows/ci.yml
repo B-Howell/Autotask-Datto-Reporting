@@ -57,3 +57,4 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build -t reporting-server server
       - run: docker build -t reporting-client client
+      - run: docker build -t reporting-renderer -f client/Dockerfile.renderer client

@@ -6,7 +6,7 @@
 
 `client/renderer/server.ts` is the process the reporting server talks to when it needs a file for a scheduled delivery. It is deliberately tiny: Node's own `http.createServer`, no framework, two routes, JSON in and bytes out. All of the report knowledge lives in [render](<Reporting Renderer - render.md>); this file only reads the body, enforces a size cap, checks the request has the fields the dispatcher needs, maps failures to status codes and writes the response headers a caller needs to store the file under its name.
 
-It starts with `npm run renderer`, which runs the TypeScript directly through `tsx`, so the renderer shares the client's source, path alias and installed libraries without a separate build step. The server is also exported as a factory so a test can bind it to a free port.
+It starts with `npm run renderer`, which runs the TypeScript directly through `tsx`, so the renderer shares the client's source, path alias and installed libraries without a separate build step. In the compose stack it is the `renderer` service, built from `client/Dockerfile.renderer` (see the [client tooling inventory](<../Reporting Client Tooling and Asset Inventory.md>)) and described in the [Docker Compose stack](<../../operations/Reporting Docker Compose Stack.md>); the image runs the same `tsx renderer/server.ts` command. The server is also exported as a factory so a test can bind it to a free port.
 
 ## Interface
 
@@ -27,8 +27,8 @@ Errors are JSON `{ error }`: `413` with `connection: close` for a body over the 
 
 | Setting | Source | Default |
 |---|---|---|
-| Host | `RENDERER_HOST` | `127.0.0.1`; the container sets `0.0.0.0` so the reporting server can reach it over the compose network. |
-| Port | `RENDERER_PORT` | `3100` |
+| Host | `RENDERER_HOST` | `127.0.0.1`; `client/Dockerfile.renderer` sets `0.0.0.0` so the reporting server can reach it over the compose network. |
+| Port | `RENDERER_PORT` | `3100`; the Dockerfile sets the same value and the compose file exposes it on the compose network only. |
 | Body cap | `MAX_BODY_BYTES` constant, or the factory option | 50 MB |
 
 ## Uses
@@ -39,7 +39,7 @@ Errors are JSON `{ error }`: `413` with `connection: close` for a body over the 
 ## Used By
 
 - The `renderer` script in the [package manifest](<../Reporting Client - package manifest.md>).
-- The reporting server's scheduled delivery, which posts report data here and stores the bytes it gets back.
+- The reporting server's scheduled delivery, which posts report data here and stores the bytes it gets back. In compose it finds the service through `RENDERER_URL=http://renderer:3100`, set on the `server` service in `docker-compose.yml`.
 - [client/renderer/server.test.ts](../../../client/renderer/server.test.ts), which binds the factory to port 0 and exercises every status.
 
 ## Key Behavior
@@ -54,7 +54,7 @@ Errors are JSON `{ error }`: `413` with `connection: close` for a body over the 
 
 ## Cleanup Notes
 
-- There is no authentication; the service is meant to listen on loopback or a private container network beside the reporting server, which is the only caller.
+- There is no authentication; the service is meant to listen on loopback or a private container network beside the reporting server, which is the only caller. The compose file keeps it that way with `expose` rather than `ports`.
 
 ## Source
 
