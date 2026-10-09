@@ -33,7 +33,7 @@ Validation failures raise `ValueError` with a message meant for the user: `No su
 
 - [server/tests/test_schedules.py](../../../server/tests/test_schedules.py).
 - [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get`, `advance` when the trigger is `schedule`, and `record_result` after every run).
-- The [schedule_runner service](<Reporting Service - schedule_runner.md>) does not call this module directly: its tick reads `due()` from the repository and hands each schedule to the scheduled_runs service, which calls `advance` and `record_result` here.
+- [schedule_runner service](<Reporting Service - schedule_runner.md>) (`get`, to re-read each schedule just before it runs and skip one that was deleted or disabled meanwhile); its tick reads `due()` from the repository directly, and the scheduled_runs service calls `advance` and `record_result` here.
 - [schedules router](<../routers/Reporting Router - schedules.md>) (`create`, `update`, `get`, `list_schedules` and `delete`).
 
 ## Key Behavior

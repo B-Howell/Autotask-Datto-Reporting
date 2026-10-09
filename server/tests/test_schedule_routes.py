@@ -85,8 +85,12 @@ def test_run_now_starts_a_run_or_reports_why_not(temp_db, monkeypatch):
         assert started == [schedule["id"]]
 
         monkeypatch.setattr(schedule_runner.runner, "run_now", lambda sid: False)
+        monkeypatch.setattr(
+            schedule_runner.runner, "status", lambda: {"running": True, "schedule_id": 3}
+        )
         busy = client.post(f"/api/schedules/{schedule['id']}/run")
-        assert busy.status_code == 409 and "in flight" in busy.json()["detail"]
+        assert busy.status_code == 409
+        assert busy.json()["detail"] == "A run of schedule 3 is already in flight"
 
         assert client.post("/api/schedules/999/run").status_code == 404
 

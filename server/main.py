@@ -63,12 +63,13 @@ async def _sync_scheduler():
 async def _schedule_ticker():
     # Scheduled reports fire on a day and an hour; checking once a minute is
     # plenty, and because due() compares with <= now a missed minute does not
-    # skip a run. tick() runs on the event loop thread, but it only queries
-    # SQLite and starts a worker thread, so it never holds the loop up.
+    # skip a run. The tick is one SQLite query, but a snapshot swap can hold
+    # the database lock for a while, so it runs on a worker thread rather
+    # than stalling every HTTP request on the event loop.
     await asyncio.sleep(10)
     while True:
         try:
-            schedule_runner.runner.tick()
+            await asyncio.to_thread(schedule_runner.runner.tick)
         except Exception as exc:
             print(f"[WARN] schedule tick failed: {exc}")
         await asyncio.sleep(settings.schedule_poll_seconds)
@@ -88,6 +89,10 @@ async def lifespan(_app):
     finally:
         scheduler.cancel()
         ticker.cancel()
+        # A run on its last step (closing its row) gets a moment to finish;
+        # one still rendering is a daemon thread that process exit ends, and
+        # the sweep on the next start records it as interrupted.
+        schedule_runner.runner.join(timeout=1)
 
 
 def create_app():

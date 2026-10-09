@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 
 from core import streams
 from repositories import schedules as schedule_repo
-from services import scheduled_runs
+from services import scheduled_runs, schedules
 
 STREAM = "schedules"
 INTERRUPTED = "Interrupted by a restart"
@@ -50,8 +50,19 @@ class ScheduleRunner:
             with self._lock:
                 self._current = schedule_id
             try:
+                # Re-read before each one: a schedule later in the batch can
+                # be deleted or switched off while the earlier ones run. A
+                # manual run-now still runs a disabled schedule, since that
+                # is how one is tried before it is switched on.
+                schedule = schedules.get(schedule_id)
+                if schedule is None:
+                    logger(f"[INFO] Schedule {schedule_id} no longer exists; skipped")
+                    continue
+                if trigger == "schedule" and not schedule["enabled"]:
+                    logger(f"[INFO] Schedule {schedule_id} is disabled; skipped")
+                    continue
                 scheduled_runs.run_schedule(schedule_id, trigger=trigger, logger=logger)
-            except Exception as exc:  # a missing schedule, for instance
+            except Exception as exc:  # a locked database, for instance
                 logger(f"[ERROR] Schedule {schedule_id}: {exc}")
         with self._lock:
             self._current = None
@@ -59,9 +70,11 @@ class ScheduleRunner:
     def tick(self):
         """Start every due schedule, in order, on one worker thread.
 
-        Cheap enough for the event loop: one SQLite query and a thread start.
-        While a run is in flight nothing starts; `due()` compares with `<=`,
-        so whatever was due is picked up on the next tick after it finishes.
+        One SQLite query and a thread start; `main` still calls it off the
+        event loop, since a snapshot swap can hold the database lock for a
+        while. While a run is in flight nothing starts; `due()` compares
+        with `<=`, so whatever was due is picked up on the next tick after
+        it finishes.
         """
         now_iso = datetime.now(UTC).isoformat()
         due = [s["id"] for s in schedule_repo.due(now_iso)]

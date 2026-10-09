@@ -137,5 +137,7 @@ def run_schedule_now(schedule_id: int):
     """Start the schedule on the runner's thread; the page follows `/logs`."""
     _existing(schedule_id)
     if not runner.run_now(schedule_id):
-        raise HTTPException(status_code=409, detail="A scheduled run is already in flight")
+        running = runner.status()["schedule_id"]
+        which = f"schedule {running}" if running is not None else "another schedule"
+        raise HTTPException(status_code=409, detail=f"A run of {which} is already in flight")
     return {"started": True}
