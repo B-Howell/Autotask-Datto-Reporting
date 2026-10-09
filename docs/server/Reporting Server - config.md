@@ -43,6 +43,7 @@ Functions: `_flag(name, default)` parses booleans, `_required(name, demo_mode)` 
 - [agencies service](<services/Reporting Service - agencies.md>) and [saved_reports service](<services/Reporting Service - saved_reports.md>) (`data_dir`), [sla service](<services/Reporting Service - sla.md>) (`demo_mode`)
 - [schedules service](<services/Reporting Service - schedules.md>) (`schedule_timezone`)
 - [renderer integration](<integrations/Reporting Integration - renderer.md>) (`renderer_url`)
+- [delivery integration](<integrations/Reporting Integration - delivery.md>) (`delivery_webhook_url`)
 - [server/tests/conftest.py](../../server/tests/conftest.py), which sets `DEMO_MODE=1` before the first import and overrides `demo_mode` per test with `dataclasses.replace`
 - [server/tests/test_config.py](../../server/tests/test_config.py), which calls `load_settings()` directly to prove the scheduled-delivery defaults and the trailing-slash strip on `RENDERER_URL`
 
