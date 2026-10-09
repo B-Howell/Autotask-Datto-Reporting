@@ -22,6 +22,8 @@ The pytest suite under `server/tests/`. Each file targets one layer and is named
 
 - [server/tests/test_autotask_client.py](../../../server/tests/test_autotask_client.py) drives [the Autotask client](<../integrations/Reporting Integration - autotask.md>) with a stubbed session: `query_all` walks results with an anchored id cursor, `query_by_ids` chunks the `IN` filter, and picklists are fetched once per entity and field and skip inactive values. Active.
 
+- [server/tests/test_renderer_client.py](../../../server/tests/test_renderer_client.py) drives [the renderer client](<../integrations/Reporting Integration - renderer.md>) with a patched `requests`: `render` posts the exact `reportType`, `data`, `options`, `filename` and `logoBase64` body to `{RENDERER_URL}/render` and returns the bytes with the response's content type, sends `{}` when options are `None`, defaults the content type when the header is missing, folds a non-200 status and the renderer's `{error}` text into a `RenderError`, and names the configured URL when the connection fails; `health` returns the parsed `/health` body and raises `RenderError` when the renderer is down or answers a 500. Active.
+
 ## Aggregation
 
 - [server/tests/test_aggregates.py](../../../server/tests/test_aggregates.py) checks the arithmetic in the report services: ticket breakdowns sum to the ticket count, first-call resolution counts only phone tickets closed the same day by the taker, business-hours calculations skip nights and weekends, the SLA pivot grand total matches the ticket list, utilization totals reconcile, and period labels name the presets. Active.
