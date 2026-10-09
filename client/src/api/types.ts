@@ -336,7 +336,7 @@ export interface ScheduleInput {
 export interface ScheduleRun {
   id: number;
   schedule_id: number;
-  trigger: 'schedule' | 'manual' | 'test';
+  trigger: 'schedule' | 'manual';
   started_at: string;
   finished_at: string | null;
   status: 'running' | 'ok' | 'error';

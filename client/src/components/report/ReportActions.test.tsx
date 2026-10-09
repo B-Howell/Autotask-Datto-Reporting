@@ -22,6 +22,17 @@ describe('ReportActions', () => {
     expect(onExport).not.toHaveBeenCalled();
   });
 
+  it('shows Schedule only when a handler is given and there are results', () => {
+    const { rerender } = render(
+      <ReportActions onGenerate={() => {}} hasResults onSchedule={() => {}} />
+    );
+    expect(screen.getByRole('button', { name: /schedule/i })).toBeEnabled();
+    rerender(<ReportActions onGenerate={() => {}} hasResults={false} onSchedule={() => {}} />);
+    expect(screen.getByRole('button', { name: /schedule/i })).toBeDisabled();
+    rerender(<ReportActions onGenerate={() => {}} hasResults />);
+    expect(screen.queryByRole('button', { name: /schedule/i })).toBeNull();
+  });
+
   it('disables generate and refresh while a report is running', () => {
     render(<ReportActions onGenerate={() => {}} onRefresh={() => {}} loading hasResults />);
     expect(screen.getByRole('button', { name: 'Generate' })).toBeDisabled();

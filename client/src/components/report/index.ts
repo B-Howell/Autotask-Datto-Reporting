@@ -12,3 +12,8 @@ export type { DataColumn } from './DataTable';
 export { default as DonutChart, ChartLegend } from './DonutChart';
 export type { DonutSlice } from './DonutChart';
 export { default as SettingsDialog } from './SettingsDialog';
+export { default as ScheduleDialog } from './ScheduleDialog';
+export { default as useScheduleDialog } from './useScheduleDialog';
+export { REPORT_LABELS } from './scheduleDraft';
+export type { PresetDraft } from './scheduleDraft';
+export type { SchedulePayload } from './useScheduleForm';

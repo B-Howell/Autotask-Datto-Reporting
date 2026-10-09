@@ -1,5 +1,6 @@
 import { Button } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
+import ScheduleSendIcon from '@mui/icons-material/ScheduleSend';
 
 export interface ExportAction {
   label: string;
@@ -12,6 +13,8 @@ interface ReportActionsProps {
   loading?: boolean;
   /** Download buttons, shown only once there is something to export. */
   exports?: ExportAction[];
+  /** Open the schedule dialog for the report as currently configured. */
+  onSchedule?: () => void;
   /** "Save to app" without a download. */
   onSave?: () => void;
   /** Re-pull from the vendor APIs, ignoring the cache. */
@@ -27,6 +30,7 @@ const ReportActions = ({
   generateDisabled = false,
   loading = false,
   exports = [],
+  onSchedule,
   onSave,
   onRefresh,
   hasResults = false,
@@ -45,6 +49,19 @@ const ReportActions = ({
         {action.label}
       </Button>
     ))}
+    {onSchedule && (
+      <Button
+        variant="outlined"
+        size="small"
+        startIcon={<ScheduleSendIcon />}
+        onClick={onSchedule}
+        disabled={!hasResults}
+        title="Email this report on a monthly schedule"
+        sx={BUTTON_SX}
+      >
+        Schedule
+      </Button>
+    )}
     {onSave && (
       <Button
         variant="outlined"

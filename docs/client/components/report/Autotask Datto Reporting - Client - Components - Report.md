@@ -27,6 +27,9 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Report Component - ReportPage.md](<Reporting Report Component - ReportPage.md>)
 - [Reporting Report Component - ReportProgress.md](<Reporting Report Component - ReportProgress.md>)
 - [Reporting Report Component - ReportToolbar.md](<Reporting Report Component - ReportToolbar.md>)
+- [Reporting Report Component - ScheduleDialog.md](<Reporting Report Component - ScheduleDialog.md>)
 - [Reporting Report Component - SettingsDialog.md](<Reporting Report Component - SettingsDialog.md>)
+- [Reporting Report Component - useScheduleDialog.md](<Reporting Report Component - useScheduleDialog.md>)
+- [Reporting Report Component - useScheduleForm.md](<Reporting Report Component - useScheduleForm.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->
