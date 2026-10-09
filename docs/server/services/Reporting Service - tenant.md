@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Every value here used to be a constant in client source, which meant a private deployment had to edit tracked files to name its own agency groups or set its billing rates, and then carry those edits through every upstream merge. Keeping the values in an untracked JSON file under `settings.data_dir` moves that customisation out of the source tree entirely: the client fetches the merged settings once at startup through the [tenant router](<../routers/Reporting Router - tenant.md>), and server-side work such as a scheduled report run resolves a dropdown value to its member agencies and finds a client's logo through the same module.
+Every value here used to be a constant in client source, which meant a private deployment had to edit tracked files to name its own agency groups or set its billing rates, and then carry those edits through every upstream merge. Keeping the values in an untracked JSON file under `settings.data_dir` moves that customisation out of the source tree entirely: the client will fetch the merged settings once at startup through the [tenant router] (the client side is wired in the next change)(<../routers/Reporting Router - tenant.md>), and server-side work such as a scheduled report run resolves a dropdown value to its member agencies and finds a client's logo through the same module.
 
 ## Interface
 
@@ -15,6 +15,7 @@ Every value here used to be a constant in client source, which meant a private d
 | `GROUP_PREFIX` | `"group:"`, the marker in front of a group name in a dropdown value. |
 | `DEFAULTS` | The settings used when the file is absent or silent on a key: no groups, no logos, five rated departments (Administration 0, Call Center 65, Help Desk 75, Jr Sys Admin 80, Sr Sys Admin 90), `firstReportYear` 2024, `earliestQuarterYear` 2023. |
 | `get_tenant()` | A fresh dict of `DEFAULTS` with every top-level key from the file laid over it. |
+| `safe_filename(name)` | The name unchanged when it can only denote a file directly under a directory, else `None`. Refuses an empty name, `.`, `..`, any name containing `/` or `\`, and any name whose `os.path.basename` differs from it. |
 | `group_members(group_name, agencies=None)` | The agencies whose `name` starts with the group's `matchPrefix`, or `[]` for an unknown group. Reads the agency list when none is passed. |
 | `resolve_agency(agency_key)` | `(members, display name)` for a dropdown value: `group:<name>` gives the group's members and the group name; an integer company id gives a one-element list and the agency's name; anything else gives `([], "")`. |
 | `logo_path(agency_name)` | Absolute path of the PNG mapped to that display name, or `None` when no mapping exists or the file is not on disk. |
@@ -29,13 +30,14 @@ The file shape, with every key optional, is the committed [server/data/tenant.ex
 
 ## Used By
 
-- [tenant router](<../routers/Reporting Router - tenant.md>) (`get_tenant`, `LOGO_DIR`)
+- [tenant router](<../routers/Reporting Router - tenant.md>) (`get_tenant`, `safe_filename`, `LOGO_DIR`)
 - [server/tests/test_tenant.py](../../../server/tests/test_tenant.py)
 
 ## Key Behavior
 
 - The merge is one level deep: a `ratedDepartments` list in the file replaces the default list whole rather than being merged entry by entry, so a deployment that wants a different rate for one department writes all five.
-- A missing or malformed file is not an error. `get_tenant` swallows `OSError` and `JSONDecodeError` and answers with the defaults, so the demo stack and a fresh deployment work with no file at all; nothing in this module ever writes the file.
+- A missing or malformed file is not an error. `get_tenant` swallows `OSError` and `JSONDecodeError` and answers with the defaults, so the demo stack and a fresh deployment work with no file at all; nothing in this module ever writes the file. A file that parses but is not a JSON object (a list, `null`, a bare number) is treated the same way, so a stray edit cannot crash the merge.
+- `safe_filename` checks for both slash characters itself rather than relying on `os.path.basename`, which on Linux treats a backslash as an ordinary character. That keeps the logo route's refusal identical on Linux and Windows.
 - The file is re-read on every call. The settings are small and change rarely, and reading each time means an edit takes effect without a restart. `group_members` and `logo_path` each call `get_tenant` themselves for the same reason.
 - Group membership is a plain `str.startswith` on the agency name, case-sensitive, so a `matchPrefix` of `"Northfield "` (with the trailing space) matches `Northfield Schools` but not `Northfield` alone. The comment in `DEFAULTS` records the client-side rule that a group needs at least two members before it is shown; this module does not enforce it.
 - `resolve_agency` accepts the id as a string or an int because dropdown values arrive as strings. A group name is taken verbatim after the prefix; an unknown group resolves to an empty member list with the name still returned.

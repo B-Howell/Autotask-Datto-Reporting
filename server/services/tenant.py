@@ -1,4 +1,4 @@
-"""Deployment-specific presentation settings the client reads at startup.
+"""Deployment-specific presentation settings served to the client.
 
 Everything here used to be a constant in client source. Keeping it in
 data/tenant.json means the private deployment can merge upstream changes
@@ -38,10 +38,23 @@ def get_tenant():
     data = dict(DEFAULTS)
     try:
         with open(TENANT_FILE, encoding="utf-8") as f:
-            data.update(json.load(f))
+            loaded = json.load(f)
     except (OSError, json.JSONDecodeError):
-        pass
+        return data
+    if isinstance(loaded, dict):
+        data.update(loaded)
     return data
+
+
+def safe_filename(name):
+    """The name when it can only ever denote a file directly under a directory.
+
+    Both slashes are refused explicitly so Linux, where a backslash is an
+    ordinary character, behaves the same as Windows.
+    """
+    if not name or name in (".", "..") or "/" in name or "\\" in name:
+        return None
+    return name if os.path.basename(name) == name else None
 
 
 def group_members(group_name, agencies=None):

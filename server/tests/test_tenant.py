@@ -1,5 +1,6 @@
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
 from main import app
@@ -29,6 +30,23 @@ def test_file_values_are_merged_over_defaults(tmp_path, monkeypatch):
     assert data["firstReportYear"] == 2021
     assert data["groups"][0]["name"] == "Northfield"
     assert data["earliestQuarterYear"] == 2023
+
+
+@pytest.mark.parametrize("content", ["[1]", "null"])
+def test_a_file_that_is_not_an_object_yields_the_defaults(tmp_path, monkeypatch, content):
+    path = tmp_path / "tenant.json"
+    path.write_text(content)
+    monkeypatch.setattr(tenant, "TENANT_FILE", str(path))
+    assert tenant.get_tenant() == tenant.DEFAULTS
+
+
+@pytest.mark.parametrize("name", ["../x", "..\\x", "..", "", "."])
+def test_safe_filename_refuses_a_name_that_could_leave_the_dir(name):
+    assert tenant.safe_filename(name) is None
+
+
+def test_safe_filename_passes_a_plain_name_through():
+    assert tenant.safe_filename("logo.png") == "logo.png"
 
 
 def test_group_members_resolve_by_prefix(tmp_path, monkeypatch):

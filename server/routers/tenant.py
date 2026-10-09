@@ -15,8 +15,8 @@ def get_tenant():
 
 @router.get("/logos/{filename}")
 def get_logo(filename: str):
-    safe = os.path.basename(filename)
-    if safe != filename or not safe:
+    safe = tenant.safe_filename(filename)
+    if safe is None:
         raise HTTPException(status_code=400, detail="Bad filename")
     path = os.path.join(tenant.LOGO_DIR, safe)
     if not os.path.isfile(path):
