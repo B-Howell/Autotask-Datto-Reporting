@@ -9,6 +9,7 @@ the same day replaces it rather than sitting beside it.
 
 import base64
 import html
+import re
 from datetime import date
 
 from integrations import delivery, renderer
@@ -41,6 +42,8 @@ REPORT_LABELS = {
 # The Saved Reports page files the quarterly report under the browser's
 # older `utilization` type; the scheduled copy must land in the same bucket.
 SAVED_REPORT_TYPES = {"quarterly_utilization": "utilization"}
+# A placeholder is a bare word in braces; `{agency:>6}` or `{}` is not one.
+_PLACEHOLDER = re.compile(r"\{(\w+)\}")
 MONTHS = [
     "January",
     "February",
@@ -86,6 +89,17 @@ def _members(preset):
     return members
 
 
+def _first_member(preset, label, logger):
+    """The one member a single-site report covers, warning when a group has more."""
+    members = _members(preset)
+    if len(members) > 1:
+        logger(
+            f"[WARN] {preset['agency_name']} has {len(members)} members; the {label} "
+            f"report covers only {members[0]['name']}"
+        )
+    return members[0]
+
+
 def _gather(preset, logger):
     """(data for the renderer, filename, period label) for one preset.
 
@@ -108,13 +122,7 @@ def _gather(preset, logger):
         return {"sheets": sheets}, f"{agency} Computer Inventory {_stamp()}.xlsx", ""
 
     if report_type == "office_windows":
-        members = _members(preset)
-        if len(members) > 1:
-            logger(
-                f"[WARN] {agency} has {len(members)} members; the Office and Windows "
-                f"report covers only {members[0]['name']}"
-            )
-        member = members[0]
+        member = _first_member(preset, "Office and Windows", logger)
         logger(f"[INFO] Gathering Office and Windows installs for {member['name']}")
         breakdown = office_windows.get_office_windows(member["id"], member["site"], logger=logger)
         data = {
@@ -126,13 +134,7 @@ def _gather(preset, logger):
         return data, f"{agency} Office and Windows Installs {_stamp()}.{extension}", ""
 
     if report_type == "patch":
-        members = _members(preset)
-        if len(members) > 1:
-            logger(
-                f"[WARN] {agency} has {len(members)} members; the patch report covers only "
-                f"{members[0]['name']}"
-            )
-        member = members[0]
+        member = _first_member(preset, "patch", logger)
         logger(f"[INFO] Gathering patch status for {member['name']}")
         report = patch_management.get_patch_report(member["site"], logger=logger)
         data = {
@@ -181,18 +183,28 @@ def _options(preset):
 
 
 def _fill(template, values):
-    """`str.format` that leaves an unknown `{placeholder}` in place instead of failing."""
+    """Replace each known `{placeholder}`; anything else, braces included, stays as typed.
 
-    class Safe(dict):
-        def __missing__(self, key):
-            return "{" + key + "}"
-
-    return template.format_map(Safe(values)).strip()
+    This is a plain substitution, not `str.format`: a stray `{`, an empty
+    `{}` or a format spec such as `{agency:>6}` would make `format` raise
+    and fail the run over a typo in the subject.
+    """
+    return _PLACEHOLDER.sub(lambda m: values.get(m.group(1), m.group(0)), template).strip()
 
 
 def _html_body(text):
-    """The delivery flow treats the body as HTML, so escape it and keep the line breaks."""
-    return html.escape(text).replace("\n", "<br>")
+    """The delivery flow treats the body as HTML, so escape it and keep the line breaks.
+
+    Quotes are left alone (`quote=False`): they are harmless as text nodes,
+    and `&#x27;` in place of every apostrophe makes the flow's run history
+    hard to read.
+    """
+    return html.escape(text, quote=False).replace("\n", "<br>")
+
+
+def _long_date(t):
+    """`November 1, 2026`, the client's `longDate` used in report headings."""
+    return f"{MONTHS[t.month - 1]} {t.day}, {t.year}"
 
 
 def _placeholders(preset, period):
@@ -200,7 +212,7 @@ def _placeholders(preset, period):
         "agency": preset["agency_name"],
         "report": REPORT_LABELS[preset["report_type"]],
         "period": period,
-        "date": _today().isoformat(),
+        "date": _long_date(_today()),
     }
 
 
@@ -221,19 +233,20 @@ def run_schedule(schedule_id, trigger, logger=print):
 
     `trigger` is recorded on the run (`schedule` for the loop, `manual` for
     the page's run-now button, or whatever a caller names). A `schedule`
-    trigger also moves `next_run_at` forward, and does so before any work
-    starts so a crash mid-run cannot leave the schedule due again on the
-    loop's next tick. Every failure is recorded on the run and the schedule
-    rather than raised; only an unknown schedule id raises.
+    trigger also moves `next_run_at` forward, as the first step inside the
+    run so that a crash mid-run cannot leave the schedule due again on the
+    loop's next tick and a failure to advance is recorded on the run row.
+    Every failure is recorded on the run and the schedule rather than
+    raised; only an unknown schedule id raises.
     """
     schedule = schedules.get(schedule_id)
     if schedule is None:
         raise LookupError("No such schedule")
-    if trigger == "schedule":
-        schedules.advance(schedule)
     run_id = schedule_repo.insert_run(schedule_id, trigger)
     saved_report_id = None
     try:
+        if trigger == "schedule":
+            schedules.advance(schedule)
         preset = presets.get(schedule["preset_id"])
         if preset is None:
             raise LookupError(f"Preset {schedule['preset_id']} no longer exists")

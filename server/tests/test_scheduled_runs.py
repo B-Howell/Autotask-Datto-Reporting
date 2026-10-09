@@ -6,6 +6,7 @@ from integrations import delivery, renderer
 from repositories import schedules as schedule_repo
 from services import presets, saved_reports, scheduled_runs, schedules
 
+REAL_SEND = delivery.send
 AGENCY = "Harbor Point Health"
 MEMBER = {"id": 1000, "site": "site-a", "name": AGENCY}
 
@@ -140,7 +141,20 @@ def test_an_unknown_placeholder_is_left_literally(run_env, monkeypatch):
 
     scheduled_runs.run_schedule(schedule["id"], trigger="test", logger=lambda m: None)
 
-    assert run_env["sent"]["subject"] == f"{{nope}} for {AGENCY} on 2026-11-01"
+    assert run_env["sent"]["subject"] == f"{{nope}} for {AGENCY} on November 1, 2026"
+
+
+@pytest.mark.parametrize(
+    "template",
+    ["Totals {", "a } b", "{} x", "{agency:>6}", "{agency"],
+)
+def test_stray_braces_and_format_specs_stay_literal(template):
+    assert scheduled_runs._fill(template, {"agency": AGENCY}) == template
+
+
+def test_fill_replaces_only_known_placeholders():
+    out = scheduled_runs._fill(" {agency}: {report} {nope} ", {"agency": "A", "report": "R"})
+    assert out == "A: R {nope}"
 
 
 def test_an_agency_that_no_longer_resolves_fails_the_run(run_env, monkeypatch):
@@ -169,14 +183,82 @@ def test_a_scheduled_trigger_advances_and_a_manual_one_does_not(run_env, monkeyp
 
 
 def test_the_body_is_escaped_html_with_newlines_as_breaks(run_env, monkeypatch):
-    schedule = _schedule(body="Hello,\nAttached: Q3 & Q4 <draft>.\n\nThanks")
+    schedule = _schedule(body="Hello,\nHere's Q3 & Q4 <draft>.\n\nThanks")
     _device_sheet(monkeypatch)
 
     scheduled_runs.run_schedule(schedule["id"], trigger="test", logger=lambda m: None)
 
-    assert run_env["sent"]["body"] == (
-        "Hello,<br>Attached: Q3 &amp; Q4 &lt;draft&gt;.<br><br>Thanks"
+    assert run_env["sent"]["body"] == "Hello,<br>Here's Q3 &amp; Q4 &lt;draft&gt;.<br><br>Thanks"
+
+
+def test_the_flow_receives_the_rendered_file_and_the_html_body(run_env, monkeypatch):
+    """End to end through the delivery client: only the HTTP post is faked."""
+    import base64
+    import dataclasses
+
+    from config import settings
+
+    monkeypatch.setattr(
+        delivery,
+        "settings",
+        dataclasses.replace(settings, delivery_webhook_url="https://f.example/x"),
     )
+    posted = {}
+
+    class Accepted:
+        status_code = 202
+
+    monkeypatch.setattr(
+        delivery.requests,
+        "post",
+        lambda url, json, timeout: posted.update(url=url, json=json) or Accepted(),
+    )
+    monkeypatch.setattr(delivery, "send", REAL_SEND)  # the fixture's stub must not run
+    schedule = _schedule(subject="{agency} {report}", body="Line one\nLine two")
+    _device_sheet(monkeypatch)
+
+    run = scheduled_runs.run_schedule(schedule["id"], trigger="test", logger=lambda m: None)
+
+    assert run["status"] == "ok"
+    message = posted["json"]
+    assert message["to"] == ["a@example.com"] and message["cc"] == []
+    assert message["subject"] == f"{AGENCY} Device inventory"
+    assert message["body"] == "Line one<br>Line two"
+    assert len(message["attachments"]) == 1
+    attachment = message["attachments"][0]
+    assert attachment["name"] == f"{AGENCY} Computer Inventory 11-1-26.xlsx"
+    assert attachment["contentType"] == "application/x"
+    assert base64.b64decode(attachment["contentBytes"]) == b"PK"
+
+
+def test_a_scheduled_trigger_moves_next_run_past_the_run(run_env, monkeypatch):
+    from datetime import UTC, datetime
+
+    monkeypatch.setattr(schedules, "_now", lambda: datetime(2026, 10, 9, 15, 0, tzinfo=UTC))
+    schedule = _schedule()
+    assert schedule["next_run_at"] == "2026-11-01T07:00:00+00:00"
+    _device_sheet(monkeypatch)
+
+    monkeypatch.setattr(schedules, "_now", lambda: datetime(2026, 11, 1, 7, 0, 10, tzinfo=UTC))
+    run = scheduled_runs.run_schedule(schedule["id"], trigger="schedule", logger=lambda m: None)
+
+    assert run["status"] == "ok"
+    assert schedules.get(schedule["id"])["next_run_at"] == "2026-12-01T07:00:00+00:00"
+
+
+def test_a_failed_advance_is_recorded_on_the_run(run_env, monkeypatch):
+    schedule = _schedule()
+    _device_sheet(monkeypatch)
+    monkeypatch.setattr(
+        scheduled_runs.schedules,
+        "advance",
+        lambda s: (_ for _ in ()).throw(ValueError("SCHEDULE_TIMEZONE is not a known IANA zone")),
+    )
+
+    run = scheduled_runs.run_schedule(schedule["id"], trigger="schedule", logger=lambda m: None)
+
+    assert run["status"] == "error" and "SCHEDULE_TIMEZONE" in run["error"]
+    assert run_env["rendered"] == {} and run_env["sent"] == {}
 
 
 def test_a_group_device_run_gathers_one_sheet_per_member(run_env, monkeypatch):
