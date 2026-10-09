@@ -209,3 +209,23 @@ UDF_PRIMARY_USER = "Primary User or Role"
 UDF_DEPARTMENT = "Department"
 # Grid columns that can be edited and written back to those fields.
 EDITABLE_DEVICE_FIELDS = (UDF_PRIMARY_USER, UDF_PURCHASE_DATE, UDF_DEPARTMENT, "Location")
+
+
+# ── Deployment overrides ─────────────────────────────────────────────────────
+
+
+def _apply_local_overrides():
+    """Replace any constant above with the value of the same name from
+    report_rules_local.py, a file that is never committed. Only names that
+    already exist here are honoured, so a typo in the local file is ignored
+    rather than silently creating a new, unused rule."""
+    try:
+        import report_rules_local as local
+    except ImportError:
+        return
+    for name, value in vars(local).items():
+        if name.isupper() and name in globals():
+            globals()[name] = value
+
+
+_apply_local_overrides()
