@@ -33,6 +33,7 @@ The file shape, with every key optional, is the committed [server/data/tenant.ex
 - [tenant router](<../routers/Reporting Router - tenant.md>) (`get_tenant`, `safe_filename`, `LOGO_DIR`)
 - The client's [tenantStore](<../../client/store/Reporting Store - tenantStore.md>) carries a copy of `DEFAULTS` as `TENANT_DEFAULTS`; the two must stay identical.
 - [server/tests/test_tenant.py](../../../server/tests/test_tenant.py)
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`resolve_agency` for the members behind a preset's key, `logo_path` for the logo the Word and PDF reports carry, and `get_tenant()["ratedDepartments"]` for the annual report's departments)
 
 ## Key Behavior
 

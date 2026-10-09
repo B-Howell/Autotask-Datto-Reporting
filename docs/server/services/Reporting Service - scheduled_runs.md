@@ -1,0 +1,59 @@
+# Scheduled runs service
+
+> Executes one schedule end to end: gathers the preset's report through the same services the browser uses, renders it to a file, keeps the file in Saved Reports, mails it through the delivery flow, and records the outcome on the run and the schedule.
+
+## Purpose
+
+A schedule is only a promise until something runs it. This module is the one place that promise is kept. Given a schedule id it reads the schedule and its preset, works out which period the report is for, calls the report service the browser would call (device sheets, Office and Windows installs, patch status, disk-space tickets, SLA, utilization), hands the result to the [renderer integration](<../integrations/Reporting Integration - renderer.md>) to produce the same bytes the browser's export button would, stores those bytes through the [saved_reports service](<Reporting Service - saved_reports.md>) under the exact filename the browser would have used, and posts the file to the [delivery integration](<../integrations/Reporting Integration - delivery.md>) with the schedule's subject and body filled in. Every stage logs, every failure lands on the run row and the schedule's `last_*` columns instead of escaping, and the finished run row is returned so a caller can show it. The scheduler loop and the run-now route are its callers; it has no opinion about when it is invoked.
+
+## Interface
+
+| Name | Description |
+|---|---|
+| `run_schedule(schedule_id, trigger, logger=print)` | Runs the schedule now and returns the finished run row from the [schedules repository](<../repositories/Reporting Repository - schedules.md>) (`status` is `ok` or `error`, `error` holds the reason, `saved_report_id` the stored copy when the save happened). Raises `LookupError` only when the schedule id does not exist; every other failure is recorded, not raised. `trigger` is stored on the run; the value `schedule` also advances `next_run_at`. |
+| `REPORT_LABELS` | Report type to the human label that fills the `{report}` placeholder: `Device inventory`, `Office and Windows licensing`, `Patch management`, `Disk-space tickets`, `SLA performance`, `Quarterly utilization`, `Annual utilization`. |
+| `SAVED_REPORT_TYPES` | Report types whose saved copy is filed under a different `report_type` than the preset's; today only `quarterly_utilization`, filed as `utilization` because that is the type the browser's quarterly export saves under. |
+| `MONTHS` | English month names, for the SLA period label and filename. |
+
+The private helpers are the stages: `_gather(preset, logger)` returns `(data, filename, period)` for one preset, `_options(preset)` the renderer options, `_fill(template, values)` the placeholder substitution, `_html_body(text)` the body conversion, `_deliver(...)` the send, `_logo_base64(agency_name)` the logo, `_members(preset)` the agencies behind a preset's key, `_today()` the clock (patched in tests) and `_stamp()` the browser's `M-D-YY` date stamp.
+
+## Uses
+
+- Standard library `base64`, `html` and `datetime.date`.
+- [schedules service](<Reporting Service - schedules.md>) for `get`, `advance` and `record_result`; [schedules repository](<../repositories/Reporting Repository - schedules.md>) for `insert_run`, `finish_run` and `list_runs`.
+- [presets service](<Reporting Service - presets.md>) for `get`: the preset supplies `report_type`, `agency_key`, `agency_name` and `options`.
+- [tenant service](<Reporting Service - tenant.md>) for `resolve_agency` (the members behind a company id or `group:<name>` key), `logo_path` (the agency logo the Word and PDF reports carry) and `get_tenant()["ratedDepartments"]` (the annual report's departments).
+- [periods service](<Reporting Service - periods.md>) for `previous_month`, `previous_quarter` and `fiscal_year_of_previous_month`, and the [utilization service](<Reporting Service - utilization.md>) `period_label` for the quarter and year names.
+- The report services, called exactly as their routers call them: [devices](<Reporting Service - devices.md>) `get_device_sheet`, [office_windows](<Reporting Service - office_windows.md>) `get_office_windows`, [patch_management](<Reporting Service - patch_management.md>) `get_patch_report`, [hdd_tickets](<Reporting Service - hdd_tickets.md>) `get_hdd_report`, [sla](<Reporting Service - sla.md>) `get_sla_report`, [utilization](<Reporting Service - utilization.md>) `get_utilization` and `get_entries`.
+- [manual_inputs repository](<../repositories/Reporting Repository - manual_inputs.md>) for the licence counts the Office and Windows report prints, keyed by the preset's `agency_key`, which is the same id-or-group key the browser saves them under.
+- [renderer integration](<../integrations/Reporting Integration - renderer.md>) `render`, [saved_reports service](<Reporting Service - saved_reports.md>) `save` and [delivery integration](<../integrations/Reporting Integration - delivery.md>) `send` and `Attachment`.
+
+## Used By
+
+- [server/tests/test_scheduled_runs.py](../../../server/tests/test_scheduled_runs.py).
+- The scheduler loop and the schedules router's run-now route that the scheduled-delivery branch adds next; the loop passes `trigger="schedule"`, the route `trigger="manual"`.
+
+## Key Behavior
+
+- Order of work: read the schedule (unknown id raises `LookupError`); when the trigger is `schedule`, call `schedules.advance` first; open the run with `insert_run`; then inside one `try`, load the preset, gather, render, save, deliver, `finish_run(ok)` and `record_result(ok)`. Any exception closes the run with `error` and the exception text (or its class name when the text is empty), stamps the schedule with the same, and is logged as `[ERROR]`. The row returned is `list_runs(schedule_id, limit=1)[0]`, so it is whatever the database holds, not a shape assembled in memory.
+- Advancing before the work rather than after is deliberate and follows the note on the [schedules service](<Reporting Service - schedules.md>) page: the loop picks up anything `due()`, so a run that crashes the process mid-render must not still be due on the next tick. A `manual` or any other trigger leaves `next_run_at` alone, so a run-now from the page does not skip the coming scheduled send.
+- A delivery failure after the save keeps `saved_report_id` on the error run: the file exists and can be opened or re-sent, and the row says so.
+- Data per report type, matching the renderer's handler table in `client/renderer/render.ts`: `devices` sends `{sheets: [{sheet, ids, companyName}]}`, one entry per member of the agency or group, exactly as the browser's device page stacks them; `office_windows` sends `{breakdown, manualInputs, agencyName}`; `patch` sends `{report, agency}` with `agency` as `{id, site, name}` where `name` is the preset's display name so the PDF title reads as the page's does; `hdd_tickets` sends `{devices}` for every member id; `sla`, `quarterly_utilization` and `annual_utilization` send the service's own dict (annual as `{utilData, entries}`), which is already the JSON the browser receives.
+- Options are the preset's filtered options passed through, so `columns`, `format` and `showLicenses` reach the renderer as stored; the annual report additionally gets `departments` from the tenant's `ratedDepartments` at run time, which is why the [presets service](<Reporting Service - presets.md>) refuses to store it.
+- Groups: `devices` and `hdd_tickets` cover every member. The renderer's `office_windows` and `patch` handlers take one breakdown and one site, so a group preset for those reports covers only the first member and the run logs a `[WARN]` line naming it; the browser merges members for these two pages, and the scheduled file does not yet.
+- Periods: `sla` is the previous month (`October 2026` for a run on 1 Nov 2026), `quarterly_utilization` the previous calendar quarter and `annual_utilization` the reporting year the previous month falls in, both labelled by `utilization.period_label` (`Q3 2026`, `FY 2026-27`). The other reports have no period and `{period}` fills as an empty string.
+- Filenames are the browser's, character for character, so `saved_reports.save` overwrites a manual export of the same report made the same day instead of adding a second row: `<agency> Computer Inventory <M-D-YY>.xlsx`, `<agency> Office and Windows Installs <M-D-YY>.docx` or `.pdf` by the preset's `format`, `<agency> Patch Management Summary <M-D-YY>.pdf`, `<agency> HDD Storage Tickets <M-D-YY>.xlsx`, `SLA Performance By Ticket <Month><year>.xlsx` (no space, as the page writes it), `Agency Utilization <period>.xlsx` and `Annual Utilization <period>.xlsx`. The date stamp is month, day and two-digit year without zero padding, the client's `fileDateStamp`. The saved row's `title` is the filename without its extension, `format` the extension, `agency_name` the preset's display name or `All Agencies` for the three company-wide reports, and `agency_id` the preset's key (the service stores it as a number only when it is a plain company id).
+- Placeholders in the subject and body: `{agency}` is the preset's `agency_name`, `{report}` the `REPORT_LABELS` entry, `{period}` as above, `{date}` the run date as ISO `YYYY-MM-DD`. An unknown placeholder such as `{nope}` is left literally rather than failing the run, and the filled subject is stripped so a blank `{period}` does not leave a trailing space.
+- The body is HTML-escaped and its newlines become `<br>` before `delivery.send`, because the flow's mail connector treats the body as HTML (see the [delivery integration](<../integrations/Reporting Integration - delivery.md>)); the subject is sent as plain text.
+- The logo is read from `tenant.logo_path(agency_name)` and sent base64-encoded for every run that has an agency name; a report without a mapped logo sends `None` and the renderer draws no image.
+- Logging follows the services' `[INFO]`, `[WARN]`, `[ERROR]` convention so the run-now page can stream the same lines the report pages do; the report services receive the same `logger` and add their own phase lines.
+- Every network call is a module attribute call (`renderer.render`, `delivery.send`, `tenant.resolve_agency`, `devices.get_device_sheet` and so on), so the tests patch the integrations and services and never reach Autotask, Datto, the renderer or the flow.
+
+## Cleanup Notes
+
+- Office and Windows and patch runs for a group cover one member; folding members the way the browser's hooks do (`mergeBreakdowns`, `mergePatchReports`) would need those merges on the server.
+- The report services are called without `refresh`, so a run serves whatever the cache holds; the background sync is what keeps that fresh before the scheduled hour.
+
+## Source
+
+[server/services/scheduled_runs.py](../../../server/services/scheduled_runs.py)

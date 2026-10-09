@@ -24,7 +24,7 @@ A schedule fires early in a month and sends a report about time that has finishe
 ## Used By
 
 - [server/tests/test_periods.py](../../../server/tests/test_periods.py).
-- The scheduler loop that the scheduled-delivery branch adds next, to build the render request for a due schedule from its preset's report type.
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`previous_month` for the SLA report, `previous_quarter` for the quarterly utilization report, `fiscal_year_of_previous_month` for the annual one).
 
 ## Key Behavior
 

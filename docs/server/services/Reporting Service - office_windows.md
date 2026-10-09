@@ -28,6 +28,7 @@ The licensing report needs to know how many machines run each client Windows ver
 
 - [office_windows router](<../routers/Reporting Router - office_windows.md>)
 - [sync service](<Reporting Service - sync.md>)
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get_office_windows` for the first member of the preset's agency)
 - [demo data](<../demo/Reporting Demo - data.md>) imports `OW_PHASES`.
 
 ## Key Behavior

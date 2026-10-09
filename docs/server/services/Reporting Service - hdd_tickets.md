@@ -29,6 +29,7 @@ The RMM raises an Autotask ticket whenever a workstation's C: drive crosses its 
 
 - [hdd_tickets router](<../routers/Reporting Router - hdd_tickets.md>)
 - [sync service](<Reporting Service - sync.md>)
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get_hdd_report` with every member id of the preset's agency or group)
 - [demo data](<../demo/Reporting Demo - data.md>) imports `HDD_PHASES`.
 
 ## Key Behavior

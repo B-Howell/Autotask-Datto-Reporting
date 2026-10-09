@@ -37,7 +37,8 @@ A decoded schedule row carries the table columns with the two recipient lists pa
 - [server/tests/test_schedule_repositories.py](../../../server/tests/test_schedule_repositories.py).
 - [presets service](<../services/Reporting Service - presets.md>) (`list_for_preset`, to refuse deleting a scheduled preset).
 - [schedules service](<../services/Reporting Service - schedules.md>), imported as `repo`: the only writer of `next_run_at` (through `insert` and `update`) and of the `last_*` columns.
-- The scheduler loop that the scheduled-delivery branch adds next, for `due()`, `insert_run` and `finish_run`.
+- [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`insert_run`, `finish_run` and `list_runs`).
+- The scheduler loop that the scheduled-delivery branch adds next, for `due()`.
 
 ## Key Behavior
 

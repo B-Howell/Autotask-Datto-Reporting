@@ -29,6 +29,7 @@ Autotask's SLA engine stamps each ticket with its first-response, resolution-pla
 
 - [sla router](<../routers/Reporting Router - sla.md>)
 - [sync service](<Reporting Service - sync.md>) (refreshes the current month only)
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get_sla_report` for the month before the run)
 - [demo data](<../demo/Reporting Demo - data.md>) imports `SLA_PHASES` and produces rows in this shape.
 - `server/tests/test_aggregates.py` runs `aggregate` over demo rows.
 

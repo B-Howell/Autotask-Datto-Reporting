@@ -30,6 +30,7 @@ Autotask holds the asset record (product type, serial, location, user-defined fi
 
 - [devices router](<../routers/Reporting Router - devices.md>) (`get_device_sheet`, `update_devices`)
 - [sync service](<Reporting Service - sync.md>) (`refresh_snapshot`)
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get_device_sheet`, once per member of the preset's agency or group)
 - [demo data](<../demo/Reporting Demo - data.md>) imports `DEVICE_PHASES` to emit the same phases.
 - `server/tests/test_devices_writeback.py`
 

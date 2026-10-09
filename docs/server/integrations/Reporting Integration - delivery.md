@@ -25,7 +25,8 @@ The server never talks to Exchange and never holds a mailbox password. Delivery 
 ## Used By
 
 - [server/tests/test_delivery.py](../../../server/tests/test_delivery.py).
-- The scheduler loop that the scheduled-delivery branch adds next, which calls `send` with the bytes the [renderer integration](<Reporting Integration - renderer.md>) returned, and the "send test email" route on the scheduled reports page.
+- [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`send` and `Attachment`, with the bytes and content type the [renderer integration](<Reporting Integration - renderer.md>) returned and the body already converted to HTML).
+- The "send test email" route on the scheduled reports page that the scheduled-delivery branch adds next.
 
 ## Key Behavior
 
@@ -41,7 +42,7 @@ The server never talks to Exchange and never holds a mailbox password. Delivery 
 
 ## Cleanup Notes
 
-- The newline-to-`<br>` conversion described above is specified here but lands with the scheduler; until then a multi-line body arrives as one paragraph.
+- The newline-to-`<br>` conversion described above lives in the scheduled_runs service (`_html_body`, which also HTML-escapes the text); a caller that bypasses it sends a multi-line body as one paragraph.
 
 ## Source
 

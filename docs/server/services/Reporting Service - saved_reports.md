@@ -25,6 +25,7 @@ Exports are built in the browser, so the server's job is only to keep the finish
 ## Used By
 
 - [saved_reports router](<../routers/Reporting Router - saved_reports.md>)
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`save`, under the browser's own filename so a scheduled copy replaces a manual export of the same day).
 
 ## Key Behavior
 

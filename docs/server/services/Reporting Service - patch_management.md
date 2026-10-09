@@ -29,6 +29,7 @@ This mirrors Datto's own Patch Management report, which covers desktops and lapt
 
 - [patch_management router](<../routers/Reporting Router - patch_management.md>)
 - [sync service](<Reporting Service - sync.md>)
+- [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get_patch_report` for the first member's site)
 - [demo data](<../demo/Reporting Demo - data.md>) imports `PATCH_PHASES`.
 - `server/tests/test_snapshots.py` uses the `patch` report type as its fixture.
 

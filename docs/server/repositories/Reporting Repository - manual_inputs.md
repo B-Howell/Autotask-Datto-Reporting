@@ -20,6 +20,7 @@ Some report figures do not exist in either vendor system; the licensing report n
 ## Used By
 
 - [manual_inputs router](<../routers/Reporting Router - manual_inputs.md>)
+- [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`get_manual_inputs` for a scheduled Office and Windows report, keyed by the preset's `agency_key`)
 - [demo seed](<../demo/Reporting Demo - seed.md>), which fills in licence counts for the first demo agency.
 
 ## Key Behavior

@@ -23,7 +23,8 @@ Scheduled deliveries have to produce the same xlsx, docx and pdf bytes a user ge
 ## Used By
 
 - [server/tests/test_renderer_client.py](../../../server/tests/test_renderer_client.py).
-- The scheduler loop and the scheduled reports status route that the scheduled-delivery branch adds next: the loop calls `render` for each due schedule and the route calls `health`.
+- [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`render`, once per run, with the payload the browser would have built).
+- The scheduled reports status route that the scheduled-delivery branch adds next, which calls `health`.
 
 ## Key Behavior
 
