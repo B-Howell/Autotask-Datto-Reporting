@@ -41,3 +41,6 @@ exclude_dirs = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Tests import the application packages from this directory; plain `pytest`
+# does not add it to sys.path the way `python -m pytest` does.
+pythonpath = ["."]
