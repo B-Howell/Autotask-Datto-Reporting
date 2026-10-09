@@ -1,10 +1,10 @@
 # FastAPI application entry point
 
-> Builds the FastAPI app: CORS, a no-cache response middleware, the lifespan that opens the database and runs the sync scheduler, and the registration of every router.
+> Builds the FastAPI app: CORS, a no-cache response middleware, the lifespan that opens the database, sweeps interrupted scheduled runs and runs the sync scheduler and the schedule ticker, and the registration of every router.
 
 ## Purpose
 
-`server/main.py` is wiring only. It owns nothing a report needs to be correct; it decides which routers are mounted, which headers every response carries, and when the background sync runs. Behaviour lives in `services/`, HTTP shape in `routers/`, and this module composes them into one process. The design decision is that the server is a single process with one in-process scheduler rather than a separate worker, because the workload is one MSP's monthly reporting.
+`server/main.py` is wiring only. It owns nothing a report needs to be correct; it decides which routers are mounted, which headers every response carries, and when the background sync and the schedule check run. Behaviour lives in `services/`, HTTP shape in `routers/`, and this module composes them into one process. The design decision is that the server is a single process with one in-process scheduler rather than a separate worker, because the workload is one MSP's monthly reporting.
 
 ## Interface
 
@@ -12,7 +12,8 @@
 |---|---|
 | `ROUTERS` | Tuple of router modules mounted in order: health, agencies, devices, office_windows, tickets, sla, utilization, patch_management, hdd_tickets, jobs, sync, manual_inputs, saved_reports, tenant. |
 | `_sync_scheduler()` | Coroutine: sleeps 5 seconds, starts a sync if no successful sync has ever been recorded, then starts one every `settings.sync_interval_hours`. |
-| `lifespan(_app)` | Async context manager: `sqlite.init_db()` on startup, creates the scheduler task, cancels it on shutdown. |
+| `_schedule_ticker()` | Coroutine: sleeps 10 seconds, then calls `schedule_runner.runner.tick()` every `settings.schedule_poll_seconds`, printing `[WARN] schedule tick failed: ...` and carrying on if a tick raises. |
+| `lifespan(_app)` | Async context manager: `sqlite.init_db()` and `schedule_runner.sweep_interrupted()` on startup, creates the sync scheduler and the schedule ticker tasks, cancels both on shutdown. |
 | `create_app()` | Returns the configured `FastAPI` instance. |
 | `app` | Module-level instance that uvicorn imports as `main:app`. |
 
@@ -21,10 +22,11 @@ Running the file directly starts uvicorn on `0.0.0.0:8000` with `reload=True` an
 ## Uses
 
 - `fastapi`, `fastapi.middleware.cors.CORSMiddleware`, `asyncio`, `uvicorn` (only under `__main__`)
-- [config](<Reporting Server - config.md>) for `cors_origins` and `sync_interval_hours`
+- [config](<Reporting Server - config.md>) for `cors_origins`, `sync_interval_hours` and `schedule_poll_seconds`
 - [sqlite repository](<repositories/Reporting Repository - sqlite.md>) for `init_db()`
 - [snapshots repository](<repositories/Reporting Repository - snapshots.md>) for `last_sync_time()`
 - [sync service](<services/Reporting Service - sync.md>) for `runner.start()`
+- [schedule_runner service](<services/Reporting Service - schedule_runner.md>) for `sweep_interrupted()` and `runner.tick()`
 - Every router module: [health](<routers/Reporting Router - health.md>), [agencies](<routers/Reporting Router - agencies.md>), [devices](<routers/Reporting Router - devices.md>), [office_windows](<routers/Reporting Router - office_windows.md>), [tickets](<routers/Reporting Router - tickets.md>), [sla](<routers/Reporting Router - sla.md>), [utilization](<routers/Reporting Router - utilization.md>), [patch_management](<routers/Reporting Router - patch_management.md>), [hdd_tickets](<routers/Reporting Router - hdd_tickets.md>), [jobs](<routers/Reporting Router - jobs.md>), [sync](<routers/Reporting Router - sync.md>), [manual_inputs](<routers/Reporting Router - manual_inputs.md>), [saved_reports](<routers/Reporting Router - saved_reports.md>), [tenant](<routers/Reporting Router - tenant.md>)
 
 ## Used By
@@ -39,13 +41,15 @@ Running the file directly starts uvicorn on `0.0.0.0:8000` with `reload=True` an
 - The cold-start warm-up is gated on `snapshots.last_sync_time()` returning `None`, which means "no `sync_state` row with status ok". A database holding only failed syncs is treated as cold and warmed again.
 - The interval loop sleeps first, so the first scheduled sync after boot is one full interval away (24 hours by default). `runner.start()` returns `False` and does nothing when a sync is already in flight, so overlapping runs cannot start from here.
 - `lifespan` cancels the scheduler task on shutdown but does not wait for a sync in progress; the sync runs on a daemon thread owned by the sync service, so process exit ends it.
+- The schedule ticker checks for due schedules once a minute by default. Scheduled reports fire on a day and an hour, so that is plenty, and because the repository's `due()` compares `next_run_at <= now` a tick that comes late or is skipped does not skip a run. `tick()` runs on the event loop thread, but it only queries SQLite and starts a worker thread, so it never holds the loop up; the run itself happens on the runner's daemon thread. An exception from a tick is printed as a warning and the loop continues, so one bad poll cannot stop every later send.
+- `sweep_interrupted()` runs before either task starts: a run the previous process was killed in the middle of has no one left to close its row, and its schedule was already advanced as the first step of that run, so the row is closed as `Interrupted by a restart` rather than run again.
 - The 2 second graceful shutdown window exists because a report request can run for minutes and uvicorn's default would wait for it, which held Ctrl+C in development.
 - Router registration order is the order of `ROUTERS`; there are no path overlaps, so order only affects the OpenAPI listing.
 
 ## Cleanup Notes
 
 - `create_app()` runs at import time to produce `app`, so tests run the real lifespan (database init and scheduler) under `TestClient`. That works only because `conftest.temp_db` points the sqlite repository at a temporary file before the client starts.
-- `settings` is frozen at import, so changing `SYNC_INTERVAL_HOURS` needs a restart. Expected, but undocumented elsewhere.
+- `settings` is frozen at import, so changing `SYNC_INTERVAL_HOURS` or `SCHEDULE_POLL_SECONDS` needs a restart. Expected, but undocumented elsewhere.
 
 ## Source
 

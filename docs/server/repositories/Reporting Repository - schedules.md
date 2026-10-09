@@ -23,6 +23,8 @@ Like presets, these are user data and history with no upstream copy, so they are
 | `delete(schedule_id)` | Deletes the schedule's runs and then the schedule. |
 | `insert_run(schedule_id, trigger)` | Opens a run with status `running` and `started_at` now; `trigger` is free text such as `manual` or `scheduled`. Returns the run id. |
 | `finish_run(run_id, status, error=None, saved_report_id=None)` | Closes a run: stamps `finished_at`, sets the status, the error text and the id of the saved report that was produced. |
+| `list_running()` | Every run still in status `running`, oldest first. After a restart these are the rows nobody is left to close. |
+| `close_running(error)` | Finishes every run `list_running` returns as `error` with the given message, keeping each row's `saved_report_id`; returns the count closed. |
 | `list_runs(schedule_id=None, limit=50)` | Runs for one schedule, or across all schedules when no id is given, newest first (ties broken by id), capped at `limit`. Run rows are returned as stored; they have no JSON columns. |
 
 A decoded schedule row carries the table columns with the two recipient lists parsed into Python lists and `enabled` as a bool.
@@ -38,7 +40,7 @@ A decoded schedule row carries the table columns with the two recipient lists pa
 - [presets service](<../services/Reporting Service - presets.md>) (`list_for_preset`, to refuse deleting a scheduled preset).
 - [schedules service](<../services/Reporting Service - schedules.md>), imported as `repo`: the only writer of `next_run_at` (through `insert` and `update`) and of the `last_*` columns.
 - [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`insert_run`, `finish_run` and `list_runs`).
-- The scheduler loop that the scheduled-delivery branch adds next, for `due()`.
+- [schedule_runner service](<../services/Reporting Service - schedule_runner.md>) (`due()` on every tick, `close_running` from its startup sweep).
 
 ## Key Behavior
 

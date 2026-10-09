@@ -125,6 +125,19 @@ def finish_run(run_id, status, error=None, saved_report_id=None):
     )
 
 
+def list_running():
+    """Runs still open, oldest first; after a restart these are the ones nobody will close."""
+    return sqlite.query("SELECT * FROM schedule_runs WHERE status = 'running' ORDER BY id")
+
+
+def close_running(error):
+    """Finish every open run as `error` with the given message; returns how many were closed."""
+    rows = list_running()
+    for row in rows:
+        finish_run(row["id"], "error", error=error, saved_report_id=row["saved_report_id"])
+    return len(rows)
+
+
 def list_runs(schedule_id=None, limit=50):
     if schedule_id is None:
         return sqlite.query(

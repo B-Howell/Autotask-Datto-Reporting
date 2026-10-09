@@ -24,6 +24,7 @@ from routers import (
     tickets,
     utilization,
 )
+from services import schedule_runner
 from services.sync import runner
 
 ROUTERS = (
@@ -55,14 +56,34 @@ async def _sync_scheduler():
         runner.start()
 
 
+async def _schedule_ticker():
+    # Scheduled reports fire on a day and an hour; checking once a minute is
+    # plenty, and because due() compares with <= now a missed minute does not
+    # skip a run. tick() runs on the event loop thread, but it only queries
+    # SQLite and starts a worker thread, so it never holds the loop up.
+    await asyncio.sleep(10)
+    while True:
+        try:
+            schedule_runner.runner.tick()
+        except Exception as exc:
+            print(f"[WARN] schedule tick failed: {exc}")
+        await asyncio.sleep(settings.schedule_poll_seconds)
+
+
 @asynccontextmanager
 async def lifespan(_app):
     sqlite.init_db()
+    # A run the previous process was in the middle of has no one left to
+    # close it; its schedule was already advanced, so it is recorded as an
+    # error rather than run again.
+    schedule_runner.sweep_interrupted()
     scheduler = asyncio.create_task(_sync_scheduler())
+    ticker = asyncio.create_task(_schedule_ticker())
     try:
         yield
     finally:
         scheduler.cancel()
+        ticker.cancel()
 
 
 def create_app():

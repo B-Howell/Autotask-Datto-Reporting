@@ -10,7 +10,7 @@ A report writes human log lines and `[PROGRESS]` lines to its stream while it ru
 
 | Name | Description |
 |---|---|
-| `get_buffer(name)` | Returns the `LogBuffer` for `name`, creating it on first use. Names in use: `devices`, `office-windows`, `tickets`, `sla`, `utilization`, `patch`, `hdd`, `sync`. |
+| `get_buffer(name)` | Returns the `LogBuffer` for `name`, creating it on first use. Names in use: `devices`, `office-windows`, `tickets`, `sla`, `utilization`, `patch`, `hdd`, `sync`, `schedules`. |
 | `sse_response(name)` | An `EventSourceResponse` whose generator polls the named buffer every 0.25 s and yields each new line until the client disconnects. |
 | `report_logger(name, job_id=None, clear=True)` | Returns a `log(message)` callable. With `clear=True` the buffer is emptied first. With a `job_id` each line is also recorded on the job and the cancel flag is checked. |
 
@@ -25,6 +25,7 @@ A report writes human log lines and `[PROGRESS]` lines to its stream while it ru
 - [routers common](<../routers/Reporting Router - common.md>) (`report_logger` with a job id, `get_buffer` to append the cancelled marker)
 - Routers that expose a `/logs` route: [devices](<../routers/Reporting Router - devices.md>), [hdd_tickets](<../routers/Reporting Router - hdd_tickets.md>), [office_windows](<../routers/Reporting Router - office_windows.md>), [patch_management](<../routers/Reporting Router - patch_management.md>), [sla](<../routers/Reporting Router - sla.md>), [sync](<../routers/Reporting Router - sync.md>), [utilization](<../routers/Reporting Router - utilization.md>)
 - [sync service](<../services/Reporting Service - sync.md>) (`get_buffer(STREAM).clear()` then `report_logger(STREAM, clear=False)` on its worker thread)
+- [schedule_runner service](<../services/Reporting Service - schedule_runner.md>) (`report_logger("schedules", clear=True)` once per batch of scheduled runs, on its worker thread)
 
 ## Key Behavior
 

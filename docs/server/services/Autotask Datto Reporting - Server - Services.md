@@ -28,6 +28,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Service - periods.md](<Reporting Service - periods.md>)
 - [Reporting Service - presets.md](<Reporting Service - presets.md>)
 - [Reporting Service - saved_reports.md](<Reporting Service - saved_reports.md>)
+- [Reporting Service - schedule_runner.md](<Reporting Service - schedule_runner.md>)
 - [Reporting Service - scheduled_runs.md](<Reporting Service - scheduled_runs.md>)
 - [Reporting Service - schedules.md](<Reporting Service - schedules.md>)
 - [Reporting Service - sla.md](<Reporting Service - sla.md>)
