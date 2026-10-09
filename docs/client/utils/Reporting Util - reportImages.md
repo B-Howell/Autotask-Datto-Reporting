@@ -14,7 +14,7 @@ Dimensions are read straight from the PNG header rather than by loading the file
 |---|---|---|
 | `ReportImage` | interface | `bytes: ArrayBuffer`, `dataUrl: string`, `width`, `height` (pixels), `format: 'PNG' \| 'JPEG'`. |
 | `ReportAssets` | interface | `officeIcon?`, `windowsIcon?`, `logo?`, each `ReportImage \| null`. Every field is optional; a missing image is skipped by the builder. |
-| `pngDimensions` | `(bytes: ArrayBuffer) => { width, height } \| null` | Reads the IHDR width and height; `null` when the signature does not match or the buffer is shorter than 24 bytes. |
+| `pngDimensions` | `(bytes: ArrayBuffer) => { width, height } \| null` | Reads the IHDR width and height; `null` when the signature does not match, the buffer is shorter than 24 bytes, the first chunk is not `IHDR`, or either dimension is zero. |
 | `toDataUrl` | `(bytes: ArrayBuffer, mime: string) => string` | `data:<mime>;base64,...` built with `btoa`. |
 | `pngImage` | `(bytes: ArrayBuffer \| null) => ReportImage \| null` | A `ReportImage` with `format: 'PNG'`; `null` for a null buffer or non-PNG bytes. |
 | `loadBrowserAssets` | `(agencyName: string \| null) => Promise<ReportAssets>` | Fetches both icons and, when the tenant maps one, the agency logo, all in parallel, through `fetchAssetBytes`. |
@@ -32,7 +32,9 @@ Dimensions are read straight from the PNG header rather than by loading the file
 
 ## Key Behavior
 
-- `pngDimensions` checks the eight-byte PNG signature and then reads two big-endian 32-bit integers at offsets 16 and 20, which is where the IHDR chunk places width and height in every valid PNG. Nothing else in the file is parsed.
+- `pngDimensions` checks the eight-byte PNG signature, then the `IHDR` tag at bytes 12 to 15, then reads two big-endian 32-bit integers at offsets 16 and 20, which is where the IHDR chunk places width and height in every valid PNG. A zero width or height is rejected because the exporters divide by the height for the aspect ratio. Nothing else in the file is parsed.
+- Images are embedded at their native size and only displayed smaller, so a logo should be a PNG of roughly 600 by 200 pixels; a much larger file inflates every export it appears in. The operations guide repeats this for whoever drops a logo into the server's data directory.
+- When the tenant maps a logo URL but it does not resolve to a usable PNG (fetch failure or a non-PNG file), `loadBrowserAssets` logs `console.warn('Agency logo is not a PNG and was skipped:', url)` and the export proceeds without it.
 - `pngImage` is the only constructor, so every `ReportImage` built here is a PNG with dimensions that match its bytes. A logo saved as JPEG or SVG under a `.png` name yields `null` and the report renders without it, which is the same degradation a failed fetch produces.
 - `loadBrowserAssets` never rejects: `fetchAssetBytes` resolves `null` on any failure and `pngImage(null)` is `null`.
 - `toDataUrl` concatenates one character per byte before calling `btoa`. Report images are small icons and a logo of at most a few hundred kilobytes, so this is fast enough and avoids a `FileReader`, which Node does not have.

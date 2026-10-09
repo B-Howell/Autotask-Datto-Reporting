@@ -22,15 +22,27 @@ export interface ReportAssets {
 }
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+// The first chunk of every PNG is IHDR; its tag sits right after the signature
+// and the chunk length, and its width and height follow the tag.
+const IHDR_TAG = 'IHDR';
+const IHDR_TAG_OFFSET = 12;
 
-/** Width and height from the IHDR chunk; null when the bytes are not a PNG. */
+/**
+ * Width and height from the IHDR chunk; null when the bytes are not a PNG,
+ * the first chunk is not IHDR, or either dimension is zero.
+ */
 export function pngDimensions(bytes: ArrayBuffer): { width: number; height: number } | null {
   const view = new DataView(bytes);
   if (view.byteLength < 24) return null;
   for (let i = 0; i < PNG_SIGNATURE.length; i += 1) {
     if (view.getUint8(i) !== PNG_SIGNATURE[i]) return null;
   }
-  return { width: view.getUint32(16), height: view.getUint32(20) };
+  for (let i = 0; i < IHDR_TAG.length; i += 1) {
+    if (view.getUint8(IHDR_TAG_OFFSET + i) !== IHDR_TAG.charCodeAt(i)) return null;
+  }
+  const width = view.getUint32(16);
+  const height = view.getUint32(20);
+  return width > 0 && height > 0 ? { width, height } : null;
 }
 
 export function toDataUrl(bytes: ArrayBuffer, mime: string): string {
@@ -55,5 +67,9 @@ export async function loadBrowserAssets(agencyName: string | null): Promise<Repo
     fetchAssetBytes(WINDOWS_ICON),
     logoUrl ? fetchAssetBytes(logoUrl) : Promise.resolve(null),
   ]);
-  return { officeIcon: pngImage(office), windowsIcon: pngImage(windows), logo: pngImage(logo) };
+  const logoImage = pngImage(logo);
+  if (logoUrl && !logoImage) {
+    console.warn('Agency logo is not a PNG and was skipped:', logoUrl);
+  }
+  return { officeIcon: pngImage(office), windowsIcon: pngImage(windows), logo: logoImage };
 }
