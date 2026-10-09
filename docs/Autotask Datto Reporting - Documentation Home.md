@@ -1,4 +1,4 @@
-﻿---
+---
 documentation_hub: true
 project: "Autotask Datto Reporting"
 area: "documentation home"
@@ -35,7 +35,7 @@ and assets, with every page linking the exact source file it describes.
 
 ## Documentation Navigation
 
-Generated path-specific navigation. Keep durable explanation outside this block; regenerate with `~/.claude/hooks/brain-doc-maps.ps1`.
+This navigation block is maintained by the documentation tooling. Keep durable explanation outside it.
 
 ### Child documentation areas
 

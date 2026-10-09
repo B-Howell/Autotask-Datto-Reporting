@@ -1,4 +1,4 @@
-﻿---
+---
 documentation_hub: true
 ---
 
@@ -10,7 +10,7 @@ This hub organizes the **Client / Api** documentation area for Autotask Datto Re
 
 ## Documentation Navigation
 
-Generated path-specific navigation. Keep durable explanation outside this block; regenerate with `~/.claude/hooks/brain-doc-maps.ps1`.
+This navigation block is maintained by the documentation tooling. Keep durable explanation outside it.
 
 - Parent hub: [Autotask Datto Reporting - Client](<../Autotask Datto Reporting - Client.md>)
 
