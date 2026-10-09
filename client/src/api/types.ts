@@ -304,7 +304,10 @@ export interface PresetInput {
   options: Record<string, unknown>;
 }
 
-/** A schedule row as the schedules router joins it, with its preset attached. */
+/**
+ * A schedule row as the list, create and update routes serve it: every stored
+ * column plus the preset joined by id, null when that preset no longer exists.
+ */
 export interface ReportSchedule {
   id: number;
   preset_id: number;
@@ -320,6 +323,8 @@ export interface ReportSchedule {
   last_run_at: string | null;
   last_status: 'ok' | 'error' | null;
   last_error: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ScheduleInput {

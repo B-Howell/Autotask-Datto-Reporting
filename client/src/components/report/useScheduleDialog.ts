@@ -24,7 +24,9 @@ export default function useScheduleDialog(draftFactory: () => PresetDraft | null
   const openDialog = useCallback(() => {
     const next = draftFactory();
     if (!next) return;
-    setDraft(next);
+    // A copy, so a page that memoises its draft still hands the form a new
+    // identity on every open and the fields start over.
+    setDraft({ ...next, options: { ...next.options } });
     setOpen(true);
   }, [draftFactory]);
 
@@ -42,9 +44,16 @@ export default function useScheduleDialog(draftFactory: () => PresetDraft | null
     } catch (err) {
       showToast(errorMessage(err), 'error');
       // The preset exists but nothing points at it; the delete cannot be
-      // refused (no schedule references it) so its own failure is not worth
-      // a second toast.
-      if (presetId !== null) await presetsApi.deletePreset(presetId).catch(() => undefined);
+      // refused (no schedule references it), so its own failure is logged
+      // rather than raising a second toast over the first.
+      if (presetId !== null) {
+        await presetsApi.deletePreset(presetId).catch((cleanupErr: unknown) => {
+          console.warn(
+            `Preset ${presetId} could not be removed after a failed schedule`,
+            cleanupErr
+          );
+        });
+      }
     } finally {
       setSaving(false);
     }

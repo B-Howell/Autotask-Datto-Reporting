@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { PresetInput, ScheduleInput } from '@/api';
-import { defaultName, defaultSubject, splitAddresses } from './scheduleDraft';
+import { defaultName, defaultSubject, invalidAddresses, splitAddresses } from './scheduleDraft';
 import type { PresetDraft } from './scheduleDraft';
 
 export interface ScheduleFormValues {
@@ -74,6 +74,10 @@ export default function useScheduleForm(draft: PresetDraft) {
   );
 
   const payload = toPayload(draft, values);
-  const valid = payload.schedule.recipients_to.length > 0 && payload.schedule.subject !== '';
+  const valid =
+    payload.schedule.recipients_to.length > 0 &&
+    payload.schedule.subject !== '' &&
+    invalidAddresses(values.to).length === 0 &&
+    invalidAddresses(values.cc).length === 0;
   return { values, update, payload, valid };
 }

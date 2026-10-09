@@ -15,9 +15,9 @@
 | `values` | `ScheduleFormValues` | The current field strings and numbers. |
 | `update` | `(patch: Partial<ScheduleFormValues>) => void` | Merges a change into the values. |
 | `payload` | `SchedulePayload` | `{ preset, schedule }` built from the draft and the values. |
-| `valid` | `boolean` | True once there is a To address and a non-blank subject. |
+| `valid` | `boolean` | True once there is a To address, no To or CC entry lacks an `@`, and the subject is non-blank. |
 
-Exports the `ScheduleFormValues` and `SchedulePayload` types. `scheduleDraft.ts` exports `PresetDraft`, `REPORT_LABELS`, `defaultName`, `defaultSubject` and `splitAddresses`.
+Exports the `ScheduleFormValues` and `SchedulePayload` types. `scheduleDraft.ts` exports `PresetDraft`, `REPORT_LABELS`, `defaultName`, `defaultSubject`, `splitAddresses` and `invalidAddresses`.
 
 ## Uses
 
@@ -35,7 +35,7 @@ Exports the `ScheduleFormValues` and `SchedulePayload` types. `scheduleDraft.ts`
 - Edits are stored together with the draft object they were made against. When the dialog is opened again for a different report the page passes a new draft object, the stored edits no longer match it, and the hook shows fresh defaults; there is no reset effect and no remount, which keeps the hook clear of the react-hooks compiler rules about setting state in effects.
 - `REPORT_LABELS` must match `REPORT_LABELS` in `server/services/scheduled_runs.py`: the server fills `{report}` with its copy, and the preset name built here uses this one, so the two should read the same. The type is `Record<PresetReportType, string>`, so a new report type fails the build until it has a label.
 - `defaultName` is `<agencyName> <label>` trimmed when `agencyKey` is not null, else the label; `defaultSubject` is `{agency} {report} {period}` or `{report} {period}` on the same test. The agency key, not the name, decides, because the agency-wide reports send an empty name.
-- `splitAddresses` splits on commas and semicolons, trims each part and drops empties, so `a@x.com;; b@x.com` yields two addresses. It does not validate the addresses; the server rejects one without an `@` with a 400 the dialog's owner toasts.
+- `splitAddresses` splits on commas and semicolons, trims each part, drops empties and drops repeats compared case-insensitively (the first spelling wins), so `a@x.com;; b@x.com` yields two addresses and `Ops@x.com, ops@x.com` one. `invalidAddresses` returns the entries without an `@`, the server's own test; the form's `valid` requires it to be empty for To and CC, and `RecipientsField` shows the first offender. Anything else about an address is still left to the server's 400.
 - The preset's `options` are the draft's, except for `office_windows` where the chosen `format` is laid over them; the initial format is the draft's `options.format` when it is `pdf`, else `docx`.
 - `name` and `subject` are trimmed in the payload; `body` is sent as typed.
 

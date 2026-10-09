@@ -48,7 +48,7 @@ Grouped by server domain, with the api module that fetches each and the store or
 - `JobProgress` mirrors the `[PROGRESS]` JSON line from `server/core/progress.py`; `done`, `total`, `step` and `steps` are `null` when a phase has no count.
 - `SavedReport.format` is `ReportFormat | string` because the server stores whatever extension it derived; the client treats unknown values as plain downloads.
 - `PresetReportType` is the closed set of report types the server's preset service and the renderer accept; it is the key of the Schedule dialog's `REPORT_LABELS`, so adding a report type fails the build until a label exists. `ReportSchedule.preset` is `ReportPreset | null` because the join is by id and a row whose preset was removed out of band still lists.
-- `ScheduleInput.enabled` is optional because the server defaults a new schedule to enabled; `next_run_at`, `last_run_at`, `last_status` and `last_error` are read-only and only ever come from the server.
+- `ScheduleInput.enabled` is optional because the server defaults a new schedule to enabled; `next_run_at`, `last_run_at`, `last_status`, `last_error`, `created_at` and `updated_at` are read-only and only ever come from the server.
 - `PatchStatus` is a closed union of six strings and `PatchSummaryItem.label` is the display text for each; the client keys its donut colours on `status`, not `label`.
 
 ## Cleanup Notes

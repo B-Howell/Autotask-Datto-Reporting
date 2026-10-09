@@ -33,7 +33,7 @@ Exports the `ExportAction` type.
 ## Key Behavior
 
 - Order is fixed: export buttons in the order given, then Schedule, then Save to app, then Refresh data, then Generate. Generate is the only contained button.
-- Export, Schedule and Save buttons are disabled until `hasResults`, so a schedule can only be made from a report that has been generated with the options it will store; Refresh is disabled while `loading`; Generate is disabled when `generateDisabled` or `loading`.
+- Export and Save buttons are disabled until `hasResults`; Schedule is disabled until `hasResults` and also while `loading`, so the draft it captures describes a finished report rather than one being regenerated; Refresh is disabled while `loading`; Generate is disabled when `generateDisabled` or `loading`.
 - Refresh carries a tooltip explaining it re-pulls from Autotask and Datto, ignoring the cache; Schedule's tooltip says it emails the report on a monthly schedule.
 - Export buttons are keyed by label, so labels within one page must be unique.
 - All buttons share a 130 px minimum width so the group does not reflow as labels change.

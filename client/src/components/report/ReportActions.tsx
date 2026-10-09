@@ -55,7 +55,7 @@ const ReportActions = ({
         size="small"
         startIcon={<ScheduleSendIcon />}
         onClick={onSchedule}
-        disabled={!hasResults}
+        disabled={!hasResults || loading}
         title="Email this report on a monthly schedule"
         sx={BUTTON_SX}
       >

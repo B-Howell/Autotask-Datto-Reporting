@@ -33,9 +33,18 @@ describe('ReportActions', () => {
     expect(screen.queryByRole('button', { name: /schedule/i })).toBeNull();
   });
 
-  it('disables generate and refresh while a report is running', () => {
-    render(<ReportActions onGenerate={() => {}} onRefresh={() => {}} loading hasResults />);
+  it('disables generate, refresh and schedule while a report is running', () => {
+    render(
+      <ReportActions
+        onGenerate={() => {}}
+        onRefresh={() => {}}
+        onSchedule={() => {}}
+        loading
+        hasResults
+      />
+    );
     expect(screen.getByRole('button', { name: 'Generate' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Refresh data' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /schedule/i })).toBeDisabled();
   });
 });

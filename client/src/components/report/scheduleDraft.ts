@@ -33,10 +33,24 @@ export function defaultSubject(draft: PresetDraft): string {
   return hasAgency(draft) ? '{agency} {report} {period}' : '{report} {period}';
 }
 
-/** Splits a typed recipient list on commas or semicolons, dropping blanks. */
+/**
+ * Splits a typed recipient list on commas or semicolons, dropping blanks and
+ * repeats (compared case-insensitively; the first spelling is kept).
+ */
 export function splitAddresses(text: string): string[] {
-  return text
-    .split(/[,;]/)
-    .map((address) => address.trim())
-    .filter(Boolean);
+  const seen = new Set<string>();
+  const addresses: string[] = [];
+  for (const part of text.split(/[,;]/)) {
+    const address = part.trim();
+    const key = address.toLowerCase();
+    if (!address || seen.has(key)) continue;
+    seen.add(key);
+    addresses.push(address);
+  }
+  return addresses;
+}
+
+/** The entries that cannot be an email address; the server refuses any without an `@`. */
+export function invalidAddresses(text: string): string[] {
+  return splitAddresses(text).filter((address) => !address.includes('@'));
 }

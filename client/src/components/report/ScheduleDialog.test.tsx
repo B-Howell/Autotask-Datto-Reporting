@@ -90,6 +90,31 @@ describe('ScheduleDialog', () => {
     ]);
   });
 
+  it('flags an entry that is not an address and blocks saving until it is fixed', () => {
+    render(<ScheduleDialog open draft={draft} onClose={() => {}} onSave={() => {}} />);
+    fireEvent.change(screen.getByLabelText(/^to$/i), {
+      target: { value: 'a@example.com, bogus' },
+    });
+    expect(screen.getByText('Not an email address: bogus')).toBeInTheDocument();
+    expect(screen.getByLabelText(/^to$/i)).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('button', { name: /save schedule/i })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/^cc$/i), { target: { value: 'nobody' } });
+    fireEvent.change(screen.getByLabelText(/^to$/i), { target: { value: 'a@example.com' } });
+    expect(screen.getByRole('button', { name: /save schedule/i })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/^cc$/i), { target: { value: '' } });
+    expect(screen.getByRole('button', { name: /save schedule/i })).toBeEnabled();
+  });
+
+  it('sends each address once however it is capitalised', () => {
+    const onSave = vi.fn();
+    render(<ScheduleDialog open draft={draft} onClose={() => {}} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText(/^to$/i), {
+      target: { value: 'Ops@example.com; ops@example.com, OPS@EXAMPLE.COM' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /save schedule/i }));
+    expect(onSave.mock.calls[0][0].schedule.recipients_to).toEqual(['Ops@example.com']);
+  });
+
   it('offers a format choice for the Office and Windows report and stores it in the options', () => {
     const onSave = vi.fn();
     render(
