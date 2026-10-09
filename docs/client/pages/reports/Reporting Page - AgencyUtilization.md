@@ -19,12 +19,15 @@ Exports: "Export Excel" and "Save to app", producing `Agency Utilization <period
 `AgencyUtilization` takes no props and is the module's default export.
 
 Local state: `quarterKey: string`, initialised from `defaultQuarterKey`. The quarter list is
-memoised once per mount.
+memoised on the tenant store's `earliestQuarterYear`, which the page subscribes to and passes
+into `quarterChoices`, so it is built once per mount and once more if the tenant settings
+arrive after the first render.
 
 ## Uses
 
 - [useUtilizationData](<../../hooks/Reporting Hook - useUtilizationData.md>)
 - [agencyUtilizationStore](<../../store/Reporting Store - agencyUtilizationStore.md>)
+- [tenantStore](<../../store/Reporting Store - tenantStore.md>) for `earliestQuarterYear`; `dayjs` for the `now` argument
 - [QuarterSelect](<agencyUtilization/Reporting Agency Utilization - QuarterSelect.md>),
   [UtilizationTable](<agencyUtilization/Reporting Agency Utilization - UtilizationTable.md>),
   [excelExport](<agencyUtilization/Reporting Agency Utilization - excelExport.md>),

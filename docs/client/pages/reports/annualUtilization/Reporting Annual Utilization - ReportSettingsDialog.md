@@ -20,13 +20,13 @@ Three preferences shape the annual report without changing its data: how it is v
 | `selectedCompanies` | `Set<string> \| null` | yes | `null` means every company is shown. |
 | `onSelectedCompaniesChange` | `(selected: Set<string>) => void` | yes | Called with the new set. |
 
-Internal components: `ViewModeField` (radio group), `RateFields` (one text field per `RATED_DEPARTMENTS` entry), `CompanyChecklist` (checkbox list with Select all / Deselect all).
+Internal components: `ViewModeField` (radio group), `RateFields` (one text field per rated department in the tenant store), `CompanyChecklist` (checkbox list with Select all / Deselect all).
 
 ## Uses
 
 - `@mui/material` form controls, `List`, `Checkbox`, `Radio`, `TextField`, `Button`.
 - [SettingsDialog](<../../../components/report/Reporting Report Component - SettingsDialog.md>) as the dialog shell (title "Report Settings", `maxWidth="xs"`).
-- [departments](<Reporting Annual Utilization - departments.md>) for `RATED_DEPARTMENTS`.
+- [tenantStore](<../../../store/Reporting Store - tenantStore.md>) for `tenant.ratedDepartments`, subscribed inside `RateFields` so the list follows a tenant load that lands after the dialog's first render.
 - `Rates`, `ViewMode` types from [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>).
 
 ## Used By
@@ -40,7 +40,7 @@ Internal components: `ViewModeField` (radio group), `RateFields` (one text field
 - The checklist treats `null` as "all checked". Toggling one box materialises a `Set` from `selected ?? allCompanies` first, so the first deselection keeps every other company.
 - "Deselect all" produces an empty set, which yields a report with no agency tabs, no summary rows and no agency sheets in the export.
 - The dialog never calls `onSelectedCompaniesChange(null)`; once a selection exists it stays explicit until storage is cleared.
-- The rate list always shows all five tiers, including ones absent from the current report's data.
+- The rate list always shows every department the tenant settings name (the five defaults until they load), including ones absent from the current report's data.
 
 ## Cleanup Notes
 

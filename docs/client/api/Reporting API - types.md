@@ -26,6 +26,7 @@ Grouped by server domain, with the api module that fetches each and the store or
 | Sync | `SyncStatus`, `SyncTriggerResponse` | [sync](<Reporting API - sync.md>) | [useSyncStatus](<../pages/settings/Reporting Settings - useSyncStatus.md>), [DataSyncSection](<../pages/settings/Reporting Settings - DataSyncSection.md>) |
 | Saved reports | `ReportFormat`, `SavedReport`, `SaveReportResponse` | [savedReports](<Reporting API - savedReports.md>) | [useSavedReports](<../pages/reports/savedReports/Reporting Saved Reports - useSavedReports.md>), [SavedReportViewer](<../components/Reporting Component - SavedReportViewer.md>), [saveReport util](<../utils/Reporting Util - saveReport.md>) |
 | Manual inputs | `ManualInputs` | [manualInputs](<Reporting API - manualInputs.md>) | [useManualInputs](<../pages/reports/officeWindows/Reporting Office Windows - useManualInputs.md>) |
+| Tenant | `TenantSettings`, `GroupRule`, `RatedDepartment` | [tenant](<Reporting API - tenant.md>) | [tenantStore](<../store/Reporting Store - tenantStore.md>), [agencyGroups util](<../utils/Reporting Util - agencyGroups.md>) (`GroupRule`), [Annual Utilization departments](<../pages/reports/annualUtilization/Reporting Annual Utilization - departments.md>) (`RatedDepartment`) |
 
 ## Uses
 
@@ -37,7 +38,8 @@ Grouped by server domain, with the api module that fetches each and the store or
 
 ## Key Behavior
 
-- `AgencyGroup` and `EffectiveAgency` are client-only. The server never sees a group; `isAgencyGroup` checks for a `members` property and `AgencyValue` is `number` for a company id or the string `group:<name>` for a group.
+- `AgencyGroup` and `EffectiveAgency` are built on the client from the `GroupRule` list the tenant route serves; the server never sends a group object, though its tenant service resolves the same `group:<name>` value when a stored selection is used server-side. `isAgencyGroup` checks for a `members` property and `AgencyValue` is `number` for a company id or the string `group:<name>` for a group.
+- `TenantSettings` mirrors the server's merged `DEFAULTS` plus `data/tenant.json`, so every key is always present and the store replaces its state wholesale. `GroupRule` and `RatedDepartment` live here rather than in the modules that use them because they are part of that response shape.
 - `DeviceSheetResponse.ids[i]` can be `null` for rows cached before configuration item ids were stored; such rows cannot be written back.
 - `SlaTicket` met flags are `boolean | null`; `null` means no target applied and must be excluded from percentages.
 - `TicketDetails.synced_at` is optional because the merged result for an agency group does not carry one.

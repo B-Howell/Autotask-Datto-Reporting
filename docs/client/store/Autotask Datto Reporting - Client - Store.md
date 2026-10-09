@@ -27,6 +27,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Store - reportDataStore.md](<Reporting Store - reportDataStore.md>)
 - [Reporting Store - reportJobStore.md](<Reporting Store - reportJobStore.md>)
 - [Reporting Store - slaDataStore.md](<Reporting Store - slaDataStore.md>)
+- [Reporting Store - tenantStore.md](<Reporting Store - tenantStore.md>)
 - [Reporting Store - themeStore.md](<Reporting Store - themeStore.md>)
 - [Reporting Store - ticketDataStore.md](<Reporting Store - ticketDataStore.md>)
 - [Reporting Store - toastStore.md](<Reporting Store - toastStore.md>)

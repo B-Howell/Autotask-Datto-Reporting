@@ -18,7 +18,9 @@ import Reports from '@/pages/reports/Reports';
 import SavedReports from '@/pages/reports/SavedReports';
 import SlaPerformance from '@/pages/reports/SlaPerformance';
 import Tickets from '@/pages/reports/Tickets';
+import { tenantApi } from '@/api';
 import useAgencyStore from '@/store/agencyStore';
+import useTenantStore from '@/store/tenantStore';
 import useThemeStore from '@/store/themeStore';
 import { buildTheme } from '@/theme';
 
@@ -30,6 +32,16 @@ function App() {
   useEffect(() => {
     void fetchAgencies();
   }, [fetchAgencies]);
+
+  // Presentation settings (groups, logos, rates, picker years) come from the
+  // server once; until they arrive, and if the fetch fails, the store's
+  // defaults apply, which match the server's own.
+  useEffect(() => {
+    tenantApi
+      .fetchTenant()
+      .then(useTenantStore.getState().setTenant)
+      .catch(() => undefined);
+  }, []);
 
   return (
     <ThemeProvider theme={theme}>

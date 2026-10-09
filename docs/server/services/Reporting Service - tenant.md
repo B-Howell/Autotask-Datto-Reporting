@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Every value here used to be a constant in client source, which meant a private deployment had to edit tracked files to name its own agency groups or set its billing rates, and then carry those edits through every upstream merge. Keeping the values in an untracked JSON file under `settings.data_dir` moves that customisation out of the source tree entirely: the client will fetch the merged settings once at startup through the [tenant router] (the client side is wired in the next change)(<../routers/Reporting Router - tenant.md>), and server-side work such as a scheduled report run resolves a dropdown value to its member agencies and finds a client's logo through the same module.
+Every value here used to be a constant in client source, which meant a private deployment had to edit tracked files to name its own agency groups or set its billing rates, and then carry those edits through every upstream merge. Keeping the values in an untracked JSON file under `settings.data_dir` moves that customisation out of the source tree entirely: the client fetches the merged settings once at startup through the [tenant router](<../routers/Reporting Router - tenant.md>) into its [tenant store](<../../client/store/Reporting Store - tenantStore.md>), and server-side work such as a scheduled report run resolves a dropdown value to its member agencies and finds a client's logo through the same module.
 
 ## Interface
 
@@ -31,6 +31,7 @@ The file shape, with every key optional, is the committed [server/data/tenant.ex
 ## Used By
 
 - [tenant router](<../routers/Reporting Router - tenant.md>) (`get_tenant`, `safe_filename`, `LOGO_DIR`)
+- The client's [tenantStore](<../../client/store/Reporting Store - tenantStore.md>) carries a copy of `DEFAULTS` as `TENANT_DEFAULTS`; the two must stay identical.
 - [server/tests/test_tenant.py](../../../server/tests/test_tenant.py)
 
 ## Key Behavior

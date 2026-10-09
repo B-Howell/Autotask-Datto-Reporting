@@ -1,15 +1,5 @@
-import type { Agency, AgencyGroup, AgencyValue, EffectiveAgency } from '@/api';
+import type { Agency, AgencyGroup, AgencyValue, EffectiveAgency, GroupRule } from '@/api';
 import { isAgencyGroup } from '@/api';
-
-interface GroupRule {
-  name: string;
-  matchPrefix: string;
-}
-
-// Add an entry when one organisation exists in Autotask as several companies
-// sharing a name prefix, e.g. { name: 'Example Schools', matchPrefix: 'Example Schools - ' }.
-// Members collapse into one dropdown option with merged results.
-const GROUPS: GroupRule[] = [];
 
 const GROUP_PREFIX = 'group:';
 
@@ -20,12 +10,19 @@ export const isGroupKey = (value: unknown): value is string =>
 
 export const groupNameFromKey = (key: string): string => key.slice(GROUP_PREFIX.length);
 
-/** Fold raw agencies into dropdown entries: known groups collapse, the rest pass through. */
-export function getEffectiveAgencies(agencies: Agency[]): EffectiveAgency[] {
+/**
+ * Fold raw agencies into dropdown entries: known groups collapse, the rest pass
+ * through. A group rule names one organisation that exists in Autotask as several
+ * companies sharing a name prefix; the rules come from the tenant settings.
+ */
+export function getEffectiveAgencies(
+  agencies: Agency[],
+  groups: GroupRule[] = []
+): EffectiveAgency[] {
   const grouped: AgencyGroup[] = [];
   const handledIds = new Set<number>();
 
-  for (const group of GROUPS) {
+  for (const group of groups) {
     const members = agencies.filter((a) => a.name && a.name.startsWith(group.matchPrefix));
     if (members.length >= 2) {
       grouped.push({

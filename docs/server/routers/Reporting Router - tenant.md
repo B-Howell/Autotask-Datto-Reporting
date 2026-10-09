@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The client will fetch `/api/tenant` once at startup (wired in the next change) to learn the agency groups, billing rates, year floors and logo map this deployment uses, in place of constants that used to live in client source. Logos are served from the same router so the image a report header shows comes from the untracked `data/logos` directory rather than from a bundled asset. The router is read-only: editing the settings means editing `data/tenant.json` by hand, which is the point of keeping them out of the source tree.
+The client fetches `/api/tenant` once at startup, through its [tenant API](<../../client/api/Reporting API - tenant.md>), to learn the agency groups, billing rates, year floors and logo map this deployment uses, in place of constants that used to live in client source. Logos are served from the same router so the image a report header shows comes from the untracked `data/logos` directory rather than from a bundled asset. The router is read-only: editing the settings means editing `data/tenant.json` by hand, which is the point of keeping them out of the source tree.
 
 ## Interface
 
@@ -24,6 +24,7 @@ No route streams SSE and none uses `run_report`; both are quick file reads.
 
 - [main](<../Reporting Server - main.md>) mounts `router`
 - [server/tests/test_tenant.py](../../../server/tests/test_tenant.py) drives the logo route under `TestClient`
+- The client's [tenant API](<../../client/api/Reporting API - tenant.md>) reads the settings route and its [tenantStore](<../../client/store/Reporting Store - tenantStore.md>) builds the logo URLs
 
 ## Key Behavior
 

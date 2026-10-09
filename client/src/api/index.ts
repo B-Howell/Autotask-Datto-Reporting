@@ -12,3 +12,4 @@ export * as jobsApi from './jobs';
 export * as syncApi from './sync';
 export * as manualInputsApi from './manualInputs';
 export * as savedReportsApi from './savedReports';
+export * as tenantApi from './tenant';

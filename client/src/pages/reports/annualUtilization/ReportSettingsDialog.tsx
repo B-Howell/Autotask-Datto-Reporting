@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { SettingsDialog } from '@/components/report';
 import type { Rates, ViewMode } from '@/store/annualUtilizationStore';
-import { RATED_DEPARTMENTS } from './departments';
+import useTenantStore from '@/store/tenantStore';
 
 interface ViewModeFieldProps {
   value: ViewMode;
@@ -36,40 +36,43 @@ interface RateFieldsProps {
   onChange: (rates: Rates) => void;
 }
 
-const RateFields = ({ rates, onChange }: RateFieldsProps) => (
-  <Box sx={{ mb: 3 }}>
-    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-      Hourly Rates
-    </Typography>
-    {RATED_DEPARTMENTS.map((d) => (
-      <Box key={d.department} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-        <Typography variant="body2" sx={{ flex: 1 }}>
-          {d.department}
-        </Typography>
-        <TextField
-          value={rates[d.department] ?? d.rate}
-          onChange={(e) => onChange({ ...rates, [d.department]: e.target.value })}
-          size="small"
-          slotProps={{
-            htmlInput: { style: { textAlign: 'right', width: '4em' }, inputMode: 'numeric' },
-            input: {
-              startAdornment: (
-                <Typography variant="body2" sx={{ mr: 0.5 }}>
-                  $
-                </Typography>
-              ),
-              endAdornment: (
-                <Typography variant="body2" sx={{ ml: 0.5 }}>
-                  /hr
-                </Typography>
-              ),
-            },
-          }}
-        />
-      </Box>
-    ))}
-  </Box>
-);
+const RateFields = ({ rates, onChange }: RateFieldsProps) => {
+  const departments = useTenantStore((s) => s.tenant.ratedDepartments);
+  return (
+    <Box sx={{ mb: 3 }}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+        Hourly Rates
+      </Typography>
+      {departments.map((d) => (
+        <Box key={d.department} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+          <Typography variant="body2" sx={{ flex: 1 }}>
+            {d.department}
+          </Typography>
+          <TextField
+            value={rates[d.department] ?? d.rate}
+            onChange={(e) => onChange({ ...rates, [d.department]: e.target.value })}
+            size="small"
+            slotProps={{
+              htmlInput: { style: { textAlign: 'right', width: '4em' }, inputMode: 'numeric' },
+              input: {
+                startAdornment: (
+                  <Typography variant="body2" sx={{ mr: 0.5 }}>
+                    $
+                  </Typography>
+                ),
+                endAdornment: (
+                  <Typography variant="body2" sx={{ ml: 0.5 }}>
+                    /hr
+                  </Typography>
+                ),
+              },
+            }}
+          />
+        </Box>
+      ))}
+    </Box>
+  );
+};
 
 interface CompanyChecklistProps {
   allCompanies: string[];

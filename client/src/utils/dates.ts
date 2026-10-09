@@ -1,3 +1,5 @@
+import useTenantStore from '@/store/tenantStore';
+
 export const MONTH_NAMES = [
   'January',
   'February',
@@ -15,12 +17,12 @@ export const MONTH_NAMES = [
 
 export type MonthName = (typeof MONTH_NAMES)[number];
 
-const FIRST_REPORT_YEAR = 2024;
+const firstReportYear = (): number => useTenantStore.getState().tenant.firstReportYear;
 
-/** Years offered in month/year pickers: the first reporting year through next year. */
-export function reportYears(now = new Date()): number[] {
+/** Years offered in month/year pickers: the first reporting year (the tenant's unless given) through next year. */
+export function reportYears(now = new Date(), first = firstReportYear()): number[] {
   const last = now.getFullYear() + 1;
-  return Array.from({ length: last - FIRST_REPORT_YEAR + 1 }, (_, i) => FIRST_REPORT_YEAR + i);
+  return Array.from({ length: last - first + 1 }, (_, i) => first + i);
 }
 
 /** `M-D-YY`, the stamp used in exported file names. */

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import dayjs from 'dayjs';
 import { Typography } from '@mui/material';
 import {
   ErrorBanner,
@@ -9,6 +10,7 @@ import {
 } from '@/components/report';
 import useUtilizationData from '@/hooks/useUtilizationData';
 import useAgencyUtilizationStore from '@/store/agencyUtilizationStore';
+import useTenantStore from '@/store/tenantStore';
 import { deliverBlob } from '@/utils/saveReport';
 import QuarterSelect from './agencyUtilization/QuarterSelect';
 import UtilizationTable from './agencyUtilization/UtilizationTable';
@@ -16,7 +18,8 @@ import { buildQuarterlyWorkbook, utilizationExportFilename } from './agencyUtili
 import { defaultQuarterKey, quarterChoices } from './agencyUtilization/quarters';
 
 const AgencyUtilization = () => {
-  const choices = useMemo(() => quarterChoices(), []);
+  const earliestYear = useTenantStore((s) => s.tenant.earliestQuarterYear);
+  const choices = useMemo(() => quarterChoices(dayjs(), earliestYear), [earliestYear]);
   const [quarterKey, setQuarterKey] = useState<string>(defaultQuarterKey);
   const selected = choices.find((c) => c.key === quarterKey) || choices[0];
 

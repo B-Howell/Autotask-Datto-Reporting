@@ -25,7 +25,7 @@ This is the first thing an account manager sees on the annual report: how much o
 
 ## Key Behavior
 
-- Column order: `Agency`, one column per tier in `summary.perDept` (display order from `RATED_DEPARTMENTS`), then `Hours per year`, `Cost per year`, `Hours per month`, `Cost per month`.
+- Column order: `Agency`, one column per tier in `summary.perDept` (display order from the tenant's rated departments, see [departments](<Reporting Annual Utilization - departments.md>)), then `Hours per year`, `Cost per year`, `Hours per month`, `Cost per month`.
 - Tier cells show that agency's annual hours for the tier via `hrs`; zero shows a dash in the disabled text colour so the eye skips it.
 - The agency cell is styled as a link (primary colour, pointer, underline on hover) and calls `onSelectCompany`, which the page wires to `setTab`.
 - The four total columns read `row[key]` through a `TOTAL_COLUMNS` table pairing each key with its formatter, so hours use `hrs` and costs use `money` (whole dollars).

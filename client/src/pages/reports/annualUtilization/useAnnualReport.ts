@@ -3,6 +3,7 @@ import { utilizationApi } from '@/api';
 import type { UtilizationEntry, UtilizationReport } from '@/api';
 import useUtilizationData from '@/hooks/useUtilizationData';
 import useAnnualUtilizationStore from '@/store/annualUtilizationStore';
+import useTenantStore from '@/store/tenantStore';
 import { departmentsIn, withDefaultRates } from './departments';
 import { RAW_TAB } from './fiscalYear';
 import { buildDetail, buildSummary, summaryRowsOf } from './summary';
@@ -34,8 +35,12 @@ const NO_ENTRIES: UtilizationEntry[] = [];
  * describe, so a finished report is still there after navigating away.
  */
 const useAnnualReport = () => {
+  const ratedDepartments = useTenantStore((s) => s.tenant.ratedDepartments);
   const storeRates = useAnnualUtilizationStore((s) => s.rates);
-  const rates = useMemo(() => withDefaultRates(storeRates), [storeRates]);
+  const rates = useMemo(
+    () => withDefaultRates(storeRates, ratedDepartments),
+    [storeRates, ratedDepartments]
+  );
   const selectedCompanies = useAnnualUtilizationStore((s) => s.selectedCompanies);
   // '' is the Summary tab; any other value is the agency whose sheet is open.
   const tab = useAnnualUtilizationStore((s) => s.tab);
@@ -55,7 +60,10 @@ const useAnnualReport = () => {
     () => (selectedCompanies ? allCompanies.filter((c) => selectedCompanies.has(c)) : allCompanies),
     [allCompanies, selectedCompanies]
   );
-  const departments = useMemo(() => departmentsIn(utilData), [utilData]);
+  const departments = useMemo(
+    () => departmentsIn(utilData, ratedDepartments),
+    [utilData, ratedDepartments]
+  );
 
   useEffect(() => {
     if (tab && tab !== RAW_TAB && !companies.includes(tab)) setTab('');

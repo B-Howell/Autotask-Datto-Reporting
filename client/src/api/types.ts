@@ -255,3 +255,22 @@ export interface SaveReportResponse {
 }
 
 export type ManualInputs = Record<string, string>;
+
+export interface GroupRule {
+  name: string;
+  matchPrefix: string;
+}
+
+export interface RatedDepartment {
+  department: string;
+  rate: number;
+}
+
+/** Deployment presentation settings from `GET /api/tenant`; see server/data/tenant.example.json. */
+export interface TenantSettings {
+  groups: GroupRule[];
+  logos: Record<string, string>;
+  ratedDepartments: RatedDepartment[];
+  firstReportYear: number;
+  earliestQuarterYear: number;
+}

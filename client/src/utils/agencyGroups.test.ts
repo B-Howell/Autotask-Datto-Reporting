@@ -23,6 +23,18 @@ describe('getEffectiveAgencies', () => {
       'Harbor Point Health',
     ]);
   });
+
+  it('collapses agencies that share a configured prefix into one group', () => {
+    const withPrefix: Agency[] = [
+      { id: 1, site: 'a', name: 'Northfield Schools' },
+      { id: 2, site: 'b', name: 'Northfield Library' },
+      { id: 3, site: 'c', name: 'Harbor Point' },
+    ];
+    const result = getEffectiveAgencies(withPrefix, [
+      { name: 'Northfield', matchPrefix: 'Northfield ' },
+    ]);
+    expect(result.map((a) => a.name)).toEqual(['Harbor Point', 'Northfield']);
+  });
 });
 
 describe('dropdown values', () => {

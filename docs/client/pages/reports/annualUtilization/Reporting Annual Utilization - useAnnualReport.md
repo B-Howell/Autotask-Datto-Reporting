@@ -29,6 +29,7 @@ Returns an object:
 - `utilizationApi.fetchUtilizationEntries` from [utilization API](<../../../api/Reporting API - utilization.md>).
 - [useUtilizationData](<../../../hooks/Reporting Hook - useUtilizationData.md>) with label `Annual Utilization` and route `/reports/annual-utilization`.
 - [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>).
+- [tenantStore](<../../../store/Reporting Store - tenantStore.md>) for `tenant.ratedDepartments`.
 - [departments](<Reporting Annual Utilization - departments.md>), [fiscalYear](<Reporting Annual Utilization - fiscalYear.md>), [summary](<Reporting Annual Utilization - summary.md>).
 
 ## Used By
@@ -42,6 +43,7 @@ Returns an object:
 - If the open tab is an agency that is no longer in `companies` (the user deselected it), an effect resets the tab to Summary. `RAW_TAB` is exempt.
 - `companies` preserves the server's order and filters by the saved `Set`; an empty saved set yields no companies and therefore an empty summary.
 - `summary`, `detail` and `summaryRows` are memoised on their inputs; changing a rate in the settings dialog recomputes the summary without a refetch.
+- `rates` and `departments` take the tenant's rated departments from a store subscription and pass them into `withDefaultRates` and `departmentsIn`, so both memos recompute when the settings arrive after mount instead of keeping the defaults captured at first render.
 - A constant `NO_ENTRIES` array is returned when the store holds `null` so consumers get a stable reference.
 
 ## Cleanup Notes

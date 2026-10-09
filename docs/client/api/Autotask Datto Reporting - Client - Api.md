@@ -28,6 +28,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting API - savedReports.md](<Reporting API - savedReports.md>)
 - [Reporting API - sla.md](<Reporting API - sla.md>)
 - [Reporting API - sync.md](<Reporting API - sync.md>)
+- [Reporting API - tenant.md](<Reporting API - tenant.md>)
 - [Reporting API - tickets.md](<Reporting API - tickets.md>)
 - [Reporting API - types.md](<Reporting API - types.md>)
 - [Reporting API - utilization.md](<Reporting API - utilization.md>)

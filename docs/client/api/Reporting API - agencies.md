@@ -30,7 +30,7 @@ The server answers every mutation with the full updated list, so the store can r
 - No `AbortSignal` is offered; these are small, fast calls that are not tracked as jobs.
 - The agency `id` doubles as the path parameter on delete and as the `company_id` query parameter every report sends, so it must be the Autotask company id, not a local row id.
 - The server validates the body as a Pydantic model; a malformed agency comes back as a 422 whose `detail` is not a plain string, so the thrown `ApiError` message falls back to `Request failed (422)`.
-- Agency groups (several companies shown as one dropdown entry) are a client-only concept built on top of this list; see [agencyGroups util](<../utils/Reporting Util - agencyGroups.md>). The server knows nothing about them.
+- Agency groups (several companies shown as one dropdown entry) are built on the client on top of this list from the group rules the [tenant API](<Reporting API - tenant.md>) serves; see [agencyGroups util](<../utils/Reporting Util - agencyGroups.md>). This route itself knows nothing about them.
 
 ## Cleanup Notes
 
