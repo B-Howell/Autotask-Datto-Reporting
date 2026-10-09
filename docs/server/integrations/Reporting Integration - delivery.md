@@ -26,7 +26,7 @@ The server never talks to Exchange and never holds a mailbox password. Delivery 
 
 - [server/tests/test_delivery.py](../../../server/tests/test_delivery.py).
 - [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`send` and `Attachment`, with the bytes and content type the [renderer integration](<Reporting Integration - renderer.md>) returned and the body already converted to HTML).
-- The "send test email" route on the scheduled reports page that the scheduled-delivery branch adds next.
+- [schedules router](<../routers/Reporting Router - schedules.md>) (`send` from `POST /api/schedules/test-delivery`, a one-line message with no attachment; a `DeliveryError` becomes its 502).
 
 ## Key Behavior
 

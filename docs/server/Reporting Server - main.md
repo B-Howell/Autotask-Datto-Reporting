@@ -10,7 +10,7 @@
 
 | Name | Description |
 |---|---|
-| `ROUTERS` | Tuple of router modules mounted in order: health, agencies, devices, office_windows, tickets, sla, utilization, patch_management, hdd_tickets, jobs, sync, manual_inputs, saved_reports, tenant. |
+| `ROUTERS` | Tuple of router modules mounted in order: health, agencies, devices, office_windows, tickets, sla, utilization, patch_management, hdd_tickets, jobs, sync, manual_inputs, saved_reports, presets, schedules, tenant. |
 | `_sync_scheduler()` | Coroutine: sleeps 5 seconds, starts a sync if no successful sync has ever been recorded, then starts one every `settings.sync_interval_hours`. |
 | `_schedule_ticker()` | Coroutine: sleeps 10 seconds, then calls `schedule_runner.runner.tick()` every `settings.schedule_poll_seconds`, printing `[WARN] schedule tick failed: ...` and carrying on if a tick raises. |
 | `lifespan(_app)` | Async context manager: `sqlite.init_db()` and `schedule_runner.sweep_interrupted()` on startup, creates the sync scheduler and the schedule ticker tasks, cancels both on shutdown. |
@@ -27,12 +27,12 @@ Running the file directly starts uvicorn on `0.0.0.0:8000` with `reload=True` an
 - [snapshots repository](<repositories/Reporting Repository - snapshots.md>) for `last_sync_time()`
 - [sync service](<services/Reporting Service - sync.md>) for `runner.start()`
 - [schedule_runner service](<services/Reporting Service - schedule_runner.md>) for `sweep_interrupted()` and `runner.tick()`
-- Every router module: [health](<routers/Reporting Router - health.md>), [agencies](<routers/Reporting Router - agencies.md>), [devices](<routers/Reporting Router - devices.md>), [office_windows](<routers/Reporting Router - office_windows.md>), [tickets](<routers/Reporting Router - tickets.md>), [sla](<routers/Reporting Router - sla.md>), [utilization](<routers/Reporting Router - utilization.md>), [patch_management](<routers/Reporting Router - patch_management.md>), [hdd_tickets](<routers/Reporting Router - hdd_tickets.md>), [jobs](<routers/Reporting Router - jobs.md>), [sync](<routers/Reporting Router - sync.md>), [manual_inputs](<routers/Reporting Router - manual_inputs.md>), [saved_reports](<routers/Reporting Router - saved_reports.md>), [tenant](<routers/Reporting Router - tenant.md>)
+- Every router module: [health](<routers/Reporting Router - health.md>), [agencies](<routers/Reporting Router - agencies.md>), [devices](<routers/Reporting Router - devices.md>), [office_windows](<routers/Reporting Router - office_windows.md>), [tickets](<routers/Reporting Router - tickets.md>), [sla](<routers/Reporting Router - sla.md>), [utilization](<routers/Reporting Router - utilization.md>), [patch_management](<routers/Reporting Router - patch_management.md>), [hdd_tickets](<routers/Reporting Router - hdd_tickets.md>), [jobs](<routers/Reporting Router - jobs.md>), [sync](<routers/Reporting Router - sync.md>), [manual_inputs](<routers/Reporting Router - manual_inputs.md>), [saved_reports](<routers/Reporting Router - saved_reports.md>), [presets](<routers/Reporting Router - presets.md>), [schedules](<routers/Reporting Router - schedules.md>), [tenant](<routers/Reporting Router - tenant.md>)
 
 ## Used By
 
 - Nothing imports this in application code; it is an entry point. uvicorn loads `main:app` from the container `CMD` in [server/Dockerfile](../../server/Dockerfile) and from the command in [docker-compose.demo.yml](../../docker-compose.demo.yml).
-- [server/tests/test_routes.py](../../server/tests/test_routes.py) and [server/tests/test_tenant.py](../../server/tests/test_tenant.py) import `app` and drive it with `TestClient`.
+- [server/tests/test_routes.py](../../server/tests/test_routes.py), [server/tests/test_schedule_routes.py](../../server/tests/test_schedule_routes.py) and [server/tests/test_tenant.py](../../server/tests/test_tenant.py) import `app` and drive it with `TestClient`.
 
 ## Key Behavior
 

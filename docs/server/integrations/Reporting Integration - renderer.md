@@ -24,7 +24,7 @@ Scheduled deliveries have to produce the same xlsx, docx and pdf bytes a user ge
 
 - [server/tests/test_renderer_client.py](../../../server/tests/test_renderer_client.py).
 - [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`render`, once per run, with the payload the browser would have built).
-- The scheduled reports status route that the scheduled-delivery branch adds next, which calls `health`.
+- [schedules router](<../routers/Reporting Router - schedules.md>) (`health` from `GET /api/schedules/renderer-health`; a `RenderError` becomes its 502).
 
 ## Key Behavior
 

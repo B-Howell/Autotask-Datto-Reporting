@@ -23,7 +23,7 @@ A report writes human log lines and `[PROGRESS]` lines to its stream while it ru
 ## Used By
 
 - [routers common](<../routers/Reporting Router - common.md>) (`report_logger` with a job id, `get_buffer` to append the cancelled marker)
-- Routers that expose a `/logs` route: [devices](<../routers/Reporting Router - devices.md>), [hdd_tickets](<../routers/Reporting Router - hdd_tickets.md>), [office_windows](<../routers/Reporting Router - office_windows.md>), [patch_management](<../routers/Reporting Router - patch_management.md>), [sla](<../routers/Reporting Router - sla.md>), [sync](<../routers/Reporting Router - sync.md>), [utilization](<../routers/Reporting Router - utilization.md>)
+- Routers that expose a `/logs` route: [devices](<../routers/Reporting Router - devices.md>), [hdd_tickets](<../routers/Reporting Router - hdd_tickets.md>), [office_windows](<../routers/Reporting Router - office_windows.md>), [patch_management](<../routers/Reporting Router - patch_management.md>), [schedules](<../routers/Reporting Router - schedules.md>), [sla](<../routers/Reporting Router - sla.md>), [sync](<../routers/Reporting Router - sync.md>), [utilization](<../routers/Reporting Router - utilization.md>)
 - [sync service](<../services/Reporting Service - sync.md>) (`get_buffer(STREAM).clear()` then `report_logger(STREAM, clear=False)` on its worker thread)
 - [schedule_runner service](<../services/Reporting Service - schedule_runner.md>) (`report_logger("schedules", clear=True)` once per batch of scheduled runs, on its worker thread)
 

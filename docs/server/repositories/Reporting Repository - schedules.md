@@ -41,6 +41,7 @@ A decoded schedule row carries the table columns with the two recipient lists pa
 - [schedules service](<../services/Reporting Service - schedules.md>), imported as `repo`: the only writer of `next_run_at` (through `insert` and `update`) and of the `last_*` columns.
 - [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`insert_run`, `finish_run` and `list_runs`).
 - [schedule_runner service](<../services/Reporting Service - schedule_runner.md>) (`due()` on every tick, `close_running` from its startup sweep).
+- [schedules router](<../routers/Reporting Router - schedules.md>) (`list_runs`, for one schedule's history and for the recent runs across all of them).
 
 ## Key Behavior
 

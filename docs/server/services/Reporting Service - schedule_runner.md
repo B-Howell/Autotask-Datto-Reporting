@@ -27,7 +27,7 @@ The [scheduled_runs service](<Reporting Service - scheduled_runs.md>) knows how 
 
 - [server/tests/test_schedule_runner.py](../../../server/tests/test_schedule_runner.py).
 - [main](<../Reporting Server - main.md>): `sweep_interrupted()` once at startup, then `runner.tick()` from the `_schedule_ticker` task.
-- The schedules router that the scheduled-delivery branch adds next: `runner.run_now`, `runner.status` and `STREAM`.
+- [schedules router](<../routers/Reporting Router - schedules.md>): `runner.run_now` from the run-now route, `runner.status` from `/status`, and `STREAM` for the `/logs` route.
 
 ## Key Behavior
 

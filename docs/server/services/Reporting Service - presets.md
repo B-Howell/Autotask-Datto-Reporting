@@ -28,7 +28,7 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 
 - [server/tests/test_presets.py](../../../server/tests/test_presets.py).
 - [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get`, to learn what a schedule renders: `report_type`, `agency_key`, `agency_name` and `options`).
-- The presets router that the scheduled-delivery branch adds next. The [schedules service](<Reporting Service - schedules.md>) does not call this module; it reads presets through the repository, since a schedule only needs to know its preset exists.
+- [presets router](<../routers/Reporting Router - presets.md>) (`list_presets`, `create`, `update` and `delete`) and the [schedules router](<../routers/Reporting Router - schedules.md>) (`get`, to attach the preset to a created or updated schedule). The [schedules service](<Reporting Service - schedules.md>) does not call this module; it reads presets through the repository, since a schedule only needs to know its preset exists.
 
 ## Key Behavior
 

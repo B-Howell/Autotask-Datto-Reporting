@@ -17,7 +17,9 @@ from routers import (
     manual_inputs,
     office_windows,
     patch_management,
+    presets,
     saved_reports,
+    schedules,
     sla,
     sync,
     tenant,
@@ -41,6 +43,8 @@ ROUTERS = (
     sync,
     manual_inputs,
     saved_reports,
+    presets,
+    schedules,
     tenant,
 )
 
