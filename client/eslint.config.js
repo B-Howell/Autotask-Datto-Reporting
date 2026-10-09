@@ -24,5 +24,10 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
+  },
+  {
+    // The renderer runs under Node, not in a page.
+    files: ['renderer/**/*.ts'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
   }
 );
