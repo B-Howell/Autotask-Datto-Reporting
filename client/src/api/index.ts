@@ -13,3 +13,5 @@ export * as syncApi from './sync';
 export * as manualInputsApi from './manualInputs';
 export * as savedReportsApi from './savedReports';
 export * as tenantApi from './tenant';
+export * as presetsApi from './presets';
+export * as schedulesApi from './schedules';

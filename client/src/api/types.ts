@@ -274,3 +274,82 @@ export interface TenantSettings {
   firstReportYear: number;
   earliestQuarterYear: number;
 }
+
+export type PresetReportType =
+  | 'devices'
+  | 'office_windows'
+  | 'patch'
+  | 'hdd_tickets'
+  | 'sla'
+  | 'quarterly_utilization'
+  | 'annual_utilization';
+
+/** A stored report configuration that a schedule renders; see server/services/presets.py. */
+export interface ReportPreset {
+  id: number;
+  name: string;
+  report_type: PresetReportType;
+  agency_key: string | null;
+  agency_name: string;
+  options: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PresetInput {
+  name: string;
+  report_type: PresetReportType;
+  agency_key: string | null;
+  agency_name: string;
+  options: Record<string, unknown>;
+}
+
+/** A schedule row as the schedules router joins it, with its preset attached. */
+export interface ReportSchedule {
+  id: number;
+  preset_id: number;
+  preset: ReportPreset | null;
+  day_of_month: number;
+  hour: number;
+  recipients_to: string[];
+  recipients_cc: string[];
+  subject: string;
+  body: string;
+  enabled: boolean;
+  next_run_at: string | null;
+  last_run_at: string | null;
+  last_status: 'ok' | 'error' | null;
+  last_error: string | null;
+}
+
+export interface ScheduleInput {
+  preset_id: number;
+  day_of_month: number;
+  hour: number;
+  recipients_to: string[];
+  recipients_cc: string[];
+  subject: string;
+  body: string;
+  enabled?: boolean;
+}
+
+export interface ScheduleRun {
+  id: number;
+  schedule_id: number;
+  trigger: 'schedule' | 'manual' | 'test';
+  started_at: string;
+  finished_at: string | null;
+  status: 'running' | 'ok' | 'error';
+  error: string | null;
+  saved_report_id: number | null;
+}
+
+export interface RunnerStatus {
+  running: boolean;
+  schedule_id: number | null;
+}
+
+export interface RendererHealth {
+  ok: boolean;
+  reportTypes: string[];
+}

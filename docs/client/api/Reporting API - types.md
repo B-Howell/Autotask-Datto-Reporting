@@ -26,6 +26,8 @@ Grouped by server domain, with the api module that fetches each and the store or
 | Sync | `SyncStatus`, `SyncTriggerResponse` | [sync](<Reporting API - sync.md>) | [useSyncStatus](<../pages/settings/Reporting Settings - useSyncStatus.md>), [DataSyncSection](<../pages/settings/Reporting Settings - DataSyncSection.md>) |
 | Saved reports | `ReportFormat`, `SavedReport`, `SaveReportResponse` | [savedReports](<Reporting API - savedReports.md>) | [useSavedReports](<../pages/reports/savedReports/Reporting Saved Reports - useSavedReports.md>), [SavedReportViewer](<../components/Reporting Component - SavedReportViewer.md>), [saveReport util](<../utils/Reporting Util - saveReport.md>) |
 | Manual inputs | `ManualInputs` | [manualInputs](<Reporting API - manualInputs.md>) | [useManualInputs](<../pages/reports/officeWindows/Reporting Office Windows - useManualInputs.md>) |
+| Presets | `PresetReportType`, `ReportPreset`, `PresetInput` | [presets](<Reporting API - presets.md>) | [ScheduleDialog](<../components/report/Reporting Report Component - ScheduleDialog.md>), [useScheduleDialog](<../components/report/Reporting Report Component - useScheduleDialog.md>) |
+| Schedules | `ReportSchedule`, `ScheduleInput`, `ScheduleRun`, `RunnerStatus`, `RendererHealth` | [schedules](<Reporting API - schedules.md>) | [useScheduleDialog](<../components/report/Reporting Report Component - useScheduleDialog.md>); the scheduled reports page once it exists |
 | Tenant | `TenantSettings`, `GroupRule`, `RatedDepartment` | [tenant](<Reporting API - tenant.md>) | [tenantStore](<../store/Reporting Store - tenantStore.md>), [agencyGroups util](<../utils/Reporting Util - agencyGroups.md>) (`GroupRule`), [Annual Utilization departments](<../pages/reports/annualUtilization/Reporting Annual Utilization - departments.md>) (`RatedDepartment`) |
 
 ## Uses
@@ -45,6 +47,8 @@ Grouped by server domain, with the api module that fetches each and the store or
 - `TicketDetails.synced_at` is optional because the merged result for an agency group does not carry one.
 - `JobProgress` mirrors the `[PROGRESS]` JSON line from `server/core/progress.py`; `done`, `total`, `step` and `steps` are `null` when a phase has no count.
 - `SavedReport.format` is `ReportFormat | string` because the server stores whatever extension it derived; the client treats unknown values as plain downloads.
+- `PresetReportType` is the closed set of report types the server's preset service and the renderer accept; it is the key of the Schedule dialog's `REPORT_LABELS`, so adding a report type fails the build until a label exists. `ReportSchedule.preset` is `ReportPreset | null` because the join is by id and a row whose preset was removed out of band still lists.
+- `ScheduleInput.enabled` is optional because the server defaults a new schedule to enabled; `next_run_at`, `last_run_at`, `last_status` and `last_error` are read-only and only ever come from the server.
 - `PatchStatus` is a closed union of six strings and `PatchSummaryItem.label` is the display text for each; the client keys its donut colours on `status`, not `label`.
 
 ## Cleanup Notes
