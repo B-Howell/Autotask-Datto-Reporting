@@ -20,6 +20,7 @@ from routers import (
     saved_reports,
     sla,
     sync,
+    tenant,
     tickets,
     utilization,
 )
@@ -39,6 +40,7 @@ ROUTERS = (
     sync,
     manual_inputs,
     saved_reports,
+    tenant,
 )
 
 

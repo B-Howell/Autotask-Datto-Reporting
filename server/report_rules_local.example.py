@@ -1,7 +1,8 @@
 """Copy to report_rules_local.py and set the values for this deployment.
 
-Only names that exist in report_rules.py are honoured. Every other setting
-keeps its default. This file is listed in .gitignore; the example is not.
+Only names that exist in report_rules.py are honoured, except
+EDITABLE_DEVICE_FIELDS, which is derived from the UDF names. Every other
+setting keeps its default. This file is listed in .gitignore; the example is not.
 The Dockerfile copies it into the image when it exists, which is how a
 deployment ships its rules.
 """

@@ -28,6 +28,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Service - saved_reports.md](<Reporting Service - saved_reports.md>)
 - [Reporting Service - sla.md](<Reporting Service - sla.md>)
 - [Reporting Service - sync.md](<Reporting Service - sync.md>)
+- [Reporting Service - tenant.md](<Reporting Service - tenant.md>)
 - [Reporting Service - tickets.md](<Reporting Service - tickets.md>)
 - [Reporting Service - utilization.md](<Reporting Service - utilization.md>)
 

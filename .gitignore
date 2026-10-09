@@ -37,7 +37,8 @@ yarn-error.log*
 venv/
 
 # runtime data (seeded from code; persisted via docker volume in prod)
-/server/data
+/server/data/*
+!/server/data/tenant.example.json
 
 # local editor / tooling config
 /.vscode

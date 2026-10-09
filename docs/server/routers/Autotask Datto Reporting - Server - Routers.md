@@ -28,6 +28,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Router - saved_reports.md](<Reporting Router - saved_reports.md>)
 - [Reporting Router - sla.md](<Reporting Router - sla.md>)
 - [Reporting Router - sync.md](<Reporting Router - sync.md>)
+- [Reporting Router - tenant.md](<Reporting Router - tenant.md>)
 - [Reporting Router - tickets.md](<Reporting Router - tickets.md>)
 - [Reporting Router - utilization.md](<Reporting Router - utilization.md>)
 

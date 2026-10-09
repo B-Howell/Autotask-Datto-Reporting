@@ -1,0 +1,13 @@
+{
+  "groups": [{ "name": "Northfield", "matchPrefix": "Northfield " }],
+  "logos": { "Harbor Point Health": "harbor-point.png" },
+  "ratedDepartments": [
+    { "department": "Administration", "rate": 0 },
+    { "department": "Call Center", "rate": 65 },
+    { "department": "Help Desk", "rate": 75 },
+    { "department": "Jr Sys Admin", "rate": 80 },
+    { "department": "Sr Sys Admin", "rate": 90 }
+  ],
+  "firstReportYear": 2024,
+  "earliestQuarterYear": 2023
+}
