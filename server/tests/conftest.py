@@ -8,8 +8,14 @@ fetch callback they pass is the one that runs.
 
 import dataclasses
 import os
+import sys
+import types
 
 os.environ.setdefault("DEMO_MODE", "1")
+# The suite must test the default rules even on a machine that has a real
+# report_rules_local.py, so an empty module takes that name before anything
+# imports report_rules.
+sys.modules.setdefault("report_rules_local", types.ModuleType("report_rules_local"))
 
 import pytest  # noqa: E402
 

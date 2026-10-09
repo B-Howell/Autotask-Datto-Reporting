@@ -25,6 +25,7 @@ The non-code files that build, configure and lint the FastAPI server, plus the p
 ## Environment template
 
 - `server/.env.example` is the documented template for `server/.env`. It is listed here in prose only because the project configuration treats every `.env*` path as sensitive and keeps it out of vault links. It names `DEMO_MODE` and the Autotask and Datto settings that [config](<Reporting Server - config.md>) reads, with a comment on each saying where in the vendor UI the value comes from. Every value in the committed template is a placeholder. Active.
+- [server/report_rules_local.example.py](../../server/report_rules_local.example.py) is the template for `server/report_rules_local.py`, the untracked file in which a private deployment sets the Autotask picklist ids, SLA targets and fiscal start month that [report_rules](<Reporting Server - report_rules.md>) would otherwise take from the public defaults. Only names that already exist in `report_rules.py` are honoured. The local file is in `.gitignore` but not `.dockerignore`, so the Dockerfile's `COPY . ./` ships it in the image whenever it is present in the build context. Active.
 
 ## Package markers
 

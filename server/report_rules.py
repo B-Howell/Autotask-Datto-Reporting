@@ -7,6 +7,8 @@ change to run these reports against its own Autotask; nothing else in the
 services should need editing for that.
 """
 
+import warnings
+
 # ── Ticket report ────────────────────────────────────────────────────────────
 
 # Ticket "source" picklist id -> report bucket. Several sources fold into one
@@ -207,8 +209,6 @@ UDF_PENDING_RETIRED = "Pending/Retired"
 UDF_PURCHASE_DATE = "Purchase Date"
 UDF_PRIMARY_USER = "Primary User or Role"
 UDF_DEPARTMENT = "Department"
-# Grid columns that can be edited and written back to those fields.
-EDITABLE_DEVICE_FIELDS = (UDF_PRIMARY_USER, UDF_PURCHASE_DATE, UDF_DEPARTMENT, "Location")
 
 
 # ── Deployment overrides ─────────────────────────────────────────────────────
@@ -217,15 +217,32 @@ EDITABLE_DEVICE_FIELDS = (UDF_PRIMARY_USER, UDF_PURCHASE_DATE, UDF_DEPARTMENT, "
 def _apply_local_overrides():
     """Replace any constant above with the value of the same name from
     report_rules_local.py, a file that is never committed. Only names that
-    already exist here are honoured, so a typo in the local file is ignored
-    rather than silently creating a new, unused rule."""
+    already exist here are honoured; an uppercase name that does not is
+    reported with a warning so a typo in the local file shows up in the log
+    instead of silently creating a new, unused rule.
+    """
     try:
         import report_rules_local as local
-    except ImportError:
+    except ModuleNotFoundError as exc:
+        # Only a missing local file is optional. A missing import inside a
+        # real local file is a broken deployment and must surface.
+        if exc.name != "report_rules_local":
+            raise
         return
     for name, value in vars(local).items():
-        if name.isupper() and name in globals():
-            globals()[name] = value
+        if not name.isupper():
+            continue
+        if name not in globals():
+            warnings.warn(
+                f"report_rules_local defines {name}, which is not a report rule", stacklevel=2
+            )
+            continue
+        globals()[name] = value
 
 
 _apply_local_overrides()
+
+# Grid columns that can be edited and written back to those fields. Derived
+# from the (possibly overridden) UDF names above, so it cannot itself be
+# overridden.
+EDITABLE_DEVICE_FIELDS = (UDF_PRIMARY_USER, UDF_PURCHASE_DATE, UDF_DEPARTMENT, "Location")
