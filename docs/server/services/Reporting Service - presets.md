@@ -27,7 +27,7 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 ## Used By
 
 - [server/tests/test_presets.py](../../../server/tests/test_presets.py).
-- The presets router and the schedules service that the scheduled-delivery branch adds next.
+- The presets router that the scheduled-delivery branch adds next. The [schedules service](<Reporting Service - schedules.md>) does not call this module; it reads presets through the repository, since a schedule only needs to know its preset exists.
 
 ## Key Behavior
 

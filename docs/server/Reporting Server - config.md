@@ -41,6 +41,7 @@ Functions: `_flag(name, default)` parses booleans, `_required(name, demo_mode)` 
 - [sqlite repository](<repositories/Reporting Repository - sqlite.md>) and [snapshots repository](<repositories/Reporting Repository - snapshots.md>) (`data_dir`, `demo_mode`)
 - [autotask integration](<integrations/Reporting Integration - autotask.md>) and [datto integration](<integrations/Reporting Integration - datto.md>) (credentials, URLs, pacing)
 - [agencies service](<services/Reporting Service - agencies.md>) and [saved_reports service](<services/Reporting Service - saved_reports.md>) (`data_dir`), [sla service](<services/Reporting Service - sla.md>) (`demo_mode`)
+- [schedules service](<services/Reporting Service - schedules.md>) (`schedule_timezone`)
 - [server/tests/conftest.py](../../server/tests/conftest.py), which sets `DEMO_MODE=1` before the first import and overrides `demo_mode` per test with `dataclasses.replace`
 - [server/tests/test_config.py](../../server/tests/test_config.py), which calls `load_settings()` directly to prove the scheduled-delivery defaults and the trailing-slash strip on `RENDERER_URL`
 
@@ -51,7 +52,7 @@ Functions: `_flag(name, default)` parses booleans, `_required(name, demo_mode)` 
 - `DATTO_PLATFORM` is validated before the dataclass is built; in demo mode with no platform the derived base URL is `https://-api.centrastage.net`, which is never contacted because the generators replace the client.
 - Environment names and field names differ for two Autotask values: `AUTOTASK_PASSWORD` becomes `autotask_secret` and `AUTOTASK_TRACKING_ID` becomes `autotask_integration_code`.
 - Numeric settings are parsed with `int()` and `float()` without range checks; a non-numeric value fails at import with a `ValueError`.
-- `RENDERER_URL` has its trailing slash stripped like `AUTOTASK_BASE_URL`, so callers can append `/render` without producing a double slash. `DELIVERY_WEBHOOK_URL` and `SCHEDULE_TIMEZONE` are stored as given: an empty webhook URL means delivery is not configured, and an unknown zone name is only detected when the scheduler first resolves a time in it.
+- `RENDERER_URL` has its trailing slash stripped like `AUTOTASK_BASE_URL`, so callers can append `/render` without producing a double slash. `DELIVERY_WEBHOOK_URL` and `SCHEDULE_TIMEZONE` are stored as given: an empty webhook URL means delivery is not configured, and an unknown zone name is only detected when the [schedules service](<services/Reporting Service - schedules.md>) first resolves a time in it, which raises a `ValueError` naming `SCHEDULE_TIMEZONE` on the create, update or advance that triggered it rather than failing at startup.
 - `.env` is loaded from the server directory regardless of the current working directory, so `python -m demo.seed` and uvicorn see the same file.
 
 ## Cleanup Notes

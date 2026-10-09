@@ -29,6 +29,7 @@ A decoded row carries the table columns with `options` already parsed from JSON 
 ## Used By
 
 - [presets service](<../services/Reporting Service - presets.md>), imported as `repo`.
+- [schedules service](<../services/Reporting Service - schedules.md>) (`get` to require that a schedule's preset exists, `list_presets` to join presets onto the schedule list).
 - [server/tests/test_schedule_repositories.py](../../../server/tests/test_schedule_repositories.py).
 
 ## Key Behavior
