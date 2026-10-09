@@ -1,5 +1,6 @@
 import base64
 import dataclasses
+import json
 
 import pytest
 import requests
@@ -12,6 +13,9 @@ class FakeResponse:
     def __init__(self, status, text=""):
         self.status_code = status
         self.text = text
+
+    def json(self):
+        return json.loads(self.text)
 
 
 def _webhook(monkeypatch, url):
@@ -83,18 +87,44 @@ def test_send_reports_a_rejected_request_without_the_url(monkeypatch):
     assert "secret-signature" not in str(info.value)
 
 
-def test_send_reports_an_unreachable_flow_without_the_url(monkeypatch):
+def test_send_prefers_the_flow_error_message_over_the_raw_body(monkeypatch):
+    _webhook(monkeypatch, "https://flow.example/x")
+    body = (
+        '{"error":{"code":"TriggerInputSchemaMismatch","message":"The input body does not match"}}'
+    )
+    monkeypatch.setattr(delivery.requests, "post", lambda *a, **k: FakeResponse(400, body))
+    with pytest.raises(delivery.DeliveryError, match="400: The input body does not match$"):
+        delivery.send(to=["a@example.com"], cc=[], subject="S", body="B", attachments=[])
+
+
+def test_send_collapses_and_caps_a_body_that_is_not_the_flow_error_shape(monkeypatch):
+    _webhook(monkeypatch, "https://flow.example/x")
+    html = "<html>\n  <body>\n    Gateway   timeout " + "x" * 400 + "\n</body></html>"
+    monkeypatch.setattr(delivery.requests, "post", lambda *a, **k: FakeResponse(504, html))
+    with pytest.raises(delivery.DeliveryError) as info:
+        delivery.send(to=["a@example.com"], cc=[], subject="S", body="B", attachments=[])
+    text = str(info.value)
+    assert text.startswith("Delivery flow returned 504: <html> <body> Gateway timeout x")
+    assert "\n" not in text and len(text) <= len("Delivery flow returned 504: ") + 300
+    monkeypatch.setattr(delivery.requests, "post", lambda *a, **k: FakeResponse(500, '{"a":1}'))
+    with pytest.raises(delivery.DeliveryError, match=r"500: \{\"a\":1\}$"):
+        delivery.send(to=["a@example.com"], cc=[], subject="S", body="B", attachments=[])
+
+
+@pytest.mark.parametrize(
+    "failure", [requests.ConnectionError, requests.Timeout, requests.ConnectTimeout]
+)
+def test_send_reports_an_unreachable_flow_without_the_url(monkeypatch, failure):
     _webhook(monkeypatch, "https://flow.example/secret-signature")
 
     def refuse(*a, **k):
         # A real requests error quotes the request URL, signature and all.
-        raise requests.ConnectionError("Max retries exceeded with url: /secret-signature")
+        raise failure("Max retries exceeded with url: /secret-signature")
 
     monkeypatch.setattr(delivery.requests, "post", refuse)
-    with pytest.raises(delivery.DeliveryError, match="unreachable.*flow.example.*ConnectionError"):
+    with pytest.raises(delivery.DeliveryError, match="unreachable.*flow.example") as info:
         delivery.send(to=["a@example.com"], cc=[], subject="S", body="B", attachments=[])
-    with pytest.raises(delivery.DeliveryError) as info:
-        delivery.send(to=["a@example.com"], cc=[], subject="S", body="B", attachments=[])
+    assert failure.__name__ in str(info.value)
     assert "secret-signature" not in str(info.value)
 
 

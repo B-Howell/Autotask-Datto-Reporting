@@ -1,4 +1,5 @@
 import dataclasses
+import json
 
 import pytest
 import requests
@@ -15,8 +16,6 @@ class FakeResponse:
         self.text = text
 
     def json(self):
-        import json
-
         return json.loads(self.text)
 
 

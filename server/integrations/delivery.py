@@ -7,6 +7,7 @@ in this module logs it or puts it in an error message.
 """
 
 import base64
+import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -14,9 +15,11 @@ import requests
 
 from config import settings
 
-# The flow accepts the request as soon as it has the body; a large attachment
-# is mostly upload time.
+# A `requests` timeout is per socket operation: it bounds the wait for the
+# flow's answer after the body has gone out, not the upload of the body.
 TIMEOUT = 60
+# How much of a refusal is kept on the run record.
+ERROR_TEXT_LIMIT = 300
 
 
 class DeliveryError(RuntimeError):
@@ -48,6 +51,22 @@ def message(to, cc, subject, body, attachments):
     }
 
 
+def _reason(response):
+    """The flow's own error message when the body has one, else the trimmed text.
+
+    Power Automate refusals are `{"error": {"code", "message"}}`; anything
+    else (a gateway's HTML page, say) is collapsed to one line and capped so
+    the stored error stays readable.
+    """
+    try:
+        message_text = response.json()["error"]["message"]
+        if isinstance(message_text, str):
+            return message_text
+    except (ValueError, KeyError, TypeError):
+        pass
+    return re.sub(r"\s+", " ", response.text).strip()[:ERROR_TEXT_LIMIT]
+
+
 def send(to, cc, subject, body, attachments):
     """Posts one message to the flow; any 2xx means the flow accepted it."""
     url = settings.delivery_webhook_url
@@ -64,4 +83,4 @@ def send(to, cc, subject, body, attachments):
             f"Delivery flow unreachable at {urlsplit(url).hostname}: {type(exc).__name__}"
         ) from exc
     if response.status_code >= 300:
-        raise DeliveryError(f"Delivery flow returned {response.status_code}: {response.text[:500]}")
+        raise DeliveryError(f"Delivery flow returned {response.status_code}: {_reason(response)}")

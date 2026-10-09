@@ -12,8 +12,10 @@ import requests
 
 from config import settings
 
-# Workbooks for a large agency take a while to build; the cap is generous so a
-# slow render is reported by the renderer, not cut off by the client.
+# A `requests` timeout is per socket operation, so this bounds the wait for
+# the renderer's answer once the payload is sent; the build of a large
+# workbook happens inside that wait, and the cap is generous so a slow render
+# is reported by the renderer rather than cut off by the client.
 TIMEOUT = 120
 HEALTH_TIMEOUT = 5
 
