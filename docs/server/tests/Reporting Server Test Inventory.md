@@ -16,6 +16,8 @@ The pytest suite under `server/tests/`. Each file targets one layer and is named
 
 - [server/tests/test_snapshots.py](../../../server/tests/test_snapshots.py) proves the read-through cache in [snapshots](<../repositories/Reporting Repository - snapshots.md>): a miss fetches, stores and records sync state; a hit returns stored rows without calling fetch; refresh replaces the whole scope; scopes do not bleed into each other; an empty result is cached rather than refetched; and a fetch error keeps the old snapshot while recording the error. Active.
 
+- [server/tests/test_schedule_repositories.py](../../../server/tests/test_schedule_repositories.py) round-trips the [presets](<../repositories/Reporting Repository - presets.md>) and [schedules](<../repositories/Reporting Repository - schedules.md>) repositories against a temporary database: a preset's `options` survive as a dict and stray keys such as `id` or `created_at` are ignored on insert and update; a schedule's recipient lists come back as lists and `enabled` as a bool; a run opens as `running` and closes with its status and saved report id; `due()` returns only enabled schedules with a non-null `next_run_at` at or before the given instant, soonest first; and deleting a schedule removes its runs. Active.
+
 ## Vendor client
 
 - [server/tests/test_autotask_client.py](../../../server/tests/test_autotask_client.py) drives [the Autotask client](<../integrations/Reporting Integration - autotask.md>) with a stubbed session: `query_all` walks results with an anchored id cursor, `query_by_ids` chunks the `IN` filter, and picklists are fetched once per entity and field and skip inactive values. Active.

@@ -17,7 +17,9 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 ### Documents and artifacts in this area
 
 - [Reporting Repository - manual_inputs.md](<Reporting Repository - manual_inputs.md>)
+- [Reporting Repository - presets.md](<Reporting Repository - presets.md>)
 - [Reporting Repository - saved_reports.md](<Reporting Repository - saved_reports.md>)
+- [Reporting Repository - schedules.md](<Reporting Repository - schedules.md>)
 - [Reporting Repository - snapshots.md](<Reporting Repository - snapshots.md>)
 - [Reporting Repository - sqlite.md](<Reporting Repository - sqlite.md>)
 

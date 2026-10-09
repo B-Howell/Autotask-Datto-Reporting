@@ -82,6 +82,51 @@ CREATE TABLE IF NOT EXISTS saved_reports (
     created_at   TEXT
 );
 
+-- Scheduled delivery. A preset is one report as configured on screen, a
+-- schedule attaches a day, an hour and recipients to a preset, and a run
+-- records each attempt. These rows are user data with no upstream copy, so
+-- they are never listed in _STALE_ON_UPGRADE and a CACHE_VERSION bump must
+-- not touch them.
+CREATE TABLE IF NOT EXISTS report_presets (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    report_type  TEXT NOT NULL,
+    agency_key   TEXT,
+    agency_name  TEXT NOT NULL DEFAULT '',
+    options      TEXT NOT NULL DEFAULT '{}',
+    created_at   TEXT NOT NULL,
+    updated_at   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS report_schedules (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    preset_id      INTEGER NOT NULL,
+    day_of_month   INTEGER NOT NULL,
+    hour           INTEGER NOT NULL DEFAULT 7,
+    recipients_to  TEXT NOT NULL DEFAULT '[]',
+    recipients_cc  TEXT NOT NULL DEFAULT '[]',
+    subject        TEXT NOT NULL DEFAULT '',
+    body           TEXT NOT NULL DEFAULT '',
+    enabled        INTEGER NOT NULL DEFAULT 1,
+    next_run_at    TEXT,
+    last_run_at    TEXT,
+    last_status    TEXT,
+    last_error     TEXT,
+    created_at     TEXT NOT NULL,
+    updated_at     TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS schedule_runs (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    schedule_id      INTEGER NOT NULL,
+    trigger          TEXT NOT NULL,
+    started_at       TEXT NOT NULL,
+    finished_at      TEXT,
+    status           TEXT NOT NULL DEFAULT 'running',
+    error            TEXT,
+    saved_report_id  INTEGER
+);
+
 -- Devices: one row per merged device (display columns from build_spreadsheet_data).
 -- Scope = (company_id, site_id), the exact params the /api/devices endpoint gets.
 CREATE TABLE IF NOT EXISTS device_rows (
