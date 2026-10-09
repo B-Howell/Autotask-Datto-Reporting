@@ -26,5 +26,6 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting SLA - RawDataGrid.md](<Reporting SLA - RawDataGrid.md>)
 - [Reporting SLA - SlaFilters.md](<Reporting SLA - SlaFilters.md>)
 - [Reporting SLA - useSlaFilters.md](<Reporting SLA - useSlaFilters.md>)
+- [Reporting SLA - workbookInput.md](<Reporting SLA - workbookInput.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->

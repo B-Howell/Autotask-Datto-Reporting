@@ -1,14 +1,18 @@
+import type { ManualInputs } from '@/api';
 import { loadBrowserAssets } from '@/utils/reportImages';
 import { deliverBlob } from '@/utils/saveReport';
+import { officeWindowsExportInput } from './exportInput';
+import type { InstallBreakdowns } from './exportInput';
 import { buildOfficeWindowsPdf } from './pdfExport';
-import { REPORT_TYPE, buildReportRows, reportFilename } from './reportRows';
-import type { ReportRowSources } from './reportRows';
+import { REPORT_TYPE, reportFilename } from './reportRows';
 import { buildOfficeWindowsDocx } from './wordExport';
 
-interface ExportSources extends ReportRowSources {
+interface ExportSources {
   /** null until a report has been generated; exports are no-ops without it. */
   agencyName: string | null;
   showLicenses: boolean;
+  breakdown: InstallBreakdowns;
+  manualInputs: ManualInputs;
 }
 
 const meta = (agencyName: string, filename: string, format: 'docx' | 'pdf') => ({
@@ -19,13 +23,16 @@ const meta = (agencyName: string, filename: string, format: 'docx' | 'pdf') => (
 });
 
 /** Word and PDF exports of the tables on screen; every export also keeps a copy in the app. */
-const useOfficeWindowsExports = ({ agencyName, showLicenses, ...rows }: ExportSources) => {
+const useOfficeWindowsExports = ({
+  agencyName,
+  showLicenses,
+  breakdown,
+  manualInputs,
+}: ExportSources) => {
   // Rows and images are gathered here so the builders stay free of fetching.
   const input = async (name: string) => ({
-    agencyName: name,
-    showLicenses,
+    ...officeWindowsExportInput(breakdown, manualInputs, name, showLicenses),
     assets: await loadBrowserAssets(name),
-    ...buildReportRows(rows),
   });
 
   const exportToWord = async (save: boolean) => {

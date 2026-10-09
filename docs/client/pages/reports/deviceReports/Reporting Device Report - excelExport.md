@@ -14,10 +14,13 @@ server's strings, so they sort newest to oldest inside Excel.
 
 ```ts
 export async function buildDeviceWorkbook(
-  columns: GridColDef<DeviceRow>[],
+  columns: Pick<GridColDef<DeviceRow>, 'field' | 'headerName'>[],
   rows: DeviceRow[]
 ): Promise<Blob>
 ```
+
+Only `field` and `headerName` are read, so the page's grid columns and the `ExportColumn[]`
+from [sheetRows](<Reporting Device Report - sheetRows.md>) both satisfy the parameter.
 
 Returns a Blob with the xlsx MIME type. Private helpers: `isDateOnly` (header equals
 `Purchase Date`), `isDateTime` (header equals `Last Seen`), `parseDateTime`, `cellValue`,
@@ -29,7 +32,7 @@ Returns a Blob with the xlsx MIME type. Private helpers: `isDateOnly` (header eq
 - [excel util](<../../../utils/Reporting Util - excel.md>) for `loadExcel`, `styleHeaderRow`,
   `bandFill`, `XLSX_ROW_BORDER` and `workbookToBlob`.
 - [dates util](<../../../utils/Reporting Util - dates.md>) for `parseUsDate`.
-- [deviceDataStore](<../../../store/Reporting Store - deviceDataStore.md>) for the `DeviceRow` type.
+- [deviceDataStore](<../../../store/Reporting Store - deviceDataStore.md>) for the `DeviceRow` type, which it re-exports from [sheetRows](<Reporting Device Report - sheetRows.md>).
 
 ## Used By
 

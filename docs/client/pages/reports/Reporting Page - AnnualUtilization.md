@@ -12,7 +12,8 @@ utilization store; and the report itself, its derived summary and the active tab
 for the current tab and view mode.
 
 Exports: "Export to Excel" and "Save to app", producing
-`Annual Utilization <period>.xlsx` via `buildAnnualWorkbook` and `annualWorkbookFilename`.
+`Annual Utilization <period>.xlsx` via `buildAnnualWorkbook` and `annualWorkbookFilename`
+from the hook's `workbookInput`.
 
 ## Interface
 
@@ -59,9 +60,11 @@ Local state: `startMonth: Dayjs | null` (from `defaultStartMonth`), `settingsOpe
   and any other tab is a company name rendered by `AgencyDetailTable`.
 - The spreadsheet grid is `gridForTab(tab, ...)`, memoised on tab, summary, rows, entries and
   detail, so switching view mode does not recompute it.
-- Export needs both `utilData` and `summary`. If the hook has no raw entries loaded it fetches
-  them with `fetchUtilizationEntries(start, end)` first, so the workbook always has the raw
-  sheet. Metadata: `agencyName: 'All Agencies'`, `reportType: 'annual_utilization'`.
+- Export takes the hook's `workbookInput` (built by
+  [workbookInput](<annualUtilization/Reporting Annual Utilization - workbookInput.md>)) and
+  needs `utilData` for the filename. If that input has no raw entries, because their load failed
+  inside the job, the page fetches them with `fetchUtilizationEntries(start, end)` once more and
+  substitutes them, so the workbook always has the raw sheet. Metadata: `agencyName: 'All Agencies'`, `reportType: 'annual_utilization'`.
 - The toolbar summary reads `<selected> of <all> agencies` and `hrs(grandTotal)` hours, with a
   gear button that opens the settings dialog (view mode, rates, company selection).
 - There is no `ReportProgress` here; progress for this report is shown by the running-report

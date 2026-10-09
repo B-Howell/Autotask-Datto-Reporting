@@ -28,6 +28,7 @@ Datto reports Microsoft 365 installs as several product names, but a customer li
 ## Used By
 
 - [OfficeWindowsReports page](<../Reporting Page - OfficeWindowsReports.md>) (`groupOfficeInstalls`).
+- [exportInput](<Reporting Office Windows - exportInput.md>) (`groupOfficeInstalls`, `availableValuesOf`, `visibleSkusOf`).
 - [useManualInputs](<Reporting Office Windows - useManualInputs.md>) (keys, parsers, `toggleSku`, `M365_DESKTOP_SKUS`).
 - [SkuSettingsDialog](<Reporting Office Windows - SkuSettingsDialog.md>) (`M365_DESKTOP_SKUS`).
 - [OfficeTable](<Reporting Office Windows - OfficeTable.md>) and [reportRows](<Reporting Office Windows - reportRows.md>) (`BundledOfficeRow` type).

@@ -29,6 +29,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Annual Utilization - summary.md](<Reporting Annual Utilization - summary.md>)
 - [Reporting Annual Utilization - SummaryTable.md](<Reporting Annual Utilization - SummaryTable.md>)
 - [Reporting Annual Utilization - useAnnualReport.md](<Reporting Annual Utilization - useAnnualReport.md>)
+- [Reporting Annual Utilization - workbookInput.md](<Reporting Annual Utilization - workbookInput.md>)
 - [Reporting Annual Utilization - YearStartPicker.md](<Reporting Annual Utilization - YearStartPicker.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->

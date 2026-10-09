@@ -24,6 +24,7 @@ The annual report is delivered as one Excel file that a client can audit from th
 ## Used By
 
 - [AnnualUtilization page](<../Reporting Page - AnnualUtilization.md>)
+- [workbookInput](<Reporting Annual Utilization - workbookInput.md>), which imports the `AnnualWorkbookInput` type and builds it.
 
 ## Key Behavior
 

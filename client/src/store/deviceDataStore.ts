@@ -1,24 +1,16 @@
 import { create } from 'zustand';
 import type { GridColDef } from '@mui/x-data-grid';
-import type { AgencyValue, SheetCell } from '@/api';
+import type { AgencyValue } from '@/api';
+import type { DeviceRow, EditableCols } from '@/pages/reports/deviceReports/sheetRows';
 import { applyUpdater } from './reportDataStore';
 import type { Updater } from './reportDataStore';
 
-/** One grid row: `col0`..`colN` hold the sheet cells, plus the synthetic columns. */
-export interface DeviceRow {
-  id: number;
-  rowNumber: number;
-  company: string;
-  /** Autotask configuration item id, needed to write edits back. */
-  autotaskId: number | null;
-  [column: `col${number}`]: SheetCell | undefined;
-}
+// The row and editable-column shapes are defined with the sheet merger that
+// produces them; they are re-exported here for the grid and its components.
+export type { DeviceRow, EditableCols };
 
 /** Edited cells keyed as `${rowId}-${field}`. */
 export type EditedCells = Record<string, boolean>;
-
-/** Editable header name -> grid field (`col3`). */
-export type EditableCols = Record<string, `col${number}`>;
 
 interface DeviceDataState {
   columns: GridColDef<DeviceRow>[];

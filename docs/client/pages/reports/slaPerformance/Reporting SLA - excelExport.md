@@ -21,6 +21,7 @@ The SLA report leaves the app as an Excel file so account managers can filter an
 
 ## Used By
 
+- [workbookInput](<Reporting SLA - workbookInput.md>) imports the `SlaWorkbookInput` type and builds the value the page passes in.
 - [SlaPerformance page](<../Reporting Page - SlaPerformance.md>): Export Excel downloads and saves; Save to app saves only. Saved-report metadata is `agencyName: 'All Agencies'`, `reportType: 'sla'`, `format: 'xlsx'`.
 
 ## Key Behavior

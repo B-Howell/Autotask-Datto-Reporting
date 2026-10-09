@@ -1,7 +1,6 @@
 import type { UtilizationReport } from '@/api';
-import type { Rates } from '@/store/annualUtilizationStore';
 import { CATEGORY_ALIASES, normalizeCategory } from './departments';
-import type { RatedDepartment } from './departments';
+import type { RatedDepartment, Rates } from './departments';
 import { MONTHS_IN_YEAR } from './fiscalYear';
 
 export interface CompanyFigures {

@@ -21,7 +21,8 @@ Returns an object:
 | `entries`, `entriesFor` | Raw entries (never null; an empty array stands in) and the `"<start>:<end>"` key they were loaded for. |
 | `allCompanies`, `companies` | Every company in the report, and the selected subset (all when no selection is saved). |
 | `departments` | The rated tiers present in the data. |
-| `summary`, `detail`, `summaryRows` | Outputs of `buildSummary`, `buildDetail(tab)` and `summaryRowsOf`. |
+| `workbookInput` | The `AnnualWorkbookInput` for the current report, null before one is loaded: report, entries, departments, chosen companies and the priced summary. |
+| `summary`, `detail`, `summaryRows` | `summary` is read from `workbookInput`; `detail` and `summaryRows` are `buildDetail(tab)` and `summaryRowsOf`. |
 
 ## Uses
 
@@ -30,7 +31,7 @@ Returns an object:
 - [useUtilizationData](<../../../hooks/Reporting Hook - useUtilizationData.md>) with label `Annual Utilization` and route `/reports/annual-utilization`.
 - [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>).
 - [tenantStore](<../../../store/Reporting Store - tenantStore.md>) for `tenant.ratedDepartments`.
-- [departments](<Reporting Annual Utilization - departments.md>), [fiscalYear](<Reporting Annual Utilization - fiscalYear.md>), [summary](<Reporting Annual Utilization - summary.md>).
+- [departments](<Reporting Annual Utilization - departments.md>), [fiscalYear](<Reporting Annual Utilization - fiscalYear.md>), [summary](<Reporting Annual Utilization - summary.md>), [workbookInput](<Reporting Annual Utilization - workbookInput.md>).
 
 ## Used By
 
@@ -41,8 +42,8 @@ Returns an object:
 - `loadEntries` clears `entries` and `entriesFor`, fetches entries for `report.start` to `report.end` with the job's `AbortSignal`, then stores them with the range key. On failure it logs to the console and stores an empty array while leaving `entriesFor` null, so the totals still render and the page's export falls back to fetching entries itself.
 - Cancelling the job aborts the entries request too, because the same signal is passed through.
 - If the open tab is an agency that is no longer in `companies` (the user deselected it), an effect resets the tab to Summary. `RAW_TAB` is exempt.
-- `companies` preserves the server's order and filters by the saved `Set`; an empty saved set yields no companies and therefore an empty summary.
-- `summary`, `detail` and `summaryRows` are memoised on their inputs; changing a rate in the settings dialog recomputes the summary without a refetch.
+- `workbookInput` is `annualWorkbookInput(utilData, entries, departments, { companies, rates })` with the saved `Set` spread into the `companies` option, memoised on all five inputs; `companies` and `summary` are read from it, so the tables and the export come from one assembly. Company order is the server's; an empty saved set yields no companies and therefore an empty summary.
+- `detail` and `summaryRows` are memoised on their inputs. Changing a rate in the settings dialog recomputes the workbook input, and so the summary, without a refetch; the arrival of the raw entries recomputes it once more.
 - `rates` and `departments` take the tenant's rated departments from a store subscription and pass them into `withDefaultRates` and `departmentsIn`, so both memos recompute when the settings arrive after mount instead of keeping the defaults captured at first render.
 - A constant `NO_ENTRIES` array is returned when the store holds `null` so consumers get a stable reference.
 

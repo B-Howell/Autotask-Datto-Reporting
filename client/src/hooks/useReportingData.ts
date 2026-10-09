@@ -1,15 +1,14 @@
 import type { GridCellParams, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import { devicesApi } from '@/api';
 import type { DeviceChange, EffectiveAgency, SheetCell } from '@/api';
+import { mergeSheets } from '@/pages/reports/deviceReports/sheetRows';
+import type { MemberSheet } from '@/pages/reports/deviceReports/sheetRows';
 import useDeviceDataStore from '@/store/deviceDataStore';
 import type { DeviceRow, EditableCols, EditedCells } from '@/store/deviceDataStore';
 import useToastStore from '@/store/toastStore';
 import { membersOf, valueFor } from '@/utils/agencyGroups';
 import { errorMessage } from '@/utils/reportJob';
 import useTrackedReport from './useTrackedReport';
-
-/** Columns the grid lets the user edit and write back to Autotask. */
-const EDITABLE_HEADERS = ['Primary User or Role', 'Purchase Date', 'Department', 'Location'];
 
 const TYPE_FIELD: `col${number}` = 'col0';
 const END_USER_TYPES = new Set(['Desktop', 'Laptop', 'Tablet']);
@@ -49,44 +48,6 @@ function buildColumns(header: SheetCell[], editableCols: EditableCols): GridColD
     }),
     { field: 'company', headerName: 'Company', flex: 1, sortable: true, minWidth: 200 },
   ];
-}
-
-interface MemberSheet {
-  sheet: SheetCell[][];
-  ids: (number | null)[];
-  companyName: string;
-}
-
-/** Stack member sheets under one header, tagging each row with its company. */
-function mergeSheets(sheets: MemberSheet[]) {
-  let header: SheetCell[] = [];
-  const editableCols: EditableCols = {};
-  const rows: DeviceRow[] = [];
-  for (const { sheet, ids, companyName } of sheets) {
-    const [headerRow, ...bodyRows] = sheet;
-    if (!headerRow) continue;
-    if (!header.length) {
-      header = headerRow;
-      headerRow.forEach((name, index) => {
-        if (typeof name === 'string' && EDITABLE_HEADERS.includes(name)) {
-          editableCols[name] = `col${index}`;
-        }
-      });
-    }
-    bodyRows.forEach((cells, i) => {
-      const row: DeviceRow = {
-        id: rows.length,
-        rowNumber: rows.length + 1,
-        company: companyName,
-        autotaskId: ids[i] ?? null,
-      };
-      cells.forEach((cell, j) => {
-        row[`col${j}`] = cell;
-      });
-      rows.push(row);
-    });
-  }
-  return { header, rows, editableCols };
 }
 
 const useReportingData = () => {

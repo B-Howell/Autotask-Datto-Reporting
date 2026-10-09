@@ -20,13 +20,14 @@ Returns the store fields `columns`, `rows`, `allRows`, `loading`, `logs`, `selec
 | `handleFilterChange(field)` | Applies the missing-field filter. |
 | `postChanges()` | Writes every edited cell to Autotask and toasts the outcome. |
 
-Module constants: `EDITABLE_HEADERS` (`Primary User or Role`, `Purchase Date`, `Department`, `Location`), `END_USER_TYPES` (`Desktop`, `Laptop`, `Tablet`), type field `col0`.
+Module constants: `END_USER_TYPES` (`Desktop`, `Laptop`, `Tablet`) and the type field `col0`. The editable header list lives with `mergeSheets` in sheetRows.
 
 ## Uses
 
 - `@mui/x-data-grid` types
 - [devices API](<../api/Reporting API - devices.md>) for `fetchDeviceSheet`, `deviceLogsUrl`, `updateDevices`
 - [API types](<../api/Reporting API - types.md>) for `DeviceChange`, `EffectiveAgency`, `SheetCell`
+- [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) for `mergeSheets` and the `MemberSheet` type
 - [deviceDataStore](<../store/Reporting Store - deviceDataStore.md>) and its `DeviceRow`, `EditableCols`, `EditedCells` types
 - [toastStore](<../store/Reporting Store - toastStore.md>)
 - [agencyGroups util](<../utils/Reporting Util - agencyGroups.md>) for `membersOf`, `valueFor`
@@ -39,8 +40,8 @@ Module constants: `EDITABLE_HEADERS` (`Primary User or Role`, `Purchase Date`, `
 
 ## Key Behavior
 
-- `fetchDevices` fetches each member of a group in sequence with the job's abort signal, then `mergeSheets` stacks the bodies under the first member's header, tags each row with `company`, assigns sequential `id` and `rowNumber`, and sets `autotaskId` from the member's `ids[i]` (null if missing). The log stream is opened on the first member's `deviceLogsUrl` only. The label is `Device Report · <agency name>` and the route `/reports/device`.
-- `buildColumns` prepends a `#` column that renders the row's position among visible rows (so numbering stays 1..N after sort or filter), marks a column `editable` only if its header is in `EDITABLE_HEADERS`, and gives edited cells the `edited-cell` class by reading `editedCells` from the store at render time.
+- `fetchDevices` fetches each member of a group in sequence with the job's abort signal, then `mergeSheets` (from sheetRows) stacks the bodies under the first member's header, tags each row with `company`, assigns sequential `id` and `rowNumber`, and sets `autotaskId` from the member's `ids[i]` (null if missing). The log stream is opened on the first member's `deviceLogsUrl` only. The label is `Device Report · <agency name>` and the route `/reports/device`.
+- `buildColumns` prepends a `#` column that renders the row's position among visible rows (so numbering stays 1..N after sort or filter), marks a column `editable` only if `mergeSheets` mapped its header in `editableCols`, and gives edited cells the `edited-cell` class by reading `editedCells` from the store at render time.
 - On success the hook resets `editedCells`, sets `page` to 0 and stores both `rows` and `allRows`. On failure it clears `columns` and `rows` only.
 - `processRowUpdate` compares only the editable fields; when one changed it marks `${rowId}-${field}` in `editedCells` and replaces the row in both `rows` and `allRows`.
 - Missing-field filter: empty restores `allRows`; `all` means any editable column; otherwise one header name. A row is kept when its `col0` value is in `END_USER_TYPES` and at least one of the chosen columns is empty. An unknown header name leaves the rows unchanged.
@@ -49,7 +50,7 @@ Module constants: `EDITABLE_HEADERS` (`Primary User or Role`, `Purchase Date`, `
 ## Cleanup Notes
 
 - The device type is read positionally from `col0`, while `PostData` finds it by the `Product` header and only treats Laptop and Desktop as end-user devices; the two filters can disagree on tablets or if the sheet's column order changes.
-- `mergeSheets`, `buildColumns` and the write-back assembly have no unit tests.
+- `buildColumns` and the write-back assembly have no unit tests; `mergeSheets` is covered by the sheetRows test.
 - No `setError` is passed to `useTrackedReport`, so a failed fetch only reaches the status bar and the console.
 
 ## Source

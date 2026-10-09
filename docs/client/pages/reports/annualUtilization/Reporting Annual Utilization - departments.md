@@ -11,6 +11,7 @@ The server reports hours by billing tier (the role a time entry was booked under
 | Export | Description |
 |---|---|
 | `RatedDepartment` | `{ department, rate }`, re-exported from the API types. |
+| `Rates` | `Record<string, number or string>`: rate overrides by department name, strings allowed because the settings dialog stores raw input. |
 | `CATEGORY_ALIASES` | `{ 'Level 0 - Administration': 'Administration' }`. |
 | `normalizeCategory(name)` | The alias target if there is one, otherwise the name unchanged. |
 | `departmentsIn(utilData, departments)` | The entries of `departments` whose name matches at least one (normalised) row category in the report, in list order; `null` data gives an empty list. |
@@ -20,12 +21,13 @@ The server reports hours by billing tier (the role a time entry was booked under
 
 ## Uses
 
-- `RatedDepartment`, `UtilizationReport` types from [API types](<../../../api/Reporting API - types.md>).
-- `Rates` type from [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>).
+- `RatedDepartment`, `UtilizationReport` types from [API types](<../../../api/Reporting API - types.md>). Nothing else: this module has no store dependency.
 
 ## Used By
 
-- [summary](<Reporting Annual Utilization - summary.md>) (`CATEGORY_ALIASES`, `normalizeCategory`, `RatedDepartment`)
+- [summary](<Reporting Annual Utilization - summary.md>) (`CATEGORY_ALIASES`, `normalizeCategory`, `RatedDepartment`, `Rates`)
+- [workbookInput](<Reporting Annual Utilization - workbookInput.md>) (`RatedDepartment`, `Rates`)
+- [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>) re-exports `Rates` for the settings dialog
 - [useAnnualReport](<Reporting Annual Utilization - useAnnualReport.md>) (`departmentsIn`, `withDefaultRates`, each given the list it subscribes to from the [tenantStore](<../../../store/Reporting Store - tenantStore.md>))
 - [excelExport](<Reporting Annual Utilization - excelExport.md>) (`RatedDepartment`)
 - [client/src/pages/reports/annualUtilization/departments.test.ts](../../../../../client/src/pages/reports/annualUtilization/departments.test.ts)

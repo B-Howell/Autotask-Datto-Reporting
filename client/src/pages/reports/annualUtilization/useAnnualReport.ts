@@ -6,7 +6,8 @@ import useAnnualUtilizationStore from '@/store/annualUtilizationStore';
 import useTenantStore from '@/store/tenantStore';
 import { departmentsIn, withDefaultRates } from './departments';
 import { RAW_TAB } from './fiscalYear';
-import { buildDetail, buildSummary, summaryRowsOf } from './summary';
+import { buildDetail, summaryRowsOf } from './summary';
+import { annualWorkbookInput } from './workbookInput';
 
 // Runs inside the report job: the raw entries are part of the report, so it
 // is not finished until they are here. Presenting totals while this is still
@@ -27,12 +28,15 @@ const loadEntries = async (report: UtilizationReport, signal: AbortSignal): Prom
 };
 
 const NO_ENTRIES: UtilizationEntry[] = [];
+const NO_COMPANIES: string[] = [];
 
 /**
  * The report and everything derived from it: the selected companies, the
  * departments present, the per-month summary, the open agency's detail and the
  * raw entries. The tab and entries live in the store with the report they
- * describe, so a finished report is still there after navigating away.
+ * describe, so a finished report is still there after navigating away. The
+ * companies and summary come from the same workbook input the export uses, so
+ * the screen and the file cannot disagree.
  */
 const useAnnualReport = () => {
   const ratedDepartments = useTenantStore((s) => s.tenant.ratedDepartments);
@@ -56,23 +60,28 @@ const useAnnualReport = () => {
   );
 
   const allCompanies = useMemo(() => utilData?.companies || [], [utilData]);
-  const companies = useMemo(
-    () => (selectedCompanies ? allCompanies.filter((c) => selectedCompanies.has(c)) : allCompanies),
-    [allCompanies, selectedCompanies]
-  );
   const departments = useMemo(
     () => departmentsIn(utilData, ratedDepartments),
     [utilData, ratedDepartments]
   );
 
+  const workbookInput = useMemo(
+    () =>
+      utilData
+        ? annualWorkbookInput(utilData, entries, departments, {
+            companies: selectedCompanies && [...selectedCompanies],
+            rates,
+          })
+        : null,
+    [utilData, entries, departments, selectedCompanies, rates]
+  );
+  const companies = workbookInput?.companies ?? NO_COMPANIES;
+  const summary = workbookInput?.summary ?? null;
+
   useEffect(() => {
     if (tab && tab !== RAW_TAB && !companies.includes(tab)) setTab('');
   }, [companies, tab, setTab]);
 
-  const summary = useMemo(
-    () => (utilData ? buildSummary(utilData, rates, companies, departments) : null),
-    [utilData, rates, companies, departments]
-  );
   const detail = useMemo(
     () => (utilData ? buildDetail(utilData, tab, departments) : []),
     [utilData, tab, departments]
@@ -103,6 +112,7 @@ const useAnnualReport = () => {
     summary,
     detail,
     summaryRows,
+    workbookInput,
   };
 };
 

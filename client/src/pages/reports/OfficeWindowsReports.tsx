@@ -52,11 +52,8 @@ const OfficeWindowsReports = () => {
   const { exportToWord, exportToPdf } = useOfficeWindowsExports({
     agencyName: selectedCompany?.name ?? null,
     showLicenses,
-    officeRows,
-    osRows,
-    officeLicenses: manual.officeLicenses,
-    officeAvailable: manual.officeAvailable,
-    osLicenses: manual.osLicenses,
+    breakdown: { windows_installs: osBreakdown, office_installs: officeBreakdown },
+    manualInputs: manual.values,
   });
 
   const handleGenerate = () => {
@@ -106,7 +103,7 @@ const OfficeWindowsReports = () => {
             <OfficeTable
               rows={officeRows}
               showLicenses={showLicenses}
-              licenses={manual.officeLicenses}
+              licenses={manual.values}
               available={manual.officeAvailable}
               onLicenseChange={manual.setOfficeLicense}
               onAvailableChange={manual.setOfficeAvailable}
@@ -117,7 +114,7 @@ const OfficeWindowsReports = () => {
             <WindowsTable
               rows={osRows}
               showLicenses={showLicenses}
-              licenses={manual.osLicenses}
+              licenses={manual.values}
               onLicenseChange={manual.setOsLicense}
               onOpenDevices={devices.open}
             />

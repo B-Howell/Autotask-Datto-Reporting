@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import type { UtilizationEntry, UtilizationReport } from '@/api';
+import type { Rates } from '@/pages/reports/annualUtilization/departments';
 import { applyUpdater } from './reportDataStore';
 import type { ReportDataState, Updater } from './reportDataStore';
 
+export type { Rates };
 export type ViewMode = 'table' | 'spreadsheet';
-export type Rates = Record<string, number | string>;
 
 const SELECTED_KEY = 'annualUtil_selectedCompanies';
 const RATES_KEY = 'annualUtil_rates';

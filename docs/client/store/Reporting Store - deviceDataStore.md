@@ -26,14 +26,15 @@ Not created by the `reportDataStore` factory; it has a bespoke shape and no `err
 | `setRows`, `setAllRows`, `setLogs`, `setEditedCells` | updater setters | Accept a value or `prev => next`. |
 | other setters | plain | `setColumns`, `setLoading`, `setSelectedCompany`, `setPage`, `setMissingFilter`, `setEditableCols`. |
 
-Exported types: `DeviceRow` (`id`, `rowNumber`, `company`, `autotaskId`, and `col0..colN` cells), `EditedCells`, `EditableCols`.
+Exported types: `EditedCells`, defined here, plus `DeviceRow` (`id`, `rowNumber`, `company`, `autotaskId`, and `col0..colN` cells) and `EditableCols`, re-exported from [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) where the merger that produces them lives.
 
 ## Uses
 
 - `zustand` (`create`)
 - `@mui/x-data-grid` for `GridColDef`
 - [reportDataStore](<Reporting Store - reportDataStore.md>) for `applyUpdater`, `Updater`
-- [API types](<../api/Reporting API - types.md>) for `AgencyValue`, `SheetCell`
+- [API types](<../api/Reporting API - types.md>) for `AgencyValue`
+- [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>) for the `DeviceRow` and `EditableCols` types
 
 ## Used By
 

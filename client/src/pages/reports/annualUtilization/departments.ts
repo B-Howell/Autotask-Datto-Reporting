@@ -1,7 +1,9 @@
 import type { RatedDepartment, UtilizationReport } from '@/api';
-import type { Rates } from '@/store/annualUtilizationStore';
 
 export type { RatedDepartment } from '@/api';
+
+/** Rate overrides by department name; strings because the settings dialog stores raw input. */
+export type Rates = Record<string, number | string>;
 
 // Autotask's "Level 0 - Administration" is the same team as Administration, so
 // it is aliased onto that row rather than standing apart.

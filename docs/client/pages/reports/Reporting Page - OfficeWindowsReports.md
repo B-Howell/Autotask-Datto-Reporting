@@ -64,6 +64,9 @@ Local state: `companyValue: AgencyValue | ''`, `showLicenses: boolean` (default 
   table only when `osRows` has rows.
 - The SKU settings button is enabled only once `manual.agencyKey` is set, that is after the
   first Generate.
+- The export hook receives the two breakdowns as `{ windows_installs, office_installs }` and
+  `manual.values`, the agency's saved map, rather than the on-screen rows; both tables read
+  their licence figures from that same map.
 - `showLicenses` is passed to both tables and to the export hook, so hiding the licence
   columns on screen also hides them in the Word and PDF output.
 - `ReportProgress` shows a 20-line log tail with the caption "Loading...".

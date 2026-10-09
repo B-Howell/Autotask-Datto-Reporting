@@ -25,13 +25,13 @@ The server returns hours by tier, worker and company for the year. This util app
 
 ## Uses
 
-- [departments](<Reporting Annual Utilization - departments.md>) for `CATEGORY_ALIASES`, `normalizeCategory`, `RatedDepartment`.
+- [departments](<Reporting Annual Utilization - departments.md>) for `CATEGORY_ALIASES`, `normalizeCategory`, `RatedDepartment`, `Rates`.
 - [fiscalYear](<Reporting Annual Utilization - fiscalYear.md>) for `MONTHS_IN_YEAR`.
-- `UtilizationReport` from [API types](<../../../api/Reporting API - types.md>); `Rates` from [annualUtilizationStore](<../../../store/Reporting Store - annualUtilizationStore.md>).
+- `UtilizationReport` from [API types](<../../../api/Reporting API - types.md>).
 
 ## Used By
 
-- [useAnnualReport](<Reporting Annual Utilization - useAnnualReport.md>), [gridModels](<Reporting Annual Utilization - gridModels.md>), [excelExport](<Reporting Annual Utilization - excelExport.md>)
+- [workbookInput](<Reporting Annual Utilization - workbookInput.md>) (`buildSummary`), [useAnnualReport](<Reporting Annual Utilization - useAnnualReport.md>) (`buildDetail`, `summaryRowsOf`), [gridModels](<Reporting Annual Utilization - gridModels.md>), [excelExport](<Reporting Annual Utilization - excelExport.md>)
 - [SummaryTable](<Reporting Annual Utilization - SummaryTable.md>), [AgencyDetailTable](<Reporting Annual Utilization - AgencyDetailTable.md>), [RawEntriesTable](<Reporting Annual Utilization - RawEntriesTable.md>)
 - [AnnualUtilization page](<../Reporting Page - AnnualUtilization.md>) (`hrs`, `Summary`)
 

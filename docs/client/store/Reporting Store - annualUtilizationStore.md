@@ -24,22 +24,21 @@ Not created by the factory. It implements `ReportDataState<UtilizationReport>` m
 | `setSelectedCompanies`, `setRates`, `setViewMode` | setters | yes | Write through to `localStorage`, then update state. |
 | `setEntries`, `setEntriesFor`, `setTab` | setters | none | Plain replacements. |
 
-Exports: the `ViewMode` and `Rates` types and the default store hook.
+Exports: the `ViewMode` type, the `Rates` type re-exported from [departments](<../pages/reports/annualUtilization/Reporting Annual Utilization - departments.md>), and the default store hook.
 
 ## Uses
 
 - `zustand` (`create`)
 - [reportDataStore](<Reporting Store - reportDataStore.md>) for `applyUpdater`, `ReportDataState`, `Updater`
 - [API types](<../api/Reporting API - types.md>) for `UtilizationEntry`, `UtilizationReport`
+- [departments](<../pages/reports/annualUtilization/Reporting Annual Utilization - departments.md>) for the `Rates` type
 - `localStorage`
 
 ## Used By
 
 - [AnnualUtilization page](<../pages/reports/Reporting Page - AnnualUtilization.md>)
 - [useAnnualReport](<../pages/reports/annualUtilization/Reporting Annual Utilization - useAnnualReport.md>), which passes this store to `useUtilizationData` and writes `entries` from inside the job
-- [ReportSettingsDialog](<../pages/reports/annualUtilization/Reporting Annual Utilization - ReportSettingsDialog.md>)
-- [departments](<../pages/reports/annualUtilization/Reporting Annual Utilization - departments.md>)
-- [summary](<../pages/reports/annualUtilization/Reporting Annual Utilization - summary.md>)
+- [ReportSettingsDialog](<../pages/reports/annualUtilization/Reporting Annual Utilization - ReportSettingsDialog.md>), which also takes the `Rates` type from here
 
 ## Key Behavior
 

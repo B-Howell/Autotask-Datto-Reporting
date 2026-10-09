@@ -45,18 +45,14 @@ const AnnualUtilization = () => {
   );
 
   const exportExcel = async (save: boolean) => {
-    if (!utilData || !summary) return;
-    const raw = entries.length
-      ? entries
+    const input = report.workbookInput;
+    if (!utilData || !input) return;
+    // The raw sheet is part of the report; if its load failed, try once more here.
+    const raw = input.entries.length
+      ? input.entries
       : (await utilizationApi.fetchUtilizationEntries(utilData.start, utilData.end)).entries || [];
     const filename = annualWorkbookFilename(utilData);
-    const blob = await buildAnnualWorkbook({
-      utilData,
-      summary,
-      companies,
-      departments: report.departments,
-      entries: raw,
-    });
+    const blob = await buildAnnualWorkbook({ ...input, entries: raw });
     await deliverBlob({
       blob,
       filename,

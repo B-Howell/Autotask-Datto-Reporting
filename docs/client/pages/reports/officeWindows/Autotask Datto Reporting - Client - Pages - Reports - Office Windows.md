@@ -17,6 +17,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 ### Documents and artifacts in this area
 
 - [Reporting Office Windows - DeviceListDialog.md](<Reporting Office Windows - DeviceListDialog.md>)
+- [Reporting Office Windows - exportInput.md](<Reporting Office Windows - exportInput.md>)
 - [Reporting Office Windows - InstallsSection.md](<Reporting Office Windows - InstallsSection.md>)
 - [Reporting Office Windows - LicenseField.md](<Reporting Office Windows - LicenseField.md>)
 - [Reporting Office Windows - OfficeTable.md](<Reporting Office Windows - OfficeTable.md>)

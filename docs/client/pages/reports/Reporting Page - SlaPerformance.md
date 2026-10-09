@@ -6,14 +6,15 @@
 
 `SlaPerformance` is rendered at `/reports/sla-performance` ("SLA Performance"). It fetches a
 month of tickets across all companies through `useSlaData` (backed by the SLA data store),
-applies the user's filters via `useSlaFilters`, and derives three pivots (by resource, by
-priority sorted in priority order, and by issue type) from the filtered set. Four tabs switch
+applies the user's filters via `useSlaFilters`, and builds the workbook input (the filtered
+tickets and the three pivots: by resource, by priority in priority order, by issue type) with
+`slaWorkbookInput`. Four tabs switch
 between the raw grid and the pivots. This report is not per agency; the month and year are
 the only inputs.
 
 Export: "Export Excel" and "Save to app", named
-`SLA Performance By Ticket <Month><Year>.xlsx` by `slaExportFilename`, built from the filtered
-tickets and the three pivots.
+`SLA Performance By Ticket <Month><Year>.xlsx` by `slaExportFilename`, built from the same memoised
+workbook input the tables render.
 
 ## Interface
 
@@ -26,7 +27,7 @@ number` (0 Report, 1 Pivot by Resource, 2 Pivot by Priority, 3 Pivot by Issue Ty
 
 - [useSlaData](<../../hooks/Reporting Hook - useSlaData.md>)
 - SLA modules: [useSlaFilters](<slaPerformance/Reporting SLA - useSlaFilters.md>),
-  [pivots](<slaPerformance/Reporting SLA - pivots.md>),
+  [workbookInput](<slaPerformance/Reporting SLA - workbookInput.md>),
   [excelExport](<slaPerformance/Reporting SLA - excelExport.md>),
   [SlaFilters](<slaPerformance/Reporting SLA - SlaFilters.md>),
   [RawDataGrid](<slaPerformance/Reporting SLA - RawDataGrid.md>),
@@ -49,10 +50,11 @@ number` (0 Report, 1 Pivot by Resource, 2 Pivot by Priority, 3 Pivot by Issue Ty
 - `lastMonth()` returns the previous calendar month, rolling back to December of the previous
   year in January, because last month is the most recent one with a complete ticket set.
 - Generate calls `fetchSlaPerformance(year, monthIndex + 1)`; the month is sent 1-based.
-- The pivots are memoised on `filteredTickets`, so changing a filter recomputes all three but
-  switching tabs does not. `pivotByPriority` is `sortByPriority(buildPivot(...))`.
-- The export uses the filtered tickets, not the full response, so the workbook reflects the
-  on-screen filters. The filename uses the response's `month` and `year`, not the picker,
+- The workbook input is memoised on `filteredTickets`, so changing a filter recomputes all
+  three pivots but switching tabs does not; the tables read `pivot`, `pivotByPriority` and
+  `pivotByIssueType` from it.
+- The export passes that same input to `buildSlaWorkbook`, so the workbook reflects the
+  on-screen filters and cannot differ from the tables. The filename uses the response's `month` and `year`, not the picker,
   so it names the data actually exported. Metadata: `agencyName: 'All Agencies'`,
   `reportType: 'sla'`, `format: 'xlsx'`.
 - The toolbar summary shows `<filtered count> tickets across <company count> companies`,

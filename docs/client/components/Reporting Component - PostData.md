@@ -32,7 +32,7 @@ The point of the editable device grid is to fill in Primary User or Role, Purcha
 
 ## Cleanup Notes
 
-- `REQUIRED` duplicates `EDITABLE_HEADERS` in `useReportingData`, and the type test differs from that hook's (`Product` by header versus `col0` by position; no `Tablet`), so the two "missing" views can disagree.
+- `REQUIRED` duplicates `EDITABLE_HEADERS` in [sheetRows](<../pages/reports/deviceReports/Reporting Device Report - sheetRows.md>), and the type test differs from `useReportingData`'s (`Product` by header versus `col0` by position; no `Tablet`), so the two "missing" views can disagree.
 
 ## Source
 

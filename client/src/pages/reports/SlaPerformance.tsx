@@ -18,8 +18,8 @@ import PivotTable from './slaPerformance/PivotTable';
 import RawDataGrid from './slaPerformance/RawDataGrid';
 import SlaFilters from './slaPerformance/SlaFilters';
 import { buildSlaWorkbook, slaExportFilename } from './slaPerformance/excelExport';
-import { buildIssueTypePivot, buildPivot, sortByPriority } from './slaPerformance/pivots';
 import useSlaFilters from './slaPerformance/useSlaFilters';
+import { slaWorkbookInput } from './slaPerformance/workbookInput';
 
 // Default to last month, the most recent one with a complete set of tickets.
 const lastMonth = (now = new Date()) => ({
@@ -35,23 +35,15 @@ const SlaPerformance = () => {
   const filters = useSlaFilters(slaData?.tickets);
   const { filteredTickets } = filters;
 
-  const pivot = useMemo(() => buildPivot(filteredTickets, (t) => t.resource), [filteredTickets]);
-  const pivotByPriority = useMemo(
-    () => sortByPriority(buildPivot(filteredTickets, (t) => t.priority)),
-    [filteredTickets]
-  );
-  const pivotByIssueType = useMemo(() => buildIssueTypePivot(filteredTickets), [filteredTickets]);
+  // The tables and the workbook show the same pivots, built once per filter change.
+  const workbook = useMemo(() => slaWorkbookInput({ tickets: filteredTickets }), [filteredTickets]);
+  const { pivot, pivotByPriority, pivotByIssueType } = workbook;
 
   const handleGenerate = () => fetchSlaPerformance(year, MONTH_NAMES.indexOf(month) + 1);
 
   const exportExcel = async (save: boolean) => {
     if (!slaData) return;
-    const blob = await buildSlaWorkbook({
-      tickets: filteredTickets,
-      pivot,
-      pivotByPriority,
-      pivotByIssueType,
-    });
+    const blob = await buildSlaWorkbook(workbook);
     const filename = slaExportFilename(slaData.month, slaData.year);
     await deliverBlob({
       blob,

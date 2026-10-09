@@ -9,7 +9,8 @@ import {
   workbookToBlob,
 } from '@/utils/excel';
 
-type DeviceColumn = GridColDef<DeviceRow>;
+// Only the field and header are read, so a grid column or a plain `ExportColumn` both serve.
+type DeviceColumn = Pick<GridColDef<DeviceRow>, 'field' | 'headerName'>;
 type CellValue = string | number | Date;
 
 // Date columns are identified by header so the export can write real Date
