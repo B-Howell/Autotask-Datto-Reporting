@@ -4,7 +4,7 @@
     python tools/screenshots.py --base http://localhost:3000
 
 Expects the client at --base and the server already seeded (python -m demo.seed).
-Captures at 1440px wide in the light theme with no browser chrome, and writes
+Captures at 1440px wide in the dark theme with no browser chrome, and writes
 PNGs to docs/screenshots/.
 """
 
@@ -133,7 +133,7 @@ def main() -> int:
         context = browser.new_context(viewport=VIEWPORT, device_scale_factor=1)
         page = context.new_page()
         page.goto(args.base)
-        page.evaluate("localStorage.setItem('themeMode', 'light')")
+        page.evaluate("localStorage.setItem('themeMode', 'dark')")
         for shot in SHOTS:
             started = time.time()
             shot(page, args.base)

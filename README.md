@@ -38,7 +38,8 @@ companies can be presented as one client.
 
 ## Screenshots
 
-Captured from the demo data set: invented agencies, devices and people.
+All screenshots are taken from the built-in demo data set. Every company,
+site, device, user and engineer shown is invented; none is a real client.
 
 | | |
 |---|---|

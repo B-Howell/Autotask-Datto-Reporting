@@ -6,7 +6,7 @@ coverage_kind: grouped
 
 # Screenshot inventory
 
-The PNGs the README embeds. All are written by the [screenshot capture](<../operations/Reporting Screenshot Capture.md>) script from the demo data set at 1440 by 900 in the light theme, so every agency, device and person shown is invented. Regenerate the whole set rather than editing one image; the script is the source of truth for what each one shows.
+The PNGs the README embeds. All are written by the [screenshot capture](<../operations/Reporting Screenshot Capture.md>) script from the demo data set at 1440 by 900 in the dark theme, so every agency, device and person shown is invented. Regenerate the whole set rather than editing one image; the script is the source of truth for what each one shows.
 
 ## Images
 

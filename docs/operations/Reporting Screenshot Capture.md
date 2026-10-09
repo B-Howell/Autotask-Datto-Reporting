@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The README screenshots have to be reproducible, because the UI changes and stale images are worse than none. This script replaces hand-captured images with a deterministic run against demo data: fixed viewport, light theme, same agencies every time, and a mid-run capture of a report in flight for the live progress image.
+The README screenshots have to be reproducible, because the UI changes and stale images are worse than none. This script replaces hand-captured images with a deterministic run against demo data: fixed viewport, dark theme, same agencies every time, and a mid-run capture of a report in flight for the live progress image.
 
 ## Interface
 
@@ -39,7 +39,7 @@ Helpers: `choose_agency` opens the agency combobox by its accessible name, `gene
 ## Key Behavior
 
 - Viewport is 1440 by 900 at device scale 1, so the PNGs are the same size on every machine.
-- The light theme is forced by writing `themeMode` to `localStorage` before the first navigation, matching what the theme store reads.
+- The dark theme is forced by writing `themeMode` to `localStorage` before the first navigation, matching what the theme store reads.
 - Every wait is on visible text or an accessible role, never a fixed sleep, apart from short settle pauses after a click.
 - `dismiss_status_bar` re-queries the Dismiss button on each loop because each click removes a row and invalidates earlier locators.
 - The live progress capture clicks Refresh data rather than Generate so the server re-runs the fetch instead of serving the cache, then waits for a specific progress line from the demo generator before capturing. The demo generator sleeps briefly every ten workdays so that line is observable.
