@@ -25,6 +25,7 @@
 ## Used By
 
 - [pdf util](<Reporting Util - pdf.md>) calls `getAgencyLogoUrl` when drawing the report header.
+- [reportImages util](<Reporting Util - reportImages.md>) calls `getAgencyLogoUrl` in `loadBrowserAssets` to decide whether to fetch a logo.
 - [Office Windows wordExport](<../pages/reports/officeWindows/Reporting Office Windows - wordExport.md>) uses both functions to place the logo in the Word document.
 
 ## Key Behavior

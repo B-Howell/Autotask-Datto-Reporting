@@ -23,6 +23,7 @@
 
 - [Office Windows wordExport](<../pages/reports/officeWindows/Reporting Office Windows - wordExport.md>) (`fetchAssetBytes`, both icon paths).
 - [Office Windows pdfExport](<../pages/reports/officeWindows/Reporting Office Windows - pdfExport.md>) (`fetchAssetDataUrl`, both icon paths).
+- [reportImages util](<Reporting Util - reportImages.md>) (`fetchAssetBytes`, both icon paths) in `loadBrowserAssets`.
 - [OfficeTable](<../pages/reports/officeWindows/Reporting Office Windows - OfficeTable.md>) and [WindowsTable](<../pages/reports/officeWindows/Reporting Office Windows - WindowsTable.md>) pass the icon paths to their section heading, which renders them as an `img`.
 
 ## Key Behavior
