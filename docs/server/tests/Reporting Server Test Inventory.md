@@ -34,6 +34,10 @@ The pytest suite under `server/tests/`. Each file targets one layer and is named
 
 - [server/tests/test_core.py](../../../server/tests/test_core.py) covers the log buffer cursor surviving eviction and clear, cooperative cancellation raising at the next log line (see [jobs](<../core/Reporting Core - jobs.md>)), Office product name classification, primary-Office selection preferring a specific plan and then the newest edition, and storage sizes rounding up to the marketing size. Active.
 
+## Presets
+
+- [server/tests/test_presets.py](../../../server/tests/test_presets.py) covers validation in [the presets service](<../services/Reporting Service - presets.md>): an unknown report type is refused, a devices preset needs an agency while an SLA preset has its agency dropped, options are filtered to the keys the renderer reads and `format` must be `docx` or `pdf`, device `columns` must be a list of names and an integer agency id is stored as text, a blank name is refused, `update` re-validates the merged row (so switching an SLA preset to `patch` without an agency fails) and raises `LookupError` for a missing id, and the set of report types matches the renderer's handler table. Active.
+
 ## Write-back
 
 - [server/tests/test_devices_writeback.py](../../../server/tests/test_devices_writeback.py) proves the device update path in [the devices service](<../services/Reporting Service - devices.md>): changes are grouped per device and unknown fields are refused, a failed PATCH is reported per device rather than raised, and the generated device sheet carries an Autotask id for every body row so the client can post edits back. Active.
