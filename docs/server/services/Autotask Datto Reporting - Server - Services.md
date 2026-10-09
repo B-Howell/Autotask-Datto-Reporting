@@ -25,6 +25,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Service - hdd_tickets.md](<Reporting Service - hdd_tickets.md>)
 - [Reporting Service - office_windows.md](<Reporting Service - office_windows.md>)
 - [Reporting Service - patch_management.md](<Reporting Service - patch_management.md>)
+- [Reporting Service - periods.md](<Reporting Service - periods.md>)
 - [Reporting Service - presets.md](<Reporting Service - presets.md>)
 - [Reporting Service - saved_reports.md](<Reporting Service - saved_reports.md>)
 - [Reporting Service - schedules.md](<Reporting Service - schedules.md>)

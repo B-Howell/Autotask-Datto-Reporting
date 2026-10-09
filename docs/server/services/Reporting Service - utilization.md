@@ -34,6 +34,7 @@ Quarterly and annual utilization answers "how many engineer hours did each clien
 
 - [utilization router](<../routers/Reporting Router - utilization.md>) (`get_utilization`, `get_entries`)
 - [sync service](<Reporting Service - sync.md>) (`quarter_range`, `fiscal_year_range`, `current_fiscal_year`, `period_label`, `refresh_snapshot`)
+- [periods service](<Reporting Service - periods.md>) (`quarter_range`, `fiscal_year_range`, `current_fiscal_year`), so a scheduled run and an on-screen run agree on period boundaries.
 - [demo data](<../demo/Reporting Demo - data.md>) imports `PHASES` and `parse_date`.
 - `server/tests/test_aggregates.py`
 
