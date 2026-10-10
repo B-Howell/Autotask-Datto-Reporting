@@ -22,6 +22,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Office Windows - LicenseField.md](<Reporting Office Windows - LicenseField.md>)
 - [Reporting Office Windows - OfficeTable.md](<Reporting Office Windows - OfficeTable.md>)
 - [Reporting Office Windows - pdfExport.md](<Reporting Office Windows - pdfExport.md>)
+- [Reporting Office Windows - presetDraft.md](<Reporting Office Windows - presetDraft.md>)
 - [Reporting Office Windows - ReportHeading.md](<Reporting Office Windows - ReportHeading.md>)
 - [Reporting Office Windows - reportRows.md](<Reporting Office Windows - reportRows.md>)
 - [Reporting Office Windows - selectedAgency.md](<Reporting Office Windows - selectedAgency.md>)

@@ -35,6 +35,8 @@ arrive after the first render.
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
+  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
   [ErrorBanner](<../../components/report/Reporting Report Component - ErrorBanner.md>)
 - [saveReport](<../../utils/Reporting Util - saveReport.md>)
@@ -59,6 +61,10 @@ arrive after the first render.
   `agencyName: 'All Agencies'`, `reportType: 'utilization'`, `format: 'xlsx'`.
 - The table renders only when data exists and the page is not loading; `ReportProgress`
   shows the hook's logs during a run.
+- Schedule opens `ScheduleDialog` through `useScheduleDialog` once `utilData` is loaded with
+  the draft `{ reportType: 'quarterly_utilization', agencyKey: null, agencyName: '',
+  options: {} }`; the quarter is not stored because a scheduled run reports the quarter
+  that precedes its run date.
 
 ## Cleanup Notes
 

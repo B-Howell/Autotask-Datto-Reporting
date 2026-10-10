@@ -30,13 +30,16 @@ AgencyValue | ''`, `chooserOpen: boolean`.
 - [useVisibleColumns](<deviceReports/Reporting Device Report - useVisibleColumns.md>),
   [ViewTabs](<deviceReports/Reporting Device Report - ViewTabs.md>),
   [MissingFieldFilter](<deviceReports/Reporting Device Report - MissingFieldFilter.md>),
-  [excelExport](<deviceReports/Reporting Device Report - excelExport.md>)
+  [excelExport](<deviceReports/Reporting Device Report - excelExport.md>),
+  [presetDraft](<deviceReports/Reporting Device Report - presetDraft.md>)
 - [DeviceSpreadsheet](<../../components/Reporting Component - DeviceSpreadsheet.md>),
   [PostData](<../../components/Reporting Component - PostData.md>),
   [ColumnChooser](<../../components/Reporting Component - ColumnChooser.md>)
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
+  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>)
 - [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>), [dates](<../../utils/Reporting Util - dates.md>),
   [saveReport](<../../utils/Reporting Util - saveReport.md>)
@@ -64,6 +67,14 @@ AgencyValue | ''`, `chooserOpen: boolean`.
 - `DeviceSpreadsheet` receives the last log line as its loading caption, the theme mode as
   `isDark`, and the hook's `page`, `setPage` and `processRowUpdate`.
 - The Post Data view always receives the full `columns`, not the user's visible subset.
+- Schedule opens `ScheduleDialog` through `useScheduleDialog`. The draft comes from
+  `devicePresetDraft` once `hasData`: report type `devices`, the generated agency's dropdown
+  value as the key (`'1000'` or `'group:Name'`), its name, and `options.columns` as the
+  `exportColumns` header names, so the columns hidden in the chooser and the order chosen
+  there travel with the preset. Before a report exists the factory returns null and the
+  button stays disabled with the exports. The missing-field filter is not stored: a
+  scheduled run mails every row, so a schedule made while the filter is on sends the full
+  inventory rather than the filtered list on screen.
 
 ## Cleanup Notes
 

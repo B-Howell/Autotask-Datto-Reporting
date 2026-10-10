@@ -5,7 +5,14 @@ import type { AgencyValue } from '@/api';
 import ColumnChooser from '@/components/ColumnChooser';
 import DeviceSpreadsheet from '@/components/DeviceSpreadsheet';
 import PostData from '@/components/PostData';
-import { AgencySelect, ReportActions, ReportPage, ReportToolbar } from '@/components/report';
+import {
+  AgencySelect,
+  ReportActions,
+  ReportPage,
+  ReportToolbar,
+  ScheduleDialog,
+  useScheduleDialog,
+} from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
 import useReportingData from '@/hooks/useReportingData';
 import useAgencyStore from '@/store/agencyStore';
@@ -15,6 +22,7 @@ import { fileDateStamp } from '@/utils/dates';
 import { deliverBlob } from '@/utils/saveReport';
 import { buildDeviceWorkbook } from './deviceReports/excelExport';
 import MissingFieldFilter from './deviceReports/MissingFieldFilter';
+import { devicePresetDraft } from './deviceReports/presetDraft';
 import useVisibleColumns from './deviceReports/useVisibleColumns';
 import ViewTabs from './deviceReports/ViewTabs';
 import type { DeviceView } from './deviceReports/ViewTabs';
@@ -51,6 +59,9 @@ const DeviceReports = () => {
   const hasData = selectedCompany !== null && allRows.length > 0 && !loading;
   const onSpreadsheet = activeTab === 'spreadsheet';
   const pendingEdits = Object.keys(editedCells).length;
+  const schedule = useScheduleDialog(() =>
+    hasData ? devicePresetDraft({ selectedCompany, agencyName, exportColumns }) : null
+  );
 
   const handleGenerate = () => {
     const agency = resolveAgencyValue(agencyValue, effectiveAgencies);
@@ -97,6 +108,7 @@ const DeviceReports = () => {
                   : []
               }
               onSave={onSpreadsheet ? () => handleExport(true) : undefined}
+              onSchedule={schedule.openDialog}
               hasResults={hasData}
             />
           </>
@@ -147,6 +159,15 @@ const DeviceReports = () => {
         visibleFields={chooserFields}
         onApply={applyVisibleFields}
       />
+      {schedule.draft && (
+        <ScheduleDialog
+          open={schedule.open}
+          draft={schedule.draft}
+          onClose={schedule.closeDialog}
+          onSave={schedule.save}
+          saving={schedule.saving}
+        />
+      )}
     </ReportPage>
   );
 };

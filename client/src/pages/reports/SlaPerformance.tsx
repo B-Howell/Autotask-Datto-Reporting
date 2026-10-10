@@ -8,6 +8,8 @@ import {
   ReportPage,
   ReportProgress,
   ReportToolbar,
+  ScheduleDialog,
+  useScheduleDialog,
 } from '@/components/report';
 import useSlaData from '@/hooks/useSlaData';
 import { MONTH_NAMES } from '@/utils/dates';
@@ -59,6 +61,9 @@ const SlaPerformance = () => {
   };
 
   const companyCount = slaData?.companies ? Object.keys(slaData.companies).length : 0;
+  const schedule = useScheduleDialog(() =>
+    slaData ? { reportType: 'sla', agencyKey: null, agencyName: '', options: {} } : null
+  );
 
   return (
     <ReportPage title="SLA Performance By Ticket">
@@ -69,6 +74,7 @@ const SlaPerformance = () => {
             loading={loading}
             exports={[{ label: 'Export Excel', onClick: () => exportExcel(false) }]}
             onSave={() => exportExcel(true)}
+            onSchedule={schedule.openDialog}
             hasResults={!!slaData}
           />
         }
@@ -109,6 +115,15 @@ const SlaPerformance = () => {
           {tab === 2 && <PivotTable pivot={pivotByPriority} rowLabel="Priority" />}
           {tab === 3 && <IssueTypePivotTable pivot={pivotByIssueType} />}
         </Box>
+      )}
+      {schedule.draft && (
+        <ScheduleDialog
+          open={schedule.open}
+          draft={schedule.draft}
+          onClose={schedule.closeDialog}
+          onSave={schedule.save}
+          saving={schedule.saving}
+        />
       )}
     </ReportPage>
   );

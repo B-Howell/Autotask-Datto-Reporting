@@ -36,6 +36,8 @@ number` (0 Report, 1 Pivot by Resource, 2 Pivot by Priority, 3 Pivot by Issue Ty
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
+  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [MonthYearSelect](<../../components/report/Reporting Report Component - MonthYearSelect.md>),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
   [ErrorBanner](<../../components/report/Reporting Report Component - ErrorBanner.md>)
@@ -60,6 +62,10 @@ number` (0 Report, 1 Pivot by Resource, 2 Pivot by Priority, 3 Pivot by Issue Ty
 - The toolbar summary shows `<filtered count> tickets across <company count> companies`,
   where the company count is the number of keys in `slaData.companies`.
 - Filters, tabs and tables render only when data exists and the page is not loading.
+- Schedule opens `ScheduleDialog` through `useScheduleDialog` once `slaData` is loaded with the
+  draft `{ reportType: 'sla', agencyKey: null, agencyName: '', options: {} }`: the report
+  covers every agency, so the dialog's name and subject default to the report label alone and
+  the scheduled run reads the period from its own run date rather than this page's month.
 
 ## Cleanup Notes
 

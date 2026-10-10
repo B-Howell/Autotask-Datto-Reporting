@@ -6,6 +6,8 @@ import {
   ReportPage,
   ReportProgress,
   ReportToolbar,
+  ScheduleDialog,
+  useScheduleDialog,
 } from '@/components/report';
 import useUtilizationData from '@/hooks/useUtilizationData';
 import useAgencyUtilizationStore from '@/store/agencyUtilizationStore';
@@ -30,6 +32,11 @@ const AgencyUtilization = () => {
 
   const handleGenerate = (refresh = false) =>
     fetchUtilization(selected.start, selected.end, { refresh });
+  const schedule = useScheduleDialog(() =>
+    utilData
+      ? { reportType: 'quarterly_utilization', agencyKey: null, agencyName: '', options: {} }
+      : null
+  );
 
   const exportExcel = async (save: boolean) => {
     if (!utilData) return;
@@ -58,6 +65,7 @@ const AgencyUtilization = () => {
             exports={[{ label: 'Export Excel', onClick: () => exportExcel(false) }]}
             onSave={() => exportExcel(true)}
             onRefresh={() => handleGenerate(true)}
+            onSchedule={schedule.openDialog}
             hasResults={!!utilData}
           />
         }
@@ -75,6 +83,15 @@ const AgencyUtilization = () => {
       <ErrorBanner error={error} />
 
       {utilData && !loading && <UtilizationTable report={utilData} />}
+      {schedule.draft && (
+        <ScheduleDialog
+          open={schedule.open}
+          draft={schedule.draft}
+          onClose={schedule.closeDialog}
+          onSave={schedule.save}
+          saving={schedule.saving}
+        />
+      )}
     </ReportPage>
   );
 };

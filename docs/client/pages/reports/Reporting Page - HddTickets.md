@@ -28,10 +28,12 @@ dropdown value and the generated label live in the store so they survive navigat
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
+  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>) (with `ALL_AGENCIES`),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
   [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>)
-- [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`membersOf`, `resolveAgencyValue`),
+- [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`membersOf`, `resolveAgencyValue`, `valueFor`),
   [dates](<../../utils/Reporting Util - dates.md>), [saveReport](<../../utils/Reporting Util - saveReport.md>)
 
 ## Used By
@@ -50,6 +52,13 @@ dropdown value and the generated label live in the store so they survive navigat
   metadata uses `reportType: 'hdd_tickets'`, `format: 'xlsx'` and the agency label as
   `agencyName`. No `agencyId` is recorded.
 - The table heading uses `deviceCount` from the server rather than `devices.length`.
+- Schedule opens `ScheduleDialog` through `useScheduleDialog`. The page keeps only the
+  generated label, so the agency to store is found by matching that label against the
+  effective agencies' names. A match gives the draft `{ reportType: 'hdd_tickets',
+  agencyKey: String(valueFor(agency)), agencyName: agency.name, options: {} }`. The
+  `All Agencies` label matches nothing, and because a preset must name one agency the page
+  passes no `onSchedule` for that run, so `ReportActions` renders no Schedule button. Before
+  any run the button is present and disabled, as on the other pages.
 
 ## Cleanup Notes
 

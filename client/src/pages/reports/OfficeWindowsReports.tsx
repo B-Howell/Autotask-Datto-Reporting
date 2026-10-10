@@ -7,6 +7,8 @@ import {
   ReportPage,
   ReportProgress,
   ReportToolbar,
+  ScheduleDialog,
+  useScheduleDialog,
 } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
 import useOfficeWindowsData from '@/hooks/useOfficeWindowsData';
@@ -14,6 +16,7 @@ import useAgencyStore from '@/store/agencyStore';
 import { resolveAgencyValue, valueFor } from '@/utils/agencyGroups';
 import DeviceListDialog from './officeWindows/DeviceListDialog';
 import OfficeTable from './officeWindows/OfficeTable';
+import { officeWindowsPresetDraft } from './officeWindows/presetDraft';
 import ReportHeading from './officeWindows/ReportHeading';
 import { installedOnly, reportTitle } from './officeWindows/reportRows';
 import { reportedAgencyForSite } from './officeWindows/selectedAgency';
@@ -55,6 +58,9 @@ const OfficeWindowsReports = () => {
     breakdown: { windows_installs: osBreakdown, office_installs: officeBreakdown },
     manualInputs: manual.values,
   });
+  const schedule = useScheduleDialog(() =>
+    hasResults ? officeWindowsPresetDraft({ agency: selectedCompany, showLicenses }) : null
+  );
 
   const handleGenerate = () => {
     const agency = companyValue ? resolveAgencyValue(companyValue, effectiveAgencies) : null;
@@ -79,6 +85,7 @@ const OfficeWindowsReports = () => {
                 { label: 'Export to PDF', onClick: exportToPdf },
               ]}
               onSave={() => exportToWord(true)}
+              onSchedule={schedule.openDialog}
             />
           </>
         }
@@ -135,6 +142,15 @@ const OfficeWindowsReports = () => {
         devices={devices.modal.devices}
         onClose={devices.close}
       />
+      {schedule.draft && (
+        <ScheduleDialog
+          open={schedule.open}
+          draft={schedule.draft}
+          onClose={schedule.closeDialog}
+          onSave={schedule.save}
+          saving={schedule.saving}
+        />
+      )}
     </ReportPage>
   );
 };

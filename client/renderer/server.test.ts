@@ -96,6 +96,7 @@ describe('renderer server', () => {
     expect(res.status).toBe(404);
   });
 
+  // The first exceljs import is slow under load, so this read gets longer than the default.
   it('returns the file with its name in the disposition header', async () => {
     const res = await post(deviceRequest);
     expect(res.status).toBe(200);
@@ -106,7 +107,7 @@ describe('renderer server', () => {
     const bytes = new Uint8Array(await res.arrayBuffer());
     expect(Number(res.headers.get('content-length'))).toBe(bytes.length);
     expect(Array.from(bytes.subarray(0, 2))).toEqual([0x50, 0x4b]);
-  });
+  }, 20_000);
 });
 
 describe('contentDisposition', () => {

@@ -7,11 +7,13 @@ import {
   ReportPage,
   ReportProgress,
   ReportToolbar,
+  ScheduleDialog,
+  useScheduleDialog,
 } from '@/components/report';
 import type { DonutSlice } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
 import usePatchManagementData from '@/hooks/usePatchManagementData';
-import { resolveAgencyValue } from '@/utils/agencyGroups';
+import { resolveAgencyValue, valueFor } from '@/utils/agencyGroups';
 import { loadBrowserAssets } from '@/utils/reportImages';
 import PatchSummaryCard from './patchManagement/PatchSummaryCard';
 import ReportMeta from './patchManagement/ReportMeta';
@@ -47,6 +49,16 @@ const PatchManagement = () => {
     [summary]
   );
   const hasResults = !loading && generatedAgency !== null && deviceCount > 0;
+  const schedule = useScheduleDialog(() =>
+    hasResults && generatedAgency
+      ? {
+          reportType: 'patch',
+          agencyKey: String(valueFor(generatedAgency)),
+          agencyName: generatedAgency.name,
+          options: {},
+        }
+      : null
+  );
 
   const handleGenerate = () => {
     const agency = companyValue ? resolveAgencyValue(companyValue, effectiveAgencies) : null;
@@ -82,6 +94,7 @@ const PatchManagement = () => {
             loading={loading}
             exports={[{ label: 'Export to PDF', onClick: () => exportPdf(true) }]}
             onSave={() => exportPdf(false)}
+            onSchedule={schedule.openDialog}
             hasResults={hasResults}
           />
         }
@@ -105,6 +118,15 @@ const PatchManagement = () => {
           <PatchSummaryCard slices={slices} total={total} chartRef={chartRef} />
           <WorkstationTable devices={devices} />
         </Box>
+      )}
+      {schedule.draft && (
+        <ScheduleDialog
+          open={schedule.open}
+          draft={schedule.draft}
+          onClose={schedule.closeDialog}
+          onSave={schedule.save}
+          saving={schedule.saving}
+        />
       )}
     </ReportPage>
   );

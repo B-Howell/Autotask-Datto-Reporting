@@ -31,7 +31,14 @@ The dialog is built from two field components in the same folder:
 ## Used By
 
 - Re-exported by [the report component barrel](<Reporting Report Component - index.md>), together with `PresetDraft`, `REPORT_LABELS` and `SchedulePayload`
-- No page renders it yet; the next change wires it into the report pages next to [ReportActions](<Reporting Report Component - ReportActions.md>)
+- The generating report pages, each through `useScheduleDialog` next to [ReportActions](<Reporting Report Component - ReportActions.md>):
+  [DeviceReports](<../../pages/reports/Reporting Page - DeviceReports.md>),
+  [OfficeWindowsReports](<../../pages/reports/Reporting Page - OfficeWindowsReports.md>),
+  [PatchManagement](<../../pages/reports/Reporting Page - PatchManagement.md>),
+  [HddTickets](<../../pages/reports/Reporting Page - HddTickets.md>),
+  [SlaPerformance](<../../pages/reports/Reporting Page - SlaPerformance.md>),
+  [AgencyUtilization](<../../pages/reports/Reporting Page - AgencyUtilization.md>) and
+  [AnnualUtilization](<../../pages/reports/Reporting Page - AnnualUtilization.md>)
 
 ## Key Behavior
 

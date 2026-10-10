@@ -6,10 +6,12 @@ import {
   ReportPage,
   ReportProgress,
   ReportToolbar,
+  ScheduleDialog,
+  useScheduleDialog,
 } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
 import useHddTicketsData from '@/hooks/useHddTicketsData';
-import { membersOf, resolveAgencyValue } from '@/utils/agencyGroups';
+import { membersOf, resolveAgencyValue, valueFor } from '@/utils/agencyGroups';
 import { fileDateStamp } from '@/utils/dates';
 import { deliverBlob } from '@/utils/saveReport';
 import { buildHddTicketsWorkbook } from './hddTickets/excelExport';
@@ -30,6 +32,21 @@ const HddTickets = () => {
 
   const hasResults = !loading && Boolean(generatedLabel) && deviceCount > 0;
   const noResults = !loading && Boolean(generatedLabel) && deviceCount === 0;
+  // The label is the generated agency's name, or 'All Agencies', which no
+  // agency carries. A preset must name one agency, so an all-agencies run
+  // offers no Schedule button; before any run the button shows disabled.
+  const generatedAgency = effectiveAgencies.find((a) => a.name === generatedLabel) ?? null;
+  const allAgenciesRun = Boolean(generatedLabel) && generatedAgency === null;
+  const schedule = useScheduleDialog(() =>
+    hasResults && generatedAgency
+      ? {
+          reportType: 'hdd_tickets',
+          agencyKey: String(valueFor(generatedAgency)),
+          agencyName: generatedAgency.name,
+          options: {},
+        }
+      : null
+  );
 
   const handleGenerate = () => {
     if (!companyValue) return;
@@ -71,6 +88,7 @@ const HddTickets = () => {
             loading={loading}
             exports={[{ label: 'Export Excel', onClick: () => handleExport(false) }]}
             onSave={() => handleExport(true)}
+            onSchedule={allAgenciesRun ? undefined : schedule.openDialog}
             hasResults={hasResults}
           />
         }
@@ -91,6 +109,15 @@ const HddTickets = () => {
       )}
       {hasResults && (
         <HddDeviceTable label={generatedLabel} devices={devices} deviceCount={deviceCount} />
+      )}
+      {schedule.draft && (
+        <ScheduleDialog
+          open={schedule.open}
+          draft={schedule.draft}
+          onClose={schedule.closeDialog}
+          onSave={schedule.save}
+          saving={schedule.saving}
+        />
       )}
     </ReportPage>
   );

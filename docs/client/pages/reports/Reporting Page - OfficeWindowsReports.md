@@ -37,10 +37,13 @@ Local state: `companyValue: AgencyValue | ''`, `showLicenses: boolean` (default 
   [ReportHeading](<officeWindows/Reporting Office Windows - ReportHeading.md>),
   [SkuSettingsButton](<officeWindows/Reporting Office Windows - SkuSettingsButton.md>),
   [SkuSettingsDialog](<officeWindows/Reporting Office Windows - SkuSettingsDialog.md>),
-  [DeviceListDialog](<officeWindows/Reporting Office Windows - DeviceListDialog.md>)
+  [DeviceListDialog](<officeWindows/Reporting Office Windows - DeviceListDialog.md>),
+  [presetDraft](<officeWindows/Reporting Office Windows - presetDraft.md>)
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
+  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>)
 - [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`resolveAgencyValue`, `valueFor`)
@@ -70,6 +73,11 @@ Local state: `companyValue: AgencyValue | ''`, `showLicenses: boolean` (default 
 - `showLicenses` is passed to both tables and to the export hook, so hiding the licence
   columns on screen also hides them in the Word and PDF output.
 - `ReportProgress` shows a 20-line log tail with the caption "Loading...".
+- Schedule opens `ScheduleDialog` through `useScheduleDialog`. The draft comes from
+  `officeWindowsPresetDraft` once `hasResults`: report type `office_windows`, the reported
+  agency's key and name (a group member is stored under its group's key), `format: 'docx'`
+  as the starting point for the dialog's Format radio, which replaces it on save, and the
+  current `showLicenses` so the mailed file hides the licence columns when the screen does.
 
 ## Cleanup Notes
 

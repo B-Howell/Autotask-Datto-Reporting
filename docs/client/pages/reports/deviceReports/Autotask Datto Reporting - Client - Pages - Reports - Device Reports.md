@@ -18,6 +18,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 
 - [Reporting Device Report - excelExport.md](<Reporting Device Report - excelExport.md>)
 - [Reporting Device Report - MissingFieldFilter.md](<Reporting Device Report - MissingFieldFilter.md>)
+- [Reporting Device Report - presetDraft.md](<Reporting Device Report - presetDraft.md>)
 - [Reporting Device Report - sheetRows.md](<Reporting Device Report - sheetRows.md>)
 - [Reporting Device Report - useVisibleColumns.md](<Reporting Device Report - useVisibleColumns.md>)
 - [Reporting Device Report - ViewTabs.md](<Reporting Device Report - ViewTabs.md>)

@@ -31,7 +31,14 @@ Default export: `useScheduleDialog`.
 ## Used By
 
 - Re-exported by [the report component barrel](<Reporting Report Component - index.md>)
-- No page yet; the next change calls it from each generating report page
+- The generating report pages, each passing a draft factory and rendering [ScheduleDialog](<Reporting Report Component - ScheduleDialog.md>) next to [ReportActions](<Reporting Report Component - ReportActions.md>):
+  [DeviceReports](<../../pages/reports/Reporting Page - DeviceReports.md>),
+  [OfficeWindowsReports](<../../pages/reports/Reporting Page - OfficeWindowsReports.md>),
+  [PatchManagement](<../../pages/reports/Reporting Page - PatchManagement.md>),
+  [HddTickets](<../../pages/reports/Reporting Page - HddTickets.md>),
+  [SlaPerformance](<../../pages/reports/Reporting Page - SlaPerformance.md>),
+  [AgencyUtilization](<../../pages/reports/Reporting Page - AgencyUtilization.md>) and
+  [AnnualUtilization](<../../pages/reports/Reporting Page - AnnualUtilization.md>)
 
 ## Key Behavior
 

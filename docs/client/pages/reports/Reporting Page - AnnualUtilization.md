@@ -38,10 +38,13 @@ Local state: `startMonth: Dayjs | null` (from `defaultStartMonth`), `settingsOpe
   [RawEntriesTable](<annualUtilization/Reporting Annual Utilization - RawEntriesTable.md>),
   [SpreadsheetView](<annualUtilization/Reporting Annual Utilization - SpreadsheetView.md>),
   [ReportSettingsDialog](<annualUtilization/Reporting Annual Utilization - ReportSettingsDialog.md>),
-  [YearStartPicker](<annualUtilization/Reporting Annual Utilization - YearStartPicker.md>)
+  [YearStartPicker](<annualUtilization/Reporting Annual Utilization - YearStartPicker.md>),
+  [presetDraft](<annualUtilization/Reporting Annual Utilization - presetDraft.md>)
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
+  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [ErrorBanner](<../../components/report/Reporting Report Component - ErrorBanner.md>)
 - [saveReport](<../../utils/Reporting Util - saveReport.md>), `dayjs` types
 
@@ -70,6 +73,11 @@ Local state: `startMonth: Dayjs | null` (from `defaultStartMonth`), `settingsOpe
   gear button that opens the settings dialog (view mode, rates, company selection).
 - There is no `ReportProgress` here; progress for this report is shown by the running-report
   bar only.
+- Schedule opens `ScheduleDialog` through `useScheduleDialog`. Once `utilData` is loaded the
+  draft comes from `annualPresetDraft` with the store's `selectedCompanies` and its raw `rates`
+  (the overrides only, read from the store rather than `useAnnualReport`, whose `rates` already
+  carry the tenant defaults). A null selection and empty overrides are left out of the
+  options so the scheduled run keeps following the tenant settings.
 
 ## Cleanup Notes
 

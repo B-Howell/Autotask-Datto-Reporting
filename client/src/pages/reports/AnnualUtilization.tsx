@@ -4,13 +4,21 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import type { Dayjs } from 'dayjs';
 import { utilizationApi } from '@/api';
 import type { UtilizationReport } from '@/api';
-import { ErrorBanner, ReportActions, ReportPage, ReportToolbar } from '@/components/report';
+import {
+  ErrorBanner,
+  ReportActions,
+  ReportPage,
+  ReportToolbar,
+  ScheduleDialog,
+  useScheduleDialog,
+} from '@/components/report';
 import useAnnualUtilizationStore from '@/store/annualUtilizationStore';
 import { deliverBlob } from '@/utils/saveReport';
 import AgencyDetailTable from './annualUtilization/AgencyDetailTable';
 import { annualWorkbookFilename, buildAnnualWorkbook } from './annualUtilization/excelExport';
 import { RAW_TAB, defaultStartMonth, rangeOrDefault } from './annualUtilization/fiscalYear';
 import { gridForTab } from './annualUtilization/gridModels';
+import { annualPresetDraft } from './annualUtilization/presetDraft';
 import RawEntriesTable from './annualUtilization/RawEntriesTable';
 import ReportSettingsDialog from './annualUtilization/ReportSettingsDialog';
 import ReportTabs from './annualUtilization/ReportTabs';
@@ -30,6 +38,7 @@ const AnnualUtilization = () => {
 
   const viewMode = useAnnualUtilizationStore((s) => s.viewMode);
   const setViewMode = useAnnualUtilizationStore((s) => s.setViewMode);
+  const rateOverrides = useAnnualUtilizationStore((s) => s.rates);
   const setRates = useAnnualUtilizationStore((s) => s.setRates);
   const selectedCompanies = useAnnualUtilizationStore((s) => s.selectedCompanies);
   const setSelectedCompanies = useAnnualUtilizationStore((s) => s.setSelectedCompanies);
@@ -38,6 +47,10 @@ const AnnualUtilization = () => {
   const { utilData, summary, summaryRows, detail, entries, tab, setTab, companies } = report;
 
   useEffect(() => setEntryPage(0), [report.entriesFor]);
+
+  const schedule = useScheduleDialog(() =>
+    utilData ? annualPresetDraft({ companies: selectedCompanies, rates: rateOverrides }) : null
+  );
 
   const grid = useMemo(
     () => gridForTab(tab, { summary, summaryRows, entries, detail }),
@@ -90,6 +103,7 @@ const AnnualUtilization = () => {
             hasResults={!!utilData}
             exports={[{ label: 'Export to Excel', onClick: () => exportExcel(false) }]}
             onSave={() => exportExcel(true)}
+            onSchedule={schedule.openDialog}
           />
         }
       >
@@ -131,6 +145,15 @@ const AnnualUtilization = () => {
           <ReportTabs value={tab} onChange={setTab} companies={companies} />
           <Box sx={{ p: 2 }}>{renderView(utilData, summary)}</Box>
         </Paper>
+      )}
+      {schedule.draft && (
+        <ScheduleDialog
+          open={schedule.open}
+          draft={schedule.draft}
+          onClose={schedule.closeDialog}
+          onSave={schedule.save}
+          saving={schedule.saving}
+        />
       )}
     </ReportPage>
   );
