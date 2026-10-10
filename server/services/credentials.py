@@ -18,6 +18,7 @@ from repositories import credentials as repo
 
 AUTOTASK = "autotask"
 DATTO = "datto"
+_VENDOR_LABELS = {AUTOTASK: "Autotask", DATTO: "Datto"}
 
 SOURCE_ENVIRONMENT = "environment"
 SOURCE_STORED = "stored"
@@ -60,6 +61,10 @@ _MIN_HINTED_LENGTH = 3 * _HINT_LENGTH
 _lock = threading.Lock()
 _resolved_values = None
 _listeners = []
+
+
+class CredentialsMissing(RuntimeError):
+    """A vendor call was attempted while one of its credentials is blank."""
 
 
 def _field(name):
@@ -208,6 +213,14 @@ def record_test(vendor, ok):
 def is_configured(vendor):
     values = current()
     return all(values[name] for name in _names_for(vendor))
+
+
+def require(vendor):
+    """Raise `CredentialsMissing` unless every field of the vendor is set."""
+    if not is_configured(vendor):
+        raise CredentialsMissing(
+            f"{_VENDOR_LABELS[vendor]} credentials are not configured; open Settings"
+        )
 
 
 def datto_api_base():

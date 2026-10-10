@@ -1,6 +1,6 @@
 # Route plumbing
 
-> `run_report` runs a report service call as the tracked job with a stream-bound logger, mapping cancellation to HTTP 499 and bad arguments to 400; `call_or_http_error` runs any other service call and maps its typed failures to 400, 404, 409 or 502.
+> `run_report` runs a report service call as the tracked job with a stream-bound logger, mapping cancellation to HTTP 499, bad arguments to 400 and missing or unreadable vendor credentials to 503; `call_or_http_error` runs any other service call and maps its typed failures to 400, 404, 409 or 502.
 
 ## Purpose
 
@@ -13,6 +13,7 @@ The scheduled-delivery routes run no job, but they share the other half of the p
 | Name | Description |
 |---|---|
 | `HTTP_CLIENT_CLOSED_REQUEST` | `499`. |
+| `SECRETS_UNREADABLE` | `Stored credentials cannot be read; check APP_SECRET_KEY or the key file`, the 503 detail for a `SecretsError`. |
 | `run_report(stream, label, run)` | Starts a job labelled `label`, builds `streams.report_logger(stream, job_id=...)`, calls `run(logger)` and returns its result. |
 | `call_or_http_error(fn)` | Calls `fn()` and returns its result, answering each typed service failure with the status below and the exception text as `detail`. |
 
@@ -22,7 +23,11 @@ The scheduled-delivery routes run no job, but they share the other half of the p
 |---|---|---|
 | `jobs.ReportCancelled` | `cancelled` | 499 `Report cancelled` |
 | `ValueError` | `error` (message stored) | 400 with `str(exc)` as `detail` |
+| `credentials.CredentialsMissing` | `error` | 503 with `str(exc)` as `detail` (`<Vendor> credentials are not configured; open Settings`) |
+| `secrets.SecretsError` | `error` | 503 `SECRETS_UNREADABLE` |
 | any other `Exception` | `error` | re-raised; FastAPI answers 500 |
+
+The mapping lives in `_report_failure(exc)`, which answers `(status, detail)` or `None`; the one `except Exception` clause finishes the job with the error and either raises the mapped `HTTPException` or re-raises.
 
 `call_or_http_error` mapping, in order of the `except` clauses:
 
@@ -37,7 +42,8 @@ The scheduled-delivery routes run no job, but they share the other half of the p
 ## Uses
 
 - `fastapi.HTTPException`
-- [jobs](<../core/Reporting Core - jobs.md>) and [streams](<../core/Reporting Core - streams.md>)
+- [jobs](<../core/Reporting Core - jobs.md>), [streams](<../core/Reporting Core - streams.md>) and [secrets](<../core/Reporting Core - secrets.md>) for `SecretsError`
+- [credentials service](<../services/Reporting Service - credentials.md>) for `CredentialsMissing`
 - [presets service](<../services/Reporting Service - presets.md>) for `InUseError`
 - [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) for `RenderError` and `DeliveryError`, which it re-exports from the integrations; the routers package imports only `core` and `services`
 
@@ -52,6 +58,7 @@ The scheduled-delivery routes run no job, but they share the other half of the p
 - The logger is created with `clear=True`, so the stream's backlog from the previous run of the same report type is dropped before the first line of the new run.
 - On cancellation the handler appends `[DONE] Cancelled` to the buffer directly with `get_buffer(stream).append` and records it with `jobs.note`; using the tracked logger here would re-raise `ReportCancelled` from inside the handler. The job is then finished as cancelled and the 499 is raised `from None` so the traceback does not drag the cancellation exception along.
 - A `ValueError` is the services' contract for bad input (`utilization.parse_date`, `_validated_range`, `quarter_range`). Pydantic validation errors never reach here; FastAPI answers 422 before the route body runs.
+- A `CredentialsMissing` comes from the vendor client the report called, before any request left the process; the detail is the exception text so the page can tell the user which vendor to configure. A `SecretsError` means the stored values exist but the loaded key cannot read them; its own message names the key file path, which is replaced by `SECRETS_UNREADABLE` so the browser gets the remedy and not the path. Both are 503 rather than 500 because the server is healthy and the condition clears without a restart once the Settings page or the environment is fixed. Proven by `test_routes.py`.
 - Unexpected exceptions are recorded on the job (so the status bar shows the message) and re-raised unchanged; nothing is written to the snapshot cache because `get_cached_rows` only stores after a successful fetch.
 - `call_or_http_error` matches `InUseError` before `ValueError` because it is one: the presets service raises it when a schedule still renders the preset, and that is a conflict with existing state (409), not a malformed request (400). `LookupError` is the services' contract for an id that does not exist, so a stale page gets a 404 rather than a success it cannot tell from its own. The two integration errors are the renderer and the delivery flow being down or answering badly, which is a bad gateway from this server's point of view.
 - The routes are synchronous `def` functions, so FastAPI runs them on its threadpool and the report blocks that worker for its full duration; the SSE `/logs` routes are `async def` and share the event loop.

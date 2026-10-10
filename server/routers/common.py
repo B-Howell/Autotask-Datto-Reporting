@@ -2,19 +2,33 @@
 
 from fastapi import HTTPException
 
-from core import jobs, streams
-from services import presets, scheduled_runs
+from core import jobs, secrets, streams
+from services import credentials, presets, scheduled_runs
 
 # nginx's "client closed request": the caller asked for the cancellation and
 # has already stopped waiting for an answer.
 HTTP_CLIENT_CLOSED_REQUEST = 499
+# The secrets error names the key file path, which the browser has no use for.
+SECRETS_UNREADABLE = "Stored credentials cannot be read; check APP_SECRET_KEY or the key file"
+
+
+def _report_failure(exc):
+    """(status, detail) for a typed failure a report route answers, else None."""
+    if isinstance(exc, ValueError):
+        return 400, str(exc)
+    if isinstance(exc, credentials.CredentialsMissing):
+        return 503, str(exc)
+    if isinstance(exc, secrets.SecretsError):
+        return 503, SECRETS_UNREADABLE
+    return None
 
 
 def run_report(stream, label, run):
     """Run a report as the tracked job, logging to its stream.
 
     `run(logger)` does the work. A cancellation from the status bar surfaces
-    as 499, a bad request (malformed dates and the like) as 400.
+    as 499, a bad request (malformed dates and the like) as 400, and vendor
+    credentials that are missing or unreadable as 503.
     """
     job_id = jobs.start(label)
     logger = streams.report_logger(stream, job_id=job_id)
@@ -31,12 +45,13 @@ def run_report(stream, label, run):
         raise HTTPException(
             status_code=HTTP_CLIENT_CLOSED_REQUEST, detail="Report cancelled"
         ) from None
-    except ValueError as exc:
-        jobs.finish(job_id, error=exc)
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         jobs.finish(job_id, error=exc)
-        raise
+        failure = _report_failure(exc)
+        if failure is None:
+            raise
+        status_code, detail = failure
+        raise HTTPException(status_code=status_code, detail=detail) from exc
 
 
 def call_or_http_error(fn):

@@ -1,4 +1,9 @@
-from integrations.autotask import ID_CHUNK_SIZE, AutotaskClient
+import pytest
+
+from integrations.autotask import ID_CHUNK_SIZE, AutotaskClient, Connection
+from services import credentials
+
+FIXED = Connection("https://example.invalid/v1.0", {"UserName": "u"})
 
 
 class FakeResponse:
@@ -18,11 +23,12 @@ class FakeSession:
     def __init__(self, records, picklists=None):
         self.records = records
         self.picklists = picklists or {}
-        self.headers = {}
         self.posts = []
+        self.requests = []
 
-    def post(self, url, json, timeout):
+    def post(self, url, json, headers, timeout):
         self.posts.append(json)
+        self.requests.append((url, headers))
         items = self.records
         for f in json["filter"]:
             if f["field"] == "id" and f["op"] == "gt":
@@ -31,12 +37,13 @@ class FakeSession:
                 items = [r for r in items if r["id"] in f["value"]]
         return FakeResponse({"items": items[: json["maxRecords"]]})
 
-    def get(self, url, timeout):
+    def get(self, url, headers, timeout):
+        self.requests.append((url, headers))
         return FakeResponse({"fields": self.picklists})
 
 
-def _client(session):
-    client = AutotaskClient("https://example.invalid/v1.0", "u", "s", "code")
+def _client(session, connection=lambda: FIXED):
+    client = AutotaskClient(connection)
     client._session = session
     return client
 
@@ -83,9 +90,9 @@ def test_picklists_are_fetched_once_and_skip_inactive_values():
     session.gets = 0
     original_get = session.get
 
-    def counted_get(url, timeout):
+    def counted_get(url, headers, timeout):
         session.gets += 1
-        return original_get(url, timeout)
+        return original_get(url, headers, timeout)
 
     session.get = counted_get
     client = _client(session)
@@ -94,3 +101,45 @@ def test_picklists_are_fetched_once_and_skip_inactive_values():
     assert client.picklist("Tickets", "priority") == {1: "High"}
     assert client.picklist("Tickets", "missing") == {}
     assert session.gets == 1
+
+
+def test_requests_carry_the_stored_credentials_and_base_url(configured):
+    session = FakeSession([])
+    client = AutotaskClient()
+    client._session = session
+
+    client.get("Tickets", 7)
+
+    assert session.requests == [
+        (
+            f"{configured['autotask_base_url']}/Tickets/7",
+            {
+                "UserName": configured["autotask_username"],
+                "Secret": configured["autotask_secret"],
+                "ApiIntegrationCode": configured["autotask_integration_code"],
+            },
+        )
+    ]
+
+
+def test_a_rotated_secret_is_used_by_the_next_request(configured):
+    session = FakeSession([])
+    client = AutotaskClient()
+    client._session = session
+    client.get("Tickets", 7)
+
+    credentials.save({"autotask_secret": "rotated-secret-not-real"})
+    client.query_page("Tickets", [])
+
+    assert session.requests[-1][1]["Secret"] == "rotated-secret-not-real"
+
+
+def test_a_request_without_credentials_names_the_settings_page(store):
+    session = FakeSession([])
+    client = AutotaskClient()
+    client._session = session
+
+    with pytest.raises(credentials.CredentialsMissing, match="open Settings"):
+        client.get("Tickets", 7)
+
+    assert session.requests == []

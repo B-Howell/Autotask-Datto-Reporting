@@ -1,4 +1,5 @@
 from config import load_settings
+from services import credentials
 
 SCHEDULE_VARS = (
     "RENDERER_URL",
@@ -32,3 +33,14 @@ def test_scheduled_delivery_settings_read_from_the_environment(monkeypatch):
     assert loaded.delivery_webhook_url == "https://flow.example/trigger?sig=x"
     assert loaded.schedule_timezone == "America/New_York"
     assert loaded.schedule_poll_seconds == 15
+
+
+def test_vendor_credentials_are_not_required_at_startup(monkeypatch):
+    monkeypatch.setenv("DEMO_MODE", "0")
+    for field in credentials.FIELDS.values():
+        monkeypatch.delenv(field.env, raising=False)
+
+    loaded = load_settings()
+
+    assert loaded.demo_mode is False
+    assert loaded.datto_max_workers == 4

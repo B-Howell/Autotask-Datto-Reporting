@@ -13,7 +13,7 @@ Reports are served from snapshots, so something has to keep the snapshots fresh.
 | `STREAM` | `"sync"`, the named log buffer the settings page follows. |
 | `build_steps(now=None)` | `(label, callable)` pairs for one full sync, in run order. |
 | `run_sync(logger=print, progress=None)` | Runs every step; `progress(done, total, label)` is called before and after each. |
-| `SyncRunner` | `start()` launches a daemon thread and returns False when one is already running; `status()` returns the status dict plus `last_synced_at`. |
+| `SyncRunner` | `start()` launches a daemon thread and returns False when one is already running or, outside demo mode, when a vendor has no usable credentials; `status()` returns the status dict plus `last_synced_at`. |
 | `runner` | The module-level `SyncRunner` instance. |
 
 Status dict keys: `running, started_at, finished_at, error, done, total, current, last_synced_at`.
@@ -21,6 +21,7 @@ Status dict keys: `running, started_at, finished_at, error, done, total, current
 ## Uses
 
 - Standard library `threading`, `datetime`.
+- [config](<../Reporting Server - config.md>) (`demo_mode`), [credentials service](<Reporting Service - credentials.md>) (`require`, `AUTOTASK`, `DATTO`, `CredentialsMissing`) and [secrets](<../core/Reporting Core - secrets.md>) (`SecretsError`) for the pre-start check.
 - [streams core](<../core/Reporting Core - streams.md>) (`get_buffer`, `report_logger`)
 - [snapshots repository](<../repositories/Reporting Repository - snapshots.md>) (`last_sync_time`) and [sqlite repository](<../repositories/Reporting Repository - sqlite.md>) (`iso_now`)
 - [agencies](<Reporting Service - agencies.md>), [devices](<Reporting Service - devices.md>), [hdd_tickets](<Reporting Service - hdd_tickets.md>), [office_windows](<Reporting Service - office_windows.md>), [patch_management](<Reporting Service - patch_management.md>), [sla](<Reporting Service - sla.md>), [tickets](<Reporting Service - tickets.md>), [utilization](<Reporting Service - utilization.md>) through their `refresh_snapshot` functions.
@@ -30,12 +31,14 @@ Status dict keys: `running, started_at, finished_at, error, done, total, current
 - [sync router](<../routers/Reporting Router - sync.md>) (`runner.start`, `runner.status`, `STREAM`)
 - [main](<../Reporting Server - main.md>) (starts a sync when nothing has ever synced, then on the interval)
 - [demo seed](<../demo/Reporting Demo - seed.md>) (`run_sync` with a console logger)
+- [server/tests/test_sync.py](../../../server/tests/test_sync.py) drives `SyncRunner.start()` with `run_sync` replaced by a recorder.
 
 ## Key Behavior
 
 - Step order: for each agency, patch, office/windows, devices, hdd tickets; then SLA for the current month; then utilization for the current calendar quarter and the current fiscal year (from `utilization.quarter_range` and `fiscal_year_range`); then, for each agency, tickets for the current month. Labels are `<agency name>: <report>`, `SLA YYYY-MM`, `Utilization <period label>` and `<agency name>: tickets YYYY-MM`.
 - Each step is a lambda with its arguments bound as defaults, called as `step(log=logger)`, so every `refresh_snapshot` receives the sync logger.
 - Error isolation: a failing step is logged as `[WARN] <label> failed: <error>` and skipped; the snapshot layer has already recorded the error in `sync_state`, so the settings page can show which scope is failing. The loop itself never raises for a step.
+- Before anything else, `start` calls `_require_vendors()`: in demo mode it returns at once (the generators replace both clients), otherwise it calls `credentials.require` for Autotask then Datto. A `CredentialsMissing` or a `SecretsError` (stored values the loaded key cannot read) is written to the sync stream and stdout as `[WARN] Sync skipped: <message>` and `start` returns False without touching the status, so a fresh install's scheduler ticks harmlessly until the Settings page has both vendors, and a sync never runs through a thousand steps that each fail the same way.
 - `SyncRunner.start` clears the sync log buffer before launching the thread, so each run's log starts clean; the per-run logger is created with `clear=False` for the same reason.
 - Status updates happen under the runner's lock; `status()` copies the dict and adds `last_synced_at` from the database so the value survives restarts.
 - `finished_at` is set in a `finally`, so a crash inside `run_sync` (not inside a step) still marks the run finished with `error` populated.

@@ -143,7 +143,8 @@ The server seeds its cache on first start; the app is at http://localhost.
 ### Real data
 
 1. Copy the environment file and fill it in. The comments say where each
-   value comes from in the vendor UIs.
+   value comes from in the vendor UIs. The vendor credentials can also be
+   entered later on the Settings page, where they are stored encrypted.
 
    ```bash
    cp server/.env.example server/.env

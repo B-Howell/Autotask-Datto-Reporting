@@ -5,48 +5,74 @@ the reliable way to walk a large result is an `id > last_id` cursor. Some
 entities (TimeEntries among them) return nothing at all unless an id filter is
 present, so the cursor is sent on the very first page too. Lookups by id go
 through `in` filters in chunks, because a single `in` list has a length limit.
+
+The base URL and the auth headers are resolved for every request, so a
+credential saved on the Settings page is used by the next call without a
+restart.
 """
 
+from dataclasses import dataclass
 from threading import Lock
 
 import requests
 
-from config import settings
+from services import credentials
 
 PAGE_SIZE = 500
 ID_CHUNK_SIZE = 200
 DEFAULT_TIMEOUT = 60
 
 
+@dataclass(frozen=True)
+class Connection:
+    """Where a request goes and the auth headers it carries."""
+
+    base_url: str
+    headers: dict
+
+
+def current_connection():
+    """The connection from the credentials in effect; raises when any is blank."""
+    credentials.require(credentials.AUTOTASK)
+    values = credentials.current()
+    return Connection(
+        values["autotask_base_url"],
+        {
+            "UserName": values["autotask_username"],
+            "Secret": values["autotask_secret"],
+            "ApiIntegrationCode": values["autotask_integration_code"],
+        },
+    )
+
+
 class AutotaskClient:
-    def __init__(self, base_url, username, secret, integration_code, timeout=DEFAULT_TIMEOUT):
-        self._base_url = base_url.rstrip("/")
+    def __init__(self, connection=current_connection, timeout=DEFAULT_TIMEOUT):
+        """`connection()` is called before every request for the URL and headers."""
+        self._connection = connection
         self._timeout = timeout
         self._session = requests.Session()
-        self._session.headers.update(
-            {
-                "UserName": username,
-                "Secret": secret,
-                "ApiIntegrationCode": integration_code,
-                "Content-Type": "application/json",
-            }
-        )
+        self._session.headers.update({"Content-Type": "application/json"})
         self._picklists = {}
         self._picklists_lock = Lock()
 
     # ── raw calls ──────────────────────────────────────────────────────────
 
-    def _post(self, path, payload):
-        response = self._session.post(
-            f"{self._base_url}/{path}", json=payload, timeout=self._timeout
+    def _request(self, method, path, **kwargs):
+        connection = self._connection()
+        response = method(
+            f"{connection.base_url}/{path}",
+            headers=connection.headers,
+            timeout=self._timeout,
+            **kwargs,
         )
         response.raise_for_status()
-        return response.json()
+        return response
+
+    def _post(self, path, payload):
+        return self._request(self._session.post, path, json=payload).json()
 
     def _get(self, path):
-        response = self._session.get(f"{self._base_url}/{path}", timeout=self._timeout)
-        response.raise_for_status()
-        return response.json()
+        return self._request(self._session.get, path).json()
 
     # ── queries ────────────────────────────────────────────────────────────
 
@@ -100,11 +126,7 @@ class AutotaskClient:
         return self._get(f"{entity}/{item_id}").get("item", {})
 
     def patch(self, entity, item_id, payload):
-        response = self._session.patch(
-            f"{self._base_url}/{entity}/{item_id}", json=payload, timeout=self._timeout
-        )
-        response.raise_for_status()
-        return response
+        return self._request(self._session.patch, f"{entity}/{item_id}", json=payload)
 
     # ── picklists ──────────────────────────────────────────────────────────
 
@@ -138,14 +160,9 @@ _client_lock = Lock()
 
 
 def autotask():
-    """The process-wide client, built from settings on first use."""
+    """The process-wide client, built on first use; it reads the credentials per request."""
     global _client
     with _client_lock:
         if _client is None:
-            _client = AutotaskClient(
-                settings.autotask_base_url,
-                settings.autotask_username,
-                settings.autotask_secret,
-                settings.autotask_integration_code,
-            )
+            _client = AutotaskClient()
         return _client

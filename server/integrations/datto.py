@@ -4,29 +4,51 @@ Datto rate-limits the account to 600 reads a minute and answers 429 (or a 5xx)
 when a sync pushes past it, so every call is paced and retried with backoff.
 OAuth tokens are cached and refreshed a minute early; a 401/403 drops the
 cached token so the retry re-authenticates rather than failing until the clock
-catches up.
+catches up. The key, secret and platform are read from the credentials service
+each time a token is fetched or a URL built, and a saved credential drops the
+cached token, so a rotation takes effect without a restart.
 """
 
 import threading
 import time
+from dataclasses import dataclass
 from threading import Lock
 
 import requests
 from requests.auth import HTTPBasicAuth
 
 from config import settings
+from services import credentials
 
 # Refresh this many seconds before the advertised expiry, so a request that
 # starts just before the deadline does not go out with a token that dies in flight.
 _EXPIRY_SKEW_SECONDS = 60
 _RETRY_STATUSES = {429}
+_TOKEN_TIMEOUT_SECONDS = 30
+
+
+@dataclass(frozen=True)
+class TokenRequest:
+    """Where a token is fetched from and the credentials that earn it."""
+
+    url: str
+    api_key: str
+    api_secret: str
+
+
+def current_token_request():
+    """The token request from the credentials in effect; raises when any is blank."""
+    credentials.require(credentials.DATTO)
+    values = credentials.current()
+    return TokenRequest(
+        credentials.datto_token_url(), values["datto_api_key"], values["datto_api_secret"]
+    )
 
 
 class DattoTokenProvider:
-    def __init__(self, token_url, api_key, api_secret, timeout=30):
-        self._token_url = token_url
-        self._api_key = api_key
-        self._api_secret = api_secret
+    def __init__(self, token_request=current_token_request, timeout=_TOKEN_TIMEOUT_SECONDS):
+        """`token_request()` is called whenever a token has to be fetched."""
+        self._token_request = token_request
         self._timeout = timeout
         self._lock = Lock()
         self._token = None
@@ -44,16 +66,17 @@ class DattoTokenProvider:
             now = time.time()
             if self._token and now < self._expires_at - _EXPIRY_SKEW_SECONDS:
                 return self._token
+            request = self._token_request()
             response = requests.post(
-                self._token_url,
+                request.url,
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Accept": "application/json",
                 },
                 data={
                     "grant_type": "password",
-                    "username": self._api_key,
-                    "password": self._api_secret,
+                    "username": request.api_key,
+                    "password": request.api_secret,
                 },
                 # Datto's documented public OAuth client; not a secret.
                 auth=HTTPBasicAuth("public-client", "public"),
@@ -68,7 +91,8 @@ class DattoTokenProvider:
 
 class DattoClient:
     def __init__(self, api_base, tokens, timeout, min_request_interval, max_workers):
-        self._api_base = api_base.rstrip("/")
+        """`api_base()` is called per request so a changed platform is used at once."""
+        self._api_base = api_base
         self._tokens = tokens
         self._timeout = timeout
         self._min_interval = min_request_interval
@@ -92,7 +116,6 @@ class DattoClient:
         Returns the Response on success, or None once the attempts are spent.
         Other 4xx responses are returned as-is for the caller to interpret.
         """
-        url = f"{self._api_base}/api/v2/{path.lstrip('/')}"
         delay = 1.0
         for attempt in range(1, attempts + 1):
             last = attempt == attempts
@@ -100,6 +123,7 @@ class DattoClient:
             # configuration error and must surface as such, not as three
             # retries ending in a generic request failure.
             token = self._tokens.token()
+            url = f"{self._api_base()}/api/v2/{path.lstrip('/')}"
             try:
                 self._pace()
                 response = requests.get(
@@ -197,19 +221,20 @@ class DattoClient:
 
 _client = None
 _client_lock = Lock()
+_tokens = DattoTokenProvider()
+# A token earned with the old key or secret is dropped the moment new values
+# are saved, so the next request authenticates with the new ones.
+credentials.on_change(_tokens.invalidate)
 
 
 def datto():
-    """The process-wide client, built from settings on first use."""
+    """The process-wide client: pacing from settings, credentials read per request."""
     global _client
     with _client_lock:
         if _client is None:
-            tokens = DattoTokenProvider(
-                settings.datto_token_url, settings.datto_api_key, settings.datto_api_secret
-            )
             _client = DattoClient(
-                settings.datto_api_base,
-                tokens,
+                credentials.datto_api_base,
+                _tokens,
                 timeout=settings.datto_timeout,
                 min_request_interval=settings.datto_min_request_interval,
                 max_workers=settings.datto_max_workers,

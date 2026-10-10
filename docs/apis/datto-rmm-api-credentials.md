@@ -21,8 +21,10 @@ These credentials are read by `server/integrations/datto.py`, which exchanges th
 
 ## Configure
 
-Put the values in `server/.env` (copy `server/.env.example` to start). They are
-read from the environment -- never hardcode them into a source file.
+Enter the values on the Settings page, where they are stored encrypted, or put
+them in `server/.env` (copy `server/.env.example` to start). A value set in the
+environment wins and cannot be edited in the app. Never hardcode them into a
+source file.
 
 ```ini
 DATTO_API_KEY=your-api-key
@@ -30,7 +32,7 @@ DATTO_API_SECRET=your-api-secret
 DATTO_PLATFORM=your-platform
 ```
 
-Restart the backend. The client fetches a fresh OAuth token on the first request and renews it a minute before expiry.
+No restart is needed: the client reads the values when it fetches a token, renews the token a minute before expiry, and drops it when the values are saved again.
 
 ---
 

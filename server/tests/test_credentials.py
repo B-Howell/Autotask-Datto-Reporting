@@ -6,7 +6,6 @@ from core import secrets
 from repositories import credentials as repo
 from services import credentials
 
-ENV_VARS = [field.env for field in credentials.FIELDS.values()]
 AUTOTASK = {
     "autotask_username": "api-user",
     "autotask_secret": "hunter2-not-a-real-secret",
@@ -18,25 +17,6 @@ DATTO = {
     "datto_api_secret": "datto-secret-not-real",
     "datto_platform": "example",
 }
-
-
-@pytest.fixture
-def store(temp_db, tmp_path, monkeypatch):
-    """A fresh database and key, with every vendor variable cleared.
-
-    config loads server/.env at import, so a developer's own credentials may
-    be sitting in os.environ; clearing them keeps precedence deterministic.
-    """
-    monkeypatch.setattr(secrets, "KEY_FILE", str(tmp_path / "secret.key"))
-    monkeypatch.setenv("APP_SECRET_KEY", "")
-    secrets.reset_cache()
-    for var in ENV_VARS:
-        monkeypatch.delenv(var, raising=False)
-    monkeypatch.setattr(credentials, "_listeners", [])
-    credentials.invalidate()
-    yield credentials
-    credentials.invalidate()
-    secrets.reset_cache()
 
 
 def _status(name):

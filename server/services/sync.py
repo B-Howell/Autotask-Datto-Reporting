@@ -10,10 +10,12 @@ import threading
 from datetime import datetime
 from threading import Lock
 
-from core import streams
+from config import settings
+from core import secrets, streams
 from repositories import snapshots, sqlite
 from services import (
     agencies,
+    credentials,
     devices,
     hdd_tickets,
     office_windows,
@@ -24,6 +26,15 @@ from services import (
 )
 
 STREAM = "sync"
+_VENDORS = (credentials.AUTOTASK, credentials.DATTO)
+
+
+def _require_vendors():
+    """Raise unless every vendor a live sync calls is configured; demo mode calls none."""
+    if settings.demo_mode:
+        return
+    for vendor in _VENDORS:
+        credentials.require(vendor)
 
 
 def build_steps(now=None):
@@ -131,7 +142,17 @@ class SyncRunner:
         return snapshot
 
     def start(self):
-        """Start a sync on a worker thread. Returns False if one is already running."""
+        """Start a sync on a worker thread.
+
+        Returns False, starting nothing, when one is already running or when a
+        vendor has no usable credentials; the skip is written to the sync
+        stream so the Settings page shows why nothing happened.
+        """
+        try:
+            _require_vendors()
+        except (credentials.CredentialsMissing, secrets.SecretsError) as exc:
+            streams.report_logger(STREAM, clear=False)(f"[WARN] Sync skipped: {exc}")
+            return False
         with self._lock:
             if self._status["running"]:
                 return False

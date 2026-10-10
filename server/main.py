@@ -51,7 +51,9 @@ ROUTERS = (
 
 async def _sync_scheduler():
     # Warm a cold database shortly after boot, then refresh on the configured
-    # interval. The runner skips a start while a sync is already in flight.
+    # interval. The runner skips a start while a sync is already in flight or
+    # while a vendor has no credentials yet, so a fresh install waits for the
+    # Settings page rather than failing every step.
     await asyncio.sleep(5)
     if snapshots.last_sync_time() is None:
         runner.start()

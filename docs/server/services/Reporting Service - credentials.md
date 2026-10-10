@@ -6,7 +6,7 @@
 
 The Autotask and Datto clients need a username, secrets and a hostname. Until now those came only from environment variables, so rotating a key meant a redeploy. This module lets them be entered in the app instead while keeping a deployment that injects its secrets in charge: a non-blank environment variable always wins and cannot be edited on the page, everything else is stored encrypted through [secrets](<../core/Reporting Core - secrets.md>) in the [credentials repository](<../repositories/Reporting Repository - credentials.md>). The resolved values are cached once per process, and `invalidate()` notifies registered listeners so a client that derived something from the old values (the Datto token provider, for one) can drop it.
 
-The seven fields are the same ones [config](<../Reporting Server - config.md>) loads today, under the same variable names, so a deployment that already sets them sees no change in behaviour; the integrations move over to this module in a later change.
+The seven fields carry the same variable names [config](<../Reporting Server - config.md>) once loaded, so a deployment that already sets them sees no change in behaviour. The vendor integrations read this module at call time, so config no longer holds the values and nothing is required at startup.
 
 ## Interface
 
@@ -24,6 +24,8 @@ The seven fields are the same ones [config](<../Reporting Server - config.md>) l
 | `on_change(callback)` | Registers a no-argument callable to run after `invalidate()`. |
 | `record_test(vendor, ok)` | Stamps the outcome of a connection test on that vendor's stored rows. |
 | `is_configured(vendor)` | True when every field of the vendor has a non-blank value in `current()`. |
+| `require(vendor)` | Raises `CredentialsMissing` (`<Vendor> credentials are not configured; open Settings`) unless `is_configured(vendor)`. The integrations call it before a request. |
+| `CredentialsMissing` | `RuntimeError` subclass: a vendor call was attempted while one of its credentials is blank. |
 | `datto_api_base()`, `datto_token_url()` | `https://<platform>-api.centrastage.net` and `<base>/auth/oauth/token`, from the current `datto_platform`, exactly as config derives them from `DATTO_PLATFORM`. |
 
 Validation failures raise `ValueError` with a message meant for the user: `Unknown credential: <name>`, `<VARIABLE> is set by the environment; clear it to manage this value here`, `The Autotask base URL must start with https://`, `The Datto platform is the first label of the host you sign in to`.
@@ -36,8 +38,11 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 
 ## Used By
 
-- [server/tests/test_credentials.py](../../../server/tests/test_credentials.py).
-- The vendor integrations, the credentials router and the Settings page build on this module in later changes; until they land nothing else imports it.
+- [autotask integration](<../integrations/Reporting Integration - autotask.md>) (`require`, `current()` on every request) and [datto integration](<../integrations/Reporting Integration - datto.md>) (`require`, `current()`, `datto_token_url()` when a token is fetched, `datto_api_base` per request, `on_change` to drop the cached token).
+- [routers/common](<../routers/Reporting Router - common.md>) maps `CredentialsMissing` to 503.
+- [sync service](<Reporting Service - sync.md>) calls `require` for both vendors before starting a live sync.
+- [server/tests/test_credentials.py](../../../server/tests/test_credentials.py); the `store` and `configured` fixtures in [server/tests/conftest.py](../../../server/tests/conftest.py) serve every test that needs stored values.
+- The credentials router and the Settings page build on this module in later changes.
 
 ## Key Behavior
 
@@ -52,7 +57,6 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 
 ## Cleanup Notes
 
-- `FIELDS` names the same variables as `config.load_settings()`; nothing checks the two lists against each other until the integrations switch to this module and the config fields are retired.
 - `on_change` has no `off` counterpart and the listener list is never reset outside the tests, which is fine for the one registration per process it is meant for.
 
 ## Source

@@ -31,7 +31,7 @@ The sync is not a report job: it does not use `run_report`, has no job record, a
 
 ## Key Behavior
 
-- POST answers `started: false` with the current status when a sync is already running; it never queues a second one. The same runner is what the scheduler in `main.py` calls, so a manual trigger and a scheduled one cannot overlap.
+- POST answers `started: false` with the current status when a sync is already running, and likewise when a vendor has no credentials outside demo mode (the runner writes `[WARN] Sync skipped: ...` to the sync stream, so `/logs` shows why); it never queues a second one. The same runner is what the scheduler in `main.py` calls, so a manual trigger and a scheduled one cannot overlap.
 - Starting a sync clears the `sync` buffer, then logs on a daemon thread with `clear=False`; `/logs` followers see `[INFO] Sync starting: N steps`, one `[INFO] (i/N) label` per step, `[WARN]` for a step that failed, and `[DONE] Sync complete`.
 - `done`, `total` and `current` in the status come from the runner's progress callback and advance per step; `last_synced_at` is read from `sync_state` on every status call, so it persists across restarts while the rest of the status does not.
 - A step that raises is logged and skipped; `error` in the status is only set if the sync loop itself fails.

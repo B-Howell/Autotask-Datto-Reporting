@@ -631,12 +631,16 @@ Nothing in the demo data comes from a real tenant.
 
 ## 13. Configuration and tenant rules
 
-`config.py` loads a frozen `Settings` dataclass once from the environment.
-Outside demo mode every credential, the Autotask zone and the Datto platform
-are required at startup, and a missing one fails fast with the variable's name
-rather than producing an authentication error minutes into a report. The
-Datto REST base and OAuth endpoint are both derived from the platform, so
-there is one setting to get right, not two that can disagree.
+`config.py` loads a frozen `Settings` dataclass once from the environment for
+the values that do not change while the process runs. The vendor
+credentials, the Autotask zone and the Datto platform are not among them:
+the credentials service resolves each one from its environment variable
+first and the encrypted store second, and the vendor clients read it on
+every request, so a key rotated on the Settings page is in use at once and
+nothing is required at startup. A report or sync that needs a missing
+credential stops before any request with a message naming the Settings
+page. The Datto REST base and OAuth endpoint are both derived from the
+platform, so there is one value to get right, not two that can disagree.
 
 `report_rules.py` is the one place that holds the rules another MSP would
 change to run these reports against its own Autotask. Autotask picklist
@@ -655,10 +659,11 @@ never touches, so that `git merge upstream/main` in the fork is conflict-free
 by construction. There are three such homes, each with a tracked example
 beside it and each excluded by `.gitignore`.
 
-`server/.env` holds what the process needs to start: vendor credentials, the
-Autotask zone, the Datto platform, the sync interval, the data directory, the
-renderer's address, the delivery flow URL and the schedule timezone.
-`.env.example` documents each.
+`server/.env` holds what the process reads from its environment: the sync
+interval, the data directory, the renderer's address, the delivery flow URL,
+the schedule timezone, and optionally the vendor credentials, the Autotask
+zone and the Datto platform, which can instead be entered on the Settings
+page and stored encrypted. `.env.example` documents each.
 
 `server/data/` holds what the application reads at run time and writes
 itself: the SQLite file (and with it the licence counts, presets, schedules

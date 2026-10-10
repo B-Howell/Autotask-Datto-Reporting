@@ -28,6 +28,7 @@ Vendor credentials entered in the app's Settings page are stored in SQLite so a 
 
 - [server/tests/test_secrets.py](../../../server/tests/test_secrets.py)
 - [credentials service](<../services/Reporting Service - credentials.md>) (`encrypt` when a value is saved, `decrypt` when the stored values are resolved; its `SecretsError` is allowed to propagate).
+- [routers/common](<../routers/Reporting Router - common.md>) maps `SecretsError` from a report to 503 with a fixed detail, and the [sync service](<../services/Reporting Service - sync.md>) skips a sync on it.
 - The credentials router and Settings page build on the service in later changes.
 
 ## Key Behavior

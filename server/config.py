@@ -21,23 +21,11 @@ def _flag(name, default=False):
 class Settings:
     # Demo mode swaps the Autotask and Datto clients for deterministic
     # generators (see demo/), so the app runs end to end with no vendor
-    # accounts. Credentials are optional in that mode and required otherwise.
+    # accounts. The vendor credentials themselves are not settings: the
+    # credentials service resolves them from the environment or the encrypted
+    # store at call time, so they can be entered and rotated in the app.
     demo_mode: bool
 
-    autotask_username: str
-    autotask_secret: str
-    autotask_integration_code: str
-    # Autotask assigns each tenant to a zone; the zone's API hostname is shown
-    # on the API user's page in Autotask.
-    autotask_base_url: str
-
-    datto_api_key: str
-    datto_api_secret: str
-    # Datto RMM is split across regional platforms. The platform is the first
-    # label of the host you sign in to (https://<platform>.centrastage.net);
-    # the REST API and its OAuth endpoint live at a sibling hostname.
-    datto_api_base: str
-    datto_token_url: str
     # How hard the Datto audit API is hit during a sync. A full sync audits
     # well over a thousand devices; too many in-flight requests on a small
     # container time out, and a timed-out audit is indistinguishable from
@@ -69,27 +57,9 @@ class Settings:
     app_secret_key: str
 
 
-def _required(name, demo_mode):
-    value = os.environ.get(name, "")
-    if not value and not demo_mode:
-        raise RuntimeError(f"{name} is not set; copy server/.env.example to server/.env")
-    return value
-
-
 def load_settings():
-    demo_mode = _flag("DEMO_MODE")
-    platform = _required("DATTO_PLATFORM", demo_mode)
-    datto_api_base = f"https://{platform}-api.centrastage.net"
     return Settings(
-        demo_mode=demo_mode,
-        autotask_username=_required("AUTOTASK_USERNAME", demo_mode),
-        autotask_secret=_required("AUTOTASK_PASSWORD", demo_mode),
-        autotask_integration_code=_required("AUTOTASK_TRACKING_ID", demo_mode),
-        autotask_base_url=_required("AUTOTASK_BASE_URL", demo_mode).rstrip("/"),
-        datto_api_key=_required("DATTO_API_KEY", demo_mode),
-        datto_api_secret=_required("DATTO_API_SECRET", demo_mode),
-        datto_api_base=datto_api_base,
-        datto_token_url=f"{datto_api_base}/auth/oauth/token",
+        demo_mode=_flag("DEMO_MODE"),
         datto_max_workers=int(os.environ.get("DATTO_MAX_WORKERS", "4")),
         datto_min_request_interval=float(os.environ.get("DATTO_MIN_REQUEST_INTERVAL", "0.05")),
         datto_timeout=float(os.environ.get("DATTO_TIMEOUT", "30")),
