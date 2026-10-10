@@ -1,6 +1,6 @@
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { ErrorBanner, ReportPage } from '@/components/report';
+import { ErrorBanner, LoadingRow, ReportPage } from '@/components/report';
 import DeliveryTestButton from './scheduledReports/DeliveryTestButton';
 import RendererStatusChip from './scheduledReports/RendererStatusChip';
 import RunnerLog from './scheduledReports/RunnerLog';
@@ -37,10 +37,7 @@ const ScheduledReports = () => {
       </Box>
       <ErrorBanner error={error} />
       {loading ? (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
-          <CircularProgress size={20} />
-          <Typography>Loading…</Typography>
-        </Box>
+        <LoadingRow />
       ) : (
         <SchedulesTable
           schedules={schedules}

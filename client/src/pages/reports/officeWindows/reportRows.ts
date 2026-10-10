@@ -1,4 +1,4 @@
-import type { InstallBreakdownItem, ManualInputs } from '@/api';
+import type { InstallBreakdownItem, ManualInputs, OfficeWindowsFormat } from '@/api';
 import { fileDateStamp } from '@/utils/dates';
 import type { BundledOfficeRow } from './skus';
 
@@ -7,7 +7,7 @@ export const REPORT_TYPE = 'office_windows';
 export const reportTitle = (agencyName: string): string =>
   `${agencyName} Office and Windows Installs`;
 
-export const reportFilename = (agencyName: string, extension: 'docx' | 'pdf'): string =>
+export const reportFilename = (agencyName: string, extension: OfficeWindowsFormat): string =>
   `${reportTitle(agencyName)} ${fileDateStamp()}.${extension}`;
 
 export interface OfficeReportRow {

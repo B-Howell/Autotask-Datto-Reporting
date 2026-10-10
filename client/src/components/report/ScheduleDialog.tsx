@@ -4,17 +4,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
-  Radio,
-  RadioGroup,
   Stack,
   TextField,
 } from '@mui/material';
 import DayHourFields from './DayHourFields';
+import FormatRadioGroup from './FormatRadioGroup';
 import RecipientsField from './RecipientsField';
-import { REPORT_LABELS } from './scheduleDraft';
+import { REPORT_LABELS, hasFormatChoice } from './scheduleDraft';
 import type { PresetDraft } from './scheduleDraft';
 import useScheduleForm from './useScheduleForm';
 import type { SchedulePayload } from './useScheduleForm';
@@ -70,23 +66,8 @@ const ScheduleDialog = ({ open, draft, onClose, onSave, saving = false }: Schedu
             size="small"
           />
           <DayHourFields dayOfMonth={values.dayOfMonth} hour={values.hour} onChange={update} />
-          {draft.reportType === 'office_windows' && (
-            <FormControl>
-              <FormLabel id="schedule-format-label">Format</FormLabel>
-              <RadioGroup
-                row
-                aria-labelledby="schedule-format-label"
-                value={values.format}
-                onChange={(event) => update({ format: event.target.value as 'docx' | 'pdf' })}
-              >
-                <FormControlLabel
-                  value="docx"
-                  control={<Radio size="small" />}
-                  label="Word (docx)"
-                />
-                <FormControlLabel value="pdf" control={<Radio size="small" />} label="PDF" />
-              </RadioGroup>
-            </FormControl>
+          {hasFormatChoice(draft) && (
+            <FormatRadioGroup value={values.format} onChange={(format) => update({ format })} />
           )}
         </Stack>
       </DialogContent>

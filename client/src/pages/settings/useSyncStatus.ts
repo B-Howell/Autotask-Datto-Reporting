@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { syncApi } from '@/api';
 import type { SyncStatus } from '@/api';
+import usePolling from '@/hooks/usePolling';
 
 const IDLE_STATUS: SyncStatus = {
   running: false,
@@ -20,7 +21,6 @@ const useSyncStatus = () => {
   const [status, setStatus] = useState<SyncStatus>(IDLE_STATUS);
   const [logs, setLogs] = useState<string[]>([]);
   const logSourceRef = useRef<EventSource | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -30,23 +30,15 @@ const useSyncStatus = () => {
     }
   }, []);
 
+  // One fetch on mount says whether a sync is already running; the log stream
+  // opened by startSync is closed when the page is left.
   useEffect(() => {
     void refresh();
-    return () => {
-      if (logSourceRef.current) logSourceRef.current.close();
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
+    return () => logSourceRef.current?.close();
   }, [refresh]);
 
   // Poll only while running, so the button re-enables as soon as the sync ends.
-  useEffect(() => {
-    if (status.running && !pollRef.current) {
-      pollRef.current = setInterval(() => void refresh(), POLL_MS);
-    } else if (!status.running && pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }, [status.running, refresh]);
+  usePolling(refresh, POLL_MS, status.running);
 
   const startSync = async () => {
     setLogs([]);

@@ -18,15 +18,18 @@ Every generating report page shares one Schedule button and one dialog. The dial
 
 Fields, top to bottom: Name, To, CC, Subject, Body, Day of month and Hour side by side, and for the Office and Windows report a Format radio (Word or PDF). The title is `Schedule <report label>`.
 
-The dialog is built from two field components in the same folder:
+The dialog is built from three field components in the same folder:
 
 - [RecipientsField](../../../../client/src/components/report/RecipientsField.tsx): one text line of addresses, with the `email` input mode set on the inner `<input>` through `slotProps.htmlInput` (MUI's `TextField` would otherwise drop it on the wrapper) and a caption that defaults to the separator rule ("Separate addresses with commas or semicolons"). The To field keeps that caption; the CC field passes "Optional" instead. The field runs `invalidAddresses` over its own value: an entry without an `@` turns it red and replaces the caption with `Not an email address: <entry>`, the same rule the server applies, so the mistake is visible before Save.
 - [DayHourFields](../../../../client/src/components/report/DayHourFields.tsx): two selects in a row, their label ids from `useId` so two dialogs on one page never share one. Day of month lists 1 to 31 with the caption "31 means the last day of the month" (the server clamps to the month's length); Hour lists 0 to 23 rendered through `formatHour` from the [dates util](<../../utils/Reporting Util - dates.md>) as `07:00` with the caption "in the server's schedule timezone". Both report through one `onChange(patch)` so the dialog passes the form's `update` straight in.
+- [FormatRadioGroup](<Reporting Report Component - FormatRadioGroup.md>): the Word-or-PDF choice, mounted only when `hasFormatChoice(draft)` says the report can go out as either.
+- [FormatRadioGroup](<Reporting Report Component - FormatRadioGroup.md>): the Word-or-PDF choice, mounted only when `hasFormatChoice(draft)` says the report can go out as either.
+- [FormatRadioGroup](<Reporting Report Component - FormatRadioGroup.md>): the Word-or-PDF choice, mounted only when `hasFormatChoice(draft)` says the report can go out as either.
 
 ## Uses
 
 - `@mui/material` dialog, text field, select and radio components
-- [useScheduleForm](<Reporting Report Component - useScheduleForm.md>) for the field values, the `update` setter, the built payload and the `valid` flag; `REPORT_LABELS` and `PresetDraft` from the same file's companion `scheduleDraft`
+- [useScheduleForm](<Reporting Report Component - useScheduleForm.md>) for the field values, the `update` setter, the built payload and the `valid` flag; `REPORT_LABELS`, `hasFormatChoice` and `PresetDraft` from the same file's companion `scheduleDraft`
 
 ## Used By
 
@@ -45,9 +48,9 @@ The dialog is built from two field components in the same folder:
 
 - Save schedule is disabled until To holds at least one address, every To and CC entry contains an `@`, and Subject is non-blank; while `saving` Cancel and Save are disabled and the backdrop and Escape key are ignored, so the dialog cannot disappear under a request in flight.
 - Name is prefilled `<agency> <report label>` (trimmed) for an agency report and just the label for an agency-wide one; Subject is prefilled `{agency} {report} {period}` or `{report} {period}` on the same rule, and its caption lists the placeholders the server fills (`agency`, `report`, `period`, `date`). The Body caption says the same placeholders apply there.
-- The Format radio appears only for `office_windows` and writes `options.format`; every other report's options pass through from the draft untouched.
+- The Format radio appears only when `hasFormatChoice(draft)` is true (today, `office_windows`) and writes `options.format`; the form applies the same test when it lays the format over the options, so the dialog and the payload cannot disagree about which reports have a format. Every other report's options pass through from the draft untouched.
 - The dialog never calls the server: `onSave` receives the payload and the owning hook decides what to do with it, so the component can be rendered with a spy in tests.
-- The field components are the parts with their own rules: the recipient line is used twice (To and CC) with one input mode and one caption default, and the day and hour selects carry the two captions that explain the server's clamping and timezone. The dialog itself is left as composition.
+- The field components are the parts with their own rules: the recipient line is used twice (To and CC) with one input mode and one caption default, the day and hour selects carry the two captions that explain the server's clamping and timezone, and the format radio carries the two options and their labels. The dialog itself is left as composition.
 
 ## Cleanup Notes
 
@@ -55,4 +58,4 @@ The dialog is built from two field components in the same folder:
 
 ## Source
 
-[client/src/components/report/ScheduleDialog.tsx](../../../../client/src/components/report/ScheduleDialog.tsx), [client/src/components/report/RecipientsField.tsx](../../../../client/src/components/report/RecipientsField.tsx), [client/src/components/report/DayHourFields.tsx](../../../../client/src/components/report/DayHourFields.tsx)
+[client/src/components/report/ScheduleDialog.tsx](../../../../client/src/components/report/ScheduleDialog.tsx), [client/src/components/report/RecipientsField.tsx](../../../../client/src/components/report/RecipientsField.tsx), [client/src/components/report/DayHourFields.tsx](../../../../client/src/components/report/DayHourFields.tsx); the format radio has [its own page](<Reporting Report Component - FormatRadioGroup.md>); the format radio has [its own page](<Reporting Report Component - FormatRadioGroup.md>); the format radio has [its own page](<Reporting Report Component - FormatRadioGroup.md>)

@@ -9,6 +9,7 @@ import type {
   HddTicketsReport,
   ManualInputs,
   OfficeWindowsBreakdown,
+  OfficeWindowsFormat,
   PatchReport,
   RatedDepartment,
   SlaReport,
@@ -103,7 +104,7 @@ interface OfficeWindowsData {
 }
 interface OfficeWindowsOptions {
   showLicenses?: boolean;
-  format?: 'docx' | 'pdf';
+  format?: OfficeWindowsFormat;
 }
 
 interface PatchData {

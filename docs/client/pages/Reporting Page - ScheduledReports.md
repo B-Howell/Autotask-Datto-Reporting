@@ -23,14 +23,14 @@ what is no longer wanted.
 |---|---|---|
 | Pre-flight row | `RendererStatusChip` on the left, `DeliveryTestButton` on the right | the schedules API's health and test-delivery routes |
 | Load error | `ErrorBanner` | `error` from `useSchedules` |
-| Schedules | `SchedulesTable`, or a spinner while loading | `schedules`, `status`, `selectedId` |
+| Schedules | `SchedulesTable`, or a `LoadingRow` while loading | `schedules`, `status`, `selectedId` |
 | Runner log | `RunnerLog` | `status.running` |
 | Run history | `RunsTable`, only while a row is selected | `runs` |
 | Delete confirmation | `ConfirmDialog`, busy while the delete runs | `removeTarget`, `removing` |
 
 ## Uses
 
-- [ReportPage](<../components/report/Reporting Report Component - ReportPage.md>) for the centred title and [ErrorBanner](<../components/report/Reporting Report Component - ErrorBanner.md>) for a failed load.
+- [ReportPage](<../components/report/Reporting Report Component - ReportPage.md>) for the centred title, [ErrorBanner](<../components/report/Reporting Report Component - ErrorBanner.md>) for a failed load and [LoadingRow](<../components/report/Reporting Report Component - LoadingRow.md>) until the first refresh settles.
 - [ConfirmDialog](<../components/Reporting Component - ConfirmDialog.md>) for the delete question.
 - [useSchedules](<scheduledReports/Reporting Scheduled Reports - useSchedules.md>) for every piece of state and every action.
 - [SchedulesTable](<scheduledReports/Reporting Scheduled Reports - SchedulesTable.md>), [RunsTable](<scheduledReports/Reporting Scheduled Reports - RunsTable.md>), [RunnerLog](<scheduledReports/Reporting Scheduled Reports - RunnerLog.md>), [RendererStatusChip](<scheduledReports/Reporting Scheduled Reports - RendererStatusChip.md>) and [DeliveryTestButton](<scheduledReports/Reporting Scheduled Reports - DeliveryTestButton.md>).

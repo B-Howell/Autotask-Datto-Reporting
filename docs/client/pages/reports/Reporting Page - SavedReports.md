@@ -25,7 +25,8 @@ string` (an agency name or `''`), `viewing: SavedReport | null`.
 - [SavedReportViewer](<../../components/Reporting Component - SavedReportViewer.md>)
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
-  [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>)
+  [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>),
+  [LoadingRow](<../../components/report/Reporting Report Component - LoadingRow.md>)
 - [API types](<../../api/Reporting API - types.md>) for `SavedReport`.
 
 ## Used By
@@ -42,7 +43,7 @@ string` (an agency name or `''`), `viewing: SavedReport | null`.
 - Both filters are AND-ed; an empty string means no filter on that axis.
 - The toolbar's only action is "Refresh", which calls the hook's `reload`; there is no
   Generate button because nothing is computed.
-- Three body states: a spinner with "Loading", an `EmptyState` when the filtered list is
+- Three body states: a `LoadingRow`, an `EmptyState` when the filtered list is
   empty (the copy says to use "Save to app" on a report), or the table.
 - Clicking a row sets `viewing`; the viewer closes by setting it back to `null`. Delete goes
   straight to the hook's `remove` with no confirmation.

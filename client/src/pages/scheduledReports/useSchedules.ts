@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { schedulesApi } from '@/api';
 import type { ReportSchedule, RunnerStatus, ScheduleRun } from '@/api';
+import usePolling from '@/hooks/usePolling';
 import useToastStore from '@/store/toastStore';
 import { errorMessage } from '@/utils/reportJob';
 
@@ -49,14 +50,7 @@ const useSchedules = () => {
     setLoading(false);
   }, [selectedId]);
 
-  useEffect(() => {
-    void refresh();
-    const timer = setInterval(
-      () => void refresh(),
-      status.running ? RUNNING_POLL_MS : IDLE_POLL_MS
-    );
-    return () => clearInterval(timer);
-  }, [refresh, status.running]);
+  usePolling(refresh, status.running ? RUNNING_POLL_MS : IDLE_POLL_MS);
 
   const select = (id: number) => {
     ticketRef.current += 1;
@@ -91,7 +85,7 @@ const useSchedules = () => {
   };
 
   // Marking the runner busy here flips the poll to its fast cadence, and the
-  // effect that rebuilds the interval refreshes at once, so no extra call is needed.
+  // rebuilt poll refreshes at once, so no extra call is needed.
   const runNow = async (id: number) => {
     try {
       await schedulesApi.runNow(id);

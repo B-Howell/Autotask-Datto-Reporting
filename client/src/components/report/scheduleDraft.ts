@@ -25,6 +25,11 @@ export const REPORT_LABELS: Record<PresetReportType, string> = {
 
 const hasAgency = (draft: PresetDraft) => draft.agencyKey !== null;
 
+/** Whether the report can go out as Word or PDF, so the dialog offers the choice. */
+export function hasFormatChoice(draft: PresetDraft): boolean {
+  return draft.reportType === 'office_windows';
+}
+
 /** The draft of a report run for one agency or group, keyed the way the dropdown keys it. */
 export function agencyPresetDraft(
   reportType: PresetReportType,

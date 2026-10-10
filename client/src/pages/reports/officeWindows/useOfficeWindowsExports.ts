@@ -1,4 +1,4 @@
-import type { ManualInputs } from '@/api';
+import type { ManualInputs, OfficeWindowsFormat } from '@/api';
 import { loadBrowserAssets } from '@/utils/reportImages';
 import { deliverBlob } from '@/utils/saveReport';
 import { officeWindowsExportInput } from './exportInput';
@@ -15,7 +15,7 @@ interface ExportSources {
   manualInputs: ManualInputs;
 }
 
-const meta = (agencyName: string, format: 'docx' | 'pdf') => ({
+const meta = (agencyName: string, format: OfficeWindowsFormat) => ({
   agencyName,
   reportType: REPORT_TYPE,
   format,

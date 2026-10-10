@@ -1,6 +1,12 @@
 import { useCallback, useState } from 'react';
-import type { PresetInput, ScheduleInput } from '@/api';
-import { defaultName, defaultSubject, invalidAddresses, splitAddresses } from './scheduleDraft';
+import type { OfficeWindowsFormat, PresetInput, ScheduleInput } from '@/api';
+import {
+  defaultName,
+  defaultSubject,
+  hasFormatChoice,
+  invalidAddresses,
+  splitAddresses,
+} from './scheduleDraft';
 import type { PresetDraft } from './scheduleDraft';
 
 export interface ScheduleFormValues {
@@ -11,7 +17,7 @@ export interface ScheduleFormValues {
   body: string;
   dayOfMonth: number;
   hour: number;
-  format: 'docx' | 'pdf';
+  format: OfficeWindowsFormat;
 }
 
 export interface SchedulePayload {
@@ -36,10 +42,7 @@ const toPayload = (draft: PresetDraft, values: ScheduleFormValues): SchedulePayl
     report_type: draft.reportType,
     agency_key: draft.agencyKey,
     agency_name: draft.agencyName,
-    options:
-      draft.reportType === 'office_windows'
-        ? { ...draft.options, format: values.format }
-        : draft.options,
+    options: hasFormatChoice(draft) ? { ...draft.options, format: values.format } : draft.options,
   },
   schedule: {
     day_of_month: values.dayOfMonth,

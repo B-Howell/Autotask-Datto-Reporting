@@ -12,7 +12,7 @@ The on-screen tables and the two export formats must show the same data, but the
 |---|---|
 | `REPORT_TYPE` | `'office_windows'`, the key used for manual inputs and saved-report metadata. |
 | `reportTitle(agencyName)` | `<agency> Office and Windows Installs`. |
-| `reportFilename(agencyName, 'docx' or 'pdf')` | Title plus a space, the `M-D-YY` date stamp and the extension. |
+| `reportFilename(agencyName, extension: OfficeWindowsFormat)` | Title plus a space, the `M-D-YY` date stamp and the extension (`docx` or `pdf`). |
 | `installedOnly(items)` | Filters `InstallBreakdownItem[]` to rows with installs greater than zero. |
 | `buildReportRows(sources)` | Produces `{ officeRows: OfficeReportRow[], osRows: OsReportRow[] }` from the bundled Office rows, the OS rows and the three manual-input maps. |
 | `ReportRow` | The common shape (`name`, `installs: string or number`, `isGroup?`, `isChild?`, `license`, `available?`) the Word and PDF table builders accept for either table. |
@@ -20,7 +20,7 @@ The on-screen tables and the two export formats must show the same data, but the
 ## Uses
 
 - `fileDateStamp` from [dates util](<../../../utils/Reporting Util - dates.md>).
-- `BundledOfficeRow` type from [skus](<Reporting Office Windows - skus.md>); `InstallBreakdownItem`, `ManualInputs` from [API types](<../../../api/Reporting API - types.md>).
+- `BundledOfficeRow` type from [skus](<Reporting Office Windows - skus.md>); `InstallBreakdownItem`, `ManualInputs`, `OfficeWindowsFormat` from [API types](<../../../api/Reporting API - types.md>).
 
 ## Used By
 

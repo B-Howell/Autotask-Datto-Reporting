@@ -38,6 +38,7 @@ const {
 
 - [schedules API](<../../api/Reporting API - schedules.md>): `fetchSchedules`, `fetchRunnerStatus`, `fetchRuns`, `updateSchedule`, `deleteSchedule`, `runNow`.
 - [API types](<../../api/Reporting API - types.md>) for `ReportSchedule`, `RunnerStatus` and `ScheduleRun`.
+- [usePolling](<../../hooks/Reporting Hook - usePolling.md>) for the refresh timer.
 - [toastStore](<../../store/Reporting Store - toastStore.md>) for every outcome message.
 - [reportJob util](<../../utils/Reporting Util - reportJob.md>) for `errorMessage`; each failure toast and the load error use it with a fallback sentence (`Schedules could not be loaded`, `The schedule could not be updated`, `The schedule could not be deleted`, `The run could not start`) for an error that carries no text.
 
@@ -47,9 +48,9 @@ const {
 
 ## Key Behavior
 
-- `refresh` is memoised on `selectedId`; changing the selection recreates it, which re-runs
-  the effect that calls it once and restarts the interval. The same effect depends on
-  `status.running`, so the interval is rebuilt at the other cadence when a run starts or ends.
+- `refresh` is memoised on `selectedId` and handed to `usePolling` with the cadence for the
+  current `status.running`; changing the selection recreates `refresh`, and a run starting or
+  ending changes the interval, and either restarts the poll with an immediate call.
 - A failed refresh sets `error` to the message and leaves the previous rows in place; the
   page shows the banner above whatever it last had. The next successful refresh clears it.
 - `loading` is true only until the first refresh settles, so later polls never blank the table.
@@ -62,7 +63,7 @@ const {
   the server refuses to delete one that another schedule still renders, so cleanup is a
   separate, explicit action rather than a side effect here.
 - Setting `status` to running straight after a 202 is optimistic; the refresh the status flip
-  triggers replaces it with the server's answer, which is already `running: true` by then
+  triggers through `usePolling` replaces it with the server's answer, which is already `running: true` by then
   because the runner starts the thread before the route returns.
 
 ## Cleanup Notes

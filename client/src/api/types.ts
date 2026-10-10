@@ -235,7 +235,10 @@ export interface SyncTriggerResponse extends SyncStatus {
   started: boolean;
 }
 
-export type ReportFormat = 'xlsx' | 'docx' | 'pdf';
+/** The two file types the Office and Windows report can be exported or mailed as. */
+export type OfficeWindowsFormat = 'docx' | 'pdf';
+
+export type ReportFormat = 'xlsx' | OfficeWindowsFormat;
 
 export interface SavedReport {
   id: number;

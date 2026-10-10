@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Box, Button, CircularProgress, MenuItem, TextField, Typography } from '@mui/material';
+import { Button, MenuItem, TextField } from '@mui/material';
 import type { SavedReport } from '@/api';
-import { EmptyState, ReportPage, ReportToolbar } from '@/components/report';
+import { EmptyState, LoadingRow, ReportPage, ReportToolbar } from '@/components/report';
 import SavedReportViewer from '@/components/SavedReportViewer';
 import { REPORT_TYPE_LABELS } from './savedReports/reportTypes';
 import SavedReportsTable from './savedReports/SavedReportsTable';
@@ -62,10 +62,7 @@ const SavedReports = () => {
       </ReportToolbar>
 
       {loading ? (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 3 }}>
-          <CircularProgress size={20} />
-          <Typography>Loading…</Typography>
-        </Box>
+        <LoadingRow />
       ) : filtered.length === 0 ? (
         <EmptyState>
           No saved reports yet. Generate a report and click <b>Save to app</b> to store it here.

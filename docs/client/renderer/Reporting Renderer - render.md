@@ -28,7 +28,7 @@ The module keeps one handler per report type in a map, so adding a report means 
 | `quarterly_utilization` | `UtilizationReport` | none | `buildQuarterlyWorkbook` | xlsx |
 | `annual_utilization` | `{ utilData: UtilizationReport, entries: UtilizationEntry[] }` | `departments?: RatedDepartment[]` (the tenant's rated departments, which the browser reads from its settings store), `companies?`, `rates?` | `annualWorkbookInput`, `buildAnnualWorkbook` | xlsx |
 | `hdd_tickets` | `{ devices: HddTicketDevice[] }` | none | `buildHddTicketsWorkbook` | xlsx |
-| `office_windows` | `{ breakdown: OfficeWindowsBreakdown, manualInputs: ManualInputs, agencyName }` | `showLicenses?: boolean` (default false), `format?: 'docx' \| 'pdf'` (default docx) | `officeWindowsExportInput`, then `buildOfficeWindowsDocx` or `buildOfficeWindowsPdf` | docx or pdf |
+| `office_windows` | `{ breakdown: OfficeWindowsBreakdown, manualInputs: ManualInputs, agencyName }` | `showLicenses?: boolean` (default false), `format?: OfficeWindowsFormat` (`docx` or `pdf`, default docx) | `officeWindowsExportInput`, then `buildOfficeWindowsDocx` or `buildOfficeWindowsPdf` | docx or pdf |
 | `patch` | `{ report: PatchReport, agency: Agency }` | none | `buildPatchPdf` with `summary`, `devices`, `total` and `chart: null` | pdf |
 
 ## Uses
@@ -41,7 +41,7 @@ The module keeps one handler per report type in a map, so adding a report means 
 - [officeWindows exportInput](<../pages/reports/officeWindows/Reporting Office Windows - exportInput.md>), [wordExport](<../pages/reports/officeWindows/Reporting Office Windows - wordExport.md>) and [pdfExport](<../pages/reports/officeWindows/Reporting Office Windows - pdfExport.md>).
 - [patchManagement pdfExport](<../pages/reports/patchManagement/Reporting Patch Management - pdfExport.md>).
 - [renderer assets](<Reporting Renderer - assets.md>) for the icons and logo the Word and PDF builders embed.
-- [excel util](<../utils/Reporting Util - excel.md>) for `XLSX_MIME`; the API types for the payload shapes.
+- [excel util](<../utils/Reporting Util - excel.md>) for `XLSX_MIME`; the [API types](<../api/Reporting API - types.md>) for the payload shapes and `OfficeWindowsFormat`.
 
 ## Used By
 

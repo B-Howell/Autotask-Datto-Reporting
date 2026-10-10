@@ -23,7 +23,7 @@ Returns:
 - `deliverBlob` from [saveReport util](<../../../utils/Reporting Util - saveReport.md>).
 - [wordExport](<Reporting Office Windows - wordExport.md>) (`buildOfficeWindowsDocx`) and [pdfExport](<Reporting Office Windows - pdfExport.md>) (`buildOfficeWindowsPdf`).
 - [exportInput](<Reporting Office Windows - exportInput.md>) (`officeWindowsExportInput`, `InstallBreakdowns`).
-- [reportRows](<Reporting Office Windows - reportRows.md>) (`REPORT_TYPE`, `reportFilename`).
+- [reportRows](<Reporting Office Windows - reportRows.md>) (`REPORT_TYPE`, `reportFilename`); `ManualInputs` and `OfficeWindowsFormat` from the [API types](<../../../api/Reporting API - types.md>).
 
 ## Used By
 

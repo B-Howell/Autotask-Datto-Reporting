@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { agencyPresetDraft, agencyWidePresetDraft, isEmailAddress } from './scheduleDraft';
+import {
+  agencyPresetDraft,
+  agencyWidePresetDraft,
+  hasFormatChoice,
+  isEmailAddress,
+} from './scheduleDraft';
 
 const agency = { id: 1000, name: 'Harbor Point Health', site: 'harbor' };
 const group = { name: 'Harbor Point', members: [agency] };
@@ -32,6 +37,14 @@ describe('agencyWidePresetDraft', () => {
     expect(agencyWidePresetDraft('annual_utilization', { companies: ['A'] }).options).toEqual({
       companies: ['A'],
     });
+  });
+});
+
+describe('hasFormatChoice', () => {
+  it('is true only for the Office and Windows report', () => {
+    expect(hasFormatChoice(agencyPresetDraft('office_windows', agency))).toBe(true);
+    expect(hasFormatChoice(agencyPresetDraft('patch', agency))).toBe(false);
+    expect(hasFormatChoice(agencyWidePresetDraft('sla'))).toBe(false);
   });
 });
 

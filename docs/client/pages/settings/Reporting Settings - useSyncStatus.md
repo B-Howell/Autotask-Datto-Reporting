@@ -27,6 +27,7 @@ Returns `{ status, logs, startSync }`:
 ## Uses
 
 - `react` (`useState`, `useEffect`, `useRef`, `useCallback`) and the browser `EventSource`.
+- [usePolling](<../../hooks/Reporting Hook - usePolling.md>) for the running-only poll.
 - [sync API](<../../api/Reporting API - sync.md>) for `fetchSyncStatus`, `triggerSync` and
   `SYNC_LOGS_URL`.
 - [API types](<../../api/Reporting API - types.md>) for `SyncStatus`.
@@ -37,13 +38,12 @@ Returns `{ status, logs, startSync }`:
 
 ## Key Behavior
 
-- On mount it fetches status once. The cleanup closes any open `EventSource` and clears the
-  poll interval.
-- A second effect watches `status.running`: it starts a 1.5 s interval when running becomes
-  true and no interval exists, and clears it when running becomes false. If the page is
-  opened while a scheduled sync is already in progress, the first status fetch sets
-  `running` and polling begins, but no log stream is opened because the stream is tied to
-  `startSync`.
+- On mount it fetches status once. The cleanup closes any open `EventSource`.
+- `usePolling(refresh, POLL_MS, status.running)` polls every 1.5 s only while running is
+  true: the flip to running starts the poll with an immediate refresh, and the flip back
+  clears it. If the page is opened while a scheduled sync is already in progress, the first
+  status fetch sets `running` and polling begins, but no log stream is opened because the
+  stream is tied to `startSync`.
 - `refresh` swallows fetch errors so a transient failure does not blank the status.
 - `startSync` clears `logs`, closes any previous stream, opens a new `EventSource` on
   `SYNC_LOGS_URL` before calling `triggerSync`, so the first lines are not missed. Each

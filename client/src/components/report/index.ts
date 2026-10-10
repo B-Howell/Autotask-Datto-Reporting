@@ -7,6 +7,7 @@ export type { ExportAction } from './ReportActions';
 export { default as ReportProgress } from './ReportProgress';
 export { default as ErrorBanner } from './ErrorBanner';
 export { default as EmptyState } from './EmptyState';
+export { default as LoadingRow } from './LoadingRow';
 export { default as DataTable } from './DataTable';
 export type { DataColumn } from './DataTable';
 export { default as DonutChart, ChartLegend } from './DonutChart';

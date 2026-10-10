@@ -21,14 +21,16 @@ export default function useScheduleDialog(draftFactory: () => PresetDraft | null
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const openDialog = useCallback(() => {
+  // Not memoised: every page passes an inline factory, so a memo keyed on it
+  // would be rebuilt each render anyway.
+  const openDialog = () => {
     const next = draftFactory();
     if (!next) return;
     // A copy, so a page that memoises its draft still hands the form a new
     // identity on every open and the fields start over.
     setDraft({ ...next, options: { ...next.options } });
     setOpen(true);
-  }, [draftFactory]);
+  };
 
   const closeDialog = useCallback(() => setOpen(false), []);
 

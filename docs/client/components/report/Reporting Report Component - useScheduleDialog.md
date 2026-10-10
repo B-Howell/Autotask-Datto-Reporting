@@ -46,7 +46,7 @@ Default export: `useScheduleDialog`.
 - `openDialog` stores a shallow copy of whatever the factory returns (its `options` copied too), so the form in [useScheduleForm](<Reporting Report Component - useScheduleForm.md>) sees a new identity on every open and starts from the defaults even when a page memoises its draft.
 - `save` posts the preset first because a schedule needs a `preset_id`. On success it toasts `Scheduled: next run <local date and time>` (or just `Scheduled` when the server returns no `next_run_at`) and closes the dialog; the draft is kept so the dialog does not change shape while it fades out.
 - On any failure it toasts the error message (the server's `detail` for an `ApiError`) and leaves the dialog open with the user's values intact. If the preset was created but the schedule was rejected, the preset is deleted again so nothing dangles on the server; that delete cannot be refused with a 409 because no schedule references the preset, and if it fails anyway the hook logs `Preset <id> could not be removed after a failed schedule` with the error through `console.warn` rather than raising a second toast over the first.
-- `openDialog` is recreated whenever `draftFactory` changes; pages that pass an inline arrow get a new callback each render, which is harmless for a button handler.
+- `openDialog` is a plain function, new on every render: every page passes an inline arrow as the factory, so a memo keyed on it would be rebuilt each render anyway, and a button handler has no need of a stable identity. `closeDialog` and `save` depend on nothing and stay memoised.
 
 ## Cleanup Notes
 

@@ -6,7 +6,7 @@
 
 Scheduled runs render through the renderer service rather than the browser, so a page that
 manages schedules should say whether that service is up. `RendererStatusChip` asks on mount
-and every 60 seconds and shows one of three states.
+and every 60 seconds, through `usePolling`, and shows one of three states.
 
 ## Interface
 
@@ -22,6 +22,7 @@ and every 60 seconds and shows one of three states.
 
 - `fetchRendererHealth` from the [schedules API](<../../api/Reporting API - schedules.md>).
 - `errorMessage` from the [reportJob util](<../../utils/Reporting Util - reportJob.md>) for the tooltip text.
+- [usePolling](<../../hooks/Reporting Hook - usePolling.md>) for the minute timer, with a memoised `check` that stores the answer.
 - Material UI `Chip`, `Tooltip`, the `CheckCircleOutline` and `ErrorOutline` icons.
 
 ## Used By
@@ -34,7 +35,7 @@ and every 60 seconds and shows one of three states.
   renderer, so it names the host and the failure; a rejection with no text falls back to
   `No response`. A response with `ok: false` (which the current renderer never sends) gets a
   fixed sentence.
-- The interval is cleared on unmount; nothing is cached across visits.
+- `checkHealth` is a module-level function that turns the request's three outcomes into a `Health`; the component's memoised `check` only stores its answer, so the poll has one stable callback and the timer is built once per mount. The interval is cleared on unmount; nothing is cached across visits.
 
 ## Cleanup Notes
 
