@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { credentialsApi } from '@/api';
-import type { CredentialFieldName, CredentialFieldStatus, CredentialsStatus } from '@/api';
+import type {
+  ConnectionTestResult,
+  CredentialFieldName,
+  CredentialFieldStatus,
+  CredentialsStatus,
+} from '@/api';
 import useToastStore from '@/store/toastStore';
 import CredentialsSection from './CredentialsSection';
 
@@ -61,15 +66,27 @@ const status: CredentialsStatus = {
   ],
 };
 
+const withDattoTested = (last_test_ok: boolean): CredentialsStatus => ({
+  ...status,
+  fields: status.fields.map((f) =>
+    f.name === 'datto_platform' ? stored('datto_platform', '', { last_test_ok }) : f
+  ),
+});
+
+const bothTested: ConnectionTestResult = {
+  autotask: { ok: true, message: 'Signed in as ops' },
+  datto: { ok: false, message: 'Datto credentials are incomplete' },
+};
+
 const mocked = vi.mocked(credentialsApi);
 
 const renderLoaded = async (overrides: Partial<CredentialsStatus> = {}) => {
   mocked.fetchCredentials.mockResolvedValue({ ...status, ...overrides });
   render(<CredentialsSection />);
-  await screen.findByText('Autotask');
+  await screen.findByRole('region', { name: 'Autotask' });
 };
 
-const cardElement = (title: string) => screen.getByText(title).closest('section') as HTMLElement;
+const cardElement = (title: string) => screen.getByRole('region', { name: title });
 const card = (title: string) => within(cardElement(title));
 const inputNames = (title: string) =>
   Array.from(cardElement(title).querySelectorAll('input')).map((input) => input.name);
@@ -82,6 +99,7 @@ afterEach(() => {
 describe('CredentialsSection', () => {
   it('lists each vendor card with labelled fields, helper texts and the key source', async () => {
     await renderLoaded();
+    expect(screen.getByRole('region', { name: 'Vendor credentials' })).toBeInTheDocument();
     expect(screen.getByText('Master key: from APP_SECRET_KEY')).toBeInTheDocument();
 
     const autotask = card('Autotask');
@@ -139,12 +157,7 @@ describe('CredentialsSection', () => {
 
     fireEvent.change(datto.getByLabelText('Platform'), { target: { value: ' zinfandel ' } });
     expect(save).toBeEnabled();
-    mocked.saveCredentials.mockResolvedValue({
-      ...status,
-      fields: status.fields.map((f) =>
-        f.name === 'datto_platform' ? stored('datto_platform', '', { last_test_ok: true }) : f
-      ),
-    });
+    mocked.saveCredentials.mockResolvedValue(withDattoTested(true));
     fireEvent.click(save);
 
     await waitFor(() =>
@@ -156,29 +169,56 @@ describe('CredentialsSection', () => {
       datto.getByText(`Last test passed, ${new Date(TESTED).toLocaleString()}`)
     ).toBeInTheDocument();
     expect(datto.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(datto.queryByRole('status')).toBeNull();
   });
 
-  it('shows both vendor results after a connection test', async () => {
+  it('shows both vendor results as a status after a test and refreshes the last-test row', async () => {
     await renderLoaded();
-    mocked.testCredentials.mockResolvedValue({
-      autotask: { ok: true, message: 'Signed in as ops' },
-      datto: { ok: false, message: 'Datto credentials are incomplete' },
-    });
+    mocked.testCredentials.mockResolvedValue(bothTested);
+    mocked.fetchCredentials.mockResolvedValueOnce(withDattoTested(false));
     const autotask = card('Autotask');
     fireEvent.change(autotask.getByLabelText('Zone API URL'), {
       target: { value: 'https://example.invalid' },
     });
     fireEvent.click(autotask.getByRole('button', { name: 'Test connection' }));
 
-    expect(await autotask.findByText('Autotask: Signed in as ops')).toBeInTheDocument();
-    expect(autotask.getByText('Datto: Datto credentials are incomplete')).toBeInTheDocument();
+    const chips = within(await autotask.findByRole('status'));
+    expect(chips.getByText('Autotask: Signed in as ops')).toBeInTheDocument();
+    expect(chips.getByText('Datto: Datto credentials are incomplete')).toBeInTheDocument();
     expect(mocked.testCredentials).toHaveBeenCalledWith({
       autotask_base_url: 'https://example.invalid',
     });
     expect(autotask.getByLabelText('Zone API URL')).toHaveValue('https://example.invalid');
+    expect(
+      card('Datto').getByText(`Last test failed, ${new Date(TESTED).toLocaleString()}`)
+    ).toBeInTheDocument();
   });
 
-  it('shows a refused save in the card and toasts it, keeping the input', async () => {
+  it('marks the pressed button busy, disables every button and leaves inputs editable', async () => {
+    await renderLoaded();
+    let answer: (result: ConnectionTestResult) => void = () => undefined;
+    mocked.testCredentials.mockImplementationOnce(
+      () => new Promise<ConnectionTestResult>((resolve) => (answer = resolve))
+    );
+    const autotask = card('Autotask');
+    const datto = card('Datto');
+    fireEvent.click(autotask.getByRole('button', { name: 'Test connection' }));
+
+    const testing = await autotask.findByRole('button', { name: 'Testing…' });
+    expect(testing).toBeDisabled();
+    expect(within(testing).getByRole('progressbar')).toBeInTheDocument();
+    expect(autotask.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(datto.getByRole('button', { name: 'Test connection' })).toBeDisabled();
+    expect(datto.getByRole('button', { name: 'Save' })).toBeDisabled();
+    expect(autotask.getByLabelText('Zone API URL')).toBeEnabled();
+    expect(datto.getByLabelText('Platform')).toBeEnabled();
+
+    answer(bothTested);
+    expect(await autotask.findByRole('button', { name: 'Test connection' })).toBeEnabled();
+    expect(datto.getByRole('button', { name: 'Test connection' })).toBeEnabled();
+  });
+
+  it('shows a refused save as a status chip, keeping the input, with the toast from the hook', async () => {
     await renderLoaded();
     mocked.saveCredentials.mockRejectedValue(
       new Error('Autotask refused the credentials: 401 Unauthorized')
@@ -187,18 +227,20 @@ describe('CredentialsSection', () => {
     fireEvent.change(autotask.getByLabelText('Secret'), { target: { value: 'hunter2' } });
     fireEvent.click(autotask.getByRole('button', { name: 'Save' }));
 
+    const chips = within(await autotask.findByRole('status'));
     expect(
-      await autotask.findByText('Autotask refused the credentials: 401 Unauthorized')
+      chips.getByText('Autotask refused the credentials: 401 Unauthorized')
     ).toBeInTheDocument();
     expect(useToastStore.getState().severity).toBe('error');
     expect(useToastStore.getState().message).toBe(
       'Autotask refused the credentials: 401 Unauthorized'
     );
     expect(autotask.getByLabelText('Secret')).toHaveValue('hunter2');
+    expect(autotask.getByRole('button', { name: 'Save' })).toBeEnabled();
   });
 
-  it('shows the detail of a status that cannot be read', async () => {
-    mocked.fetchCredentials.mockRejectedValue(
+  it('shows the detail of a status that cannot be read and retries on request', async () => {
+    mocked.fetchCredentials.mockRejectedValueOnce(
       new Error('The stored credentials cannot be decrypted with the current key')
     );
     render(<CredentialsSection />);
@@ -207,6 +249,12 @@ describe('CredentialsSection', () => {
         'Error: The stored credentials cannot be decrypted with the current key'
       )
     ).toBeInTheDocument();
-    expect(screen.queryByText('Autotask')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Autotask' })).toBeNull();
+
+    mocked.fetchCredentials.mockResolvedValueOnce(status);
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByRole('region', { name: 'Autotask' })).toBeInTheDocument();
+    expect(screen.queryByText(/cannot be decrypted/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
   });
 });

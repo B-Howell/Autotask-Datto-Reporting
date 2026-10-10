@@ -4,10 +4,10 @@
 
 ## Purpose
 
-`CredentialField` turns a `CredentialFieldStatus` entry into a labelled text field. It knows
-the human label for each field name, masks secrets, disables a field that the environment
-sets, and writes the helper text from the status so the operator can tell a stored value from
-a missing one without ever seeing it.
+`CredentialField` turns a `CredentialFieldStatus` entry into a labelled text field. It looks
+up the human label, masks secrets, disables a field that the environment sets, and writes the
+helper text from the status so the operator can tell a stored value from a missing one
+without ever seeing it.
 
 ## Interface
 
@@ -23,8 +23,9 @@ Default export: `CredentialField`.
 ## Uses
 
 - Material UI `TextField`.
+- [vendors](<Reporting Settings - vendors.md>) for `FIELD_LABELS`.
 - [dates util](<../../utils/Reporting Util - dates.md>) for `formatDateTime`.
-- [API types](<../../api/Reporting API - types.md>) for `CredentialFieldName` and `CredentialFieldStatus`.
+- [API types](<../../api/Reporting API - types.md>) for `CredentialFieldStatus`.
 
 ## Used By
 
@@ -32,9 +33,9 @@ Default export: `CredentialField`.
 
 ## Key Behavior
 
-- Labels: `Username`, `Secret`, `Integration code`, `Zone API URL` for Autotask and
-  `API key`, `API secret`, `Platform` for Datto. The `name` attribute carries the server's
-  field name.
+- The label comes from `FIELD_LABELS` (`Username`, `Secret`, `Integration code`,
+  `Zone API URL`; `API key`, `API secret`, `Platform`) and the `name` attribute carries the
+  server's field name.
 - A field marked `secret` renders as `type="password"`; the others are plain text. Browser
   autofill is turned off so a saved browser password is not pasted into a vendor key field.
 - Helper text by source: `stored` reads `Stored, ends with 1234, saved <when>` through
@@ -42,6 +43,7 @@ Default export: `CredentialField`.
   a value that is long enough to keep most of it unknown); `environment` reads `Set by the
   environment, read-only` and the input is disabled, since the server refuses to store a
   value that an environment variable would shadow; `missing` reads `Not configured`.
+- `disabled` is only ever true for demo mode; a running test or save leaves the input editable.
 
 ## Cleanup Notes
 

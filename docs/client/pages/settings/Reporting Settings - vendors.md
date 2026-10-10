@@ -1,0 +1,48 @@
+# vendors
+
+> The vendor and field catalogue the credential cards render from: labels, card order and field order.
+
+## Purpose
+
+`vendors.ts` is the one place that says which vendors the Settings page shows, in what order,
+which fields belong to each card and under which human label. The server lists the fields in
+its own order and names them by key; this module turns that into the page's layout so the
+section, the cards, the inputs and the outcome chips all agree without repeating the lists.
+
+## Interface
+
+| Export | Type | Description |
+|---|---|---|
+| `VENDOR_LABELS` | `Record<CredentialVendor, string>` | `Autotask` and `Datto`. |
+| `VENDORS` | `CredentialVendor[]` | The vendors in card order, derived from the label map's keys. |
+| `VENDOR_FIELDS` | `Record<CredentialVendor, CredentialFieldName[]>` | Each vendor's fields in the order its card lists them. |
+| `FIELD_LABELS` | `Record<CredentialFieldName, string>` | `Username`, `Secret`, `Integration code`, `Zone API URL`, `API key`, `API secret`, `Platform`. |
+| `vendorFields` | `(fields: CredentialFieldStatus[], vendor: CredentialVendor) => CredentialFieldStatus[]` | The vendor's status entries in `VENDOR_FIELDS` order; a name the server did not list is left out. |
+
+## Uses
+
+- [API types](<../../api/Reporting API - types.md>) for `CredentialVendor`, `CredentialFieldName` and `CredentialFieldStatus`.
+
+## Used By
+
+- [CredentialsSection](<Reporting Settings - CredentialsSection.md>) iterates `VENDORS` and picks each card's fields with `vendorFields`.
+- [VendorCredentialsCard](<Reporting Settings - VendorCredentialsCard.md>) titles itself from `VENDOR_LABELS`.
+- [ConnectionOutcomeChips](<Reporting Settings - ConnectionOutcomeChips.md>) labels one chip per entry of `VENDORS`.
+- [CredentialField](<Reporting Settings - CredentialField.md>) labels its input from `FIELD_LABELS`.
+
+## Key Behavior
+
+- `vendorFields` walks `VENDOR_FIELDS` rather than the server's list, so the cards keep their
+  layout whatever order the server serializes; a status entry under a name this module does
+  not know is dropped, which is where a newly added server field surfaces as a missing input
+  until it is listed here.
+- Both records are typed on the closed unions from `types.ts`, so adding a vendor or field
+  name there fails the build until a label exists.
+
+## Cleanup Notes
+
+- Covered by `vendors.test.ts`.
+
+## Source
+
+[client/src/pages/settings/vendors.ts](../../../../client/src/pages/settings/vendors.ts)

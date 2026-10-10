@@ -7,9 +7,11 @@ import { errorMessage } from '@/utils/reportJob';
 /**
  * The vendor credential status plus the two actions the Settings cards take on it.
  *
- * `test` and `save` reject with the server's detail so the card that asked can
- * show it beside its own inputs; a save that goes through replaces the status
- * with the one the server returns, so no second fetch is needed.
+ * Every toast about a save is raised here; `test` and `save` still reject with
+ * the server's detail so the card that asked can show it beside its own inputs.
+ * A test is followed by a reload, because the server stamps the outcome on the
+ * stored rows; a save that goes through replaces the status with the one the
+ * server returns, so no second fetch is needed there.
  */
 const useCredentials = () => {
   const [status, setStatus] = useState<CredentialsStatus | null>(null);
@@ -32,7 +34,7 @@ const useCredentials = () => {
     void reload();
   }, [reload]);
 
-  // One request at a time: both cards disable while either vendor is probed.
+  // One request at a time: every card's buttons disable while either vendor is probed.
   const whileBusy = async <T>(action: () => Promise<T>): Promise<T> => {
     setBusy(true);
     try {
@@ -43,12 +45,21 @@ const useCredentials = () => {
   };
 
   const test = (values: CredentialValues): Promise<ConnectionTestResult> =>
-    whileBusy(() => credentialsApi.testCredentials(values));
+    whileBusy(async () => {
+      const result = await credentialsApi.testCredentials(values);
+      await reload();
+      return result;
+    });
 
   const save = (values: CredentialValues): Promise<void> =>
     whileBusy(async () => {
-      setStatus(await credentialsApi.saveCredentials(values));
-      showToast('Credentials saved');
+      try {
+        setStatus(await credentialsApi.saveCredentials(values));
+        showToast('Credentials saved');
+      } catch (err) {
+        showToast(errorMessage(err) || 'The credentials were not saved', 'error');
+        throw err;
+      }
     });
 
   return { status, loading, error, reload, test, save, busy };

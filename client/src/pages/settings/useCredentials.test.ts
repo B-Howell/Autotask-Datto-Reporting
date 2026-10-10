@@ -82,7 +82,7 @@ describe('useCredentials', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('tests the given values and hands back both vendors, busy while in flight', async () => {
+  it('tests the given values, busy until the status is reloaded, and hands back both vendors', async () => {
     const { result } = await loaded();
     const outcome = {
       autotask: { ok: false, message: 'Autotask credentials are incomplete' },
@@ -92,17 +92,22 @@ describe('useCredentials', () => {
     mocked.testCredentials.mockImplementationOnce(
       () => new Promise<typeof outcome>((resolve) => (answer = resolve))
     );
+    // The server stamps the outcome on the stored rows, so the reload sees it.
+    mocked.fetchCredentials.mockResolvedValueOnce(stored);
     let pending: Promise<typeof outcome> = Promise.resolve(outcome);
     act(() => {
       pending = result.current.test({ datto_platform: 'zinfandel' });
     });
     expect(result.current.busy).toBe(true);
+    expect(mocked.fetchCredentials).toHaveBeenCalledTimes(1);
     await act(async () => {
       answer(outcome);
       await expect(pending).resolves.toEqual(outcome);
     });
     expect(result.current.busy).toBe(false);
     expect(mocked.testCredentials).toHaveBeenCalledWith({ datto_platform: 'zinfandel' });
+    expect(mocked.fetchCredentials).toHaveBeenCalledTimes(2);
+    expect(result.current.status).toEqual(stored);
   });
 
   it('keeps the status the save returns and toasts', async () => {
@@ -115,7 +120,7 @@ describe('useCredentials', () => {
     expect(mocked.fetchCredentials).toHaveBeenCalledTimes(1);
   });
 
-  it('lets a refused save reach the caller with the status untouched', async () => {
+  it('toasts a refused save as an error and lets it reach the caller, status untouched', async () => {
     const { result } = await loaded();
     mocked.saveCredentials.mockRejectedValue(new Error('Datto refused the credentials: 401'));
     await act(async () => {
@@ -125,6 +130,7 @@ describe('useCredentials', () => {
     });
     expect(result.current.status).toEqual(missing);
     expect(result.current.busy).toBe(false);
-    expect(useToastStore.getState().open).toBe(false);
+    expect(useToastStore.getState().severity).toBe('error');
+    expect(useToastStore.getState().message).toBe('Datto refused the credentials: 401');
   });
 });

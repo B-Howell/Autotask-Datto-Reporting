@@ -1,62 +1,20 @@
 import { useState } from 'react';
-import { Box, Button, Chip, Paper, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Paper, Stack, Typography } from '@mui/material';
 import type {
   ConnectionTestResult,
-  CredentialFieldName,
   CredentialFieldStatus,
   CredentialValues,
   CredentialVendor,
 } from '@/api';
-import useToastStore from '@/store/toastStore';
 import { formatDateTime } from '@/utils/dates';
 import { errorMessage } from '@/utils/reportJob';
+import ConnectionOutcomeChips from './ConnectionOutcomeChips';
+import type { ConnectionOutcome } from './ConnectionOutcomeChips';
 import CredentialField from './CredentialField';
+import { latestTest, typedValues } from './credentialValues';
+import { VENDOR_LABELS } from './vendors';
 
-const VENDOR_LABELS: Record<CredentialVendor, string> = { autotask: 'Autotask', datto: 'Datto' };
-const VENDORS = Object.keys(VENDOR_LABELS) as CredentialVendor[];
-
-type Outcome =
-  { kind: 'tested'; result: ConnectionTestResult } | { kind: 'failed'; message: string };
-
-/** The trimmed, non-blank entries: what a test or save sends. */
-const typedValues = (values: CredentialValues): CredentialValues => {
-  const typed: CredentialValues = {};
-  for (const [name, value] of Object.entries(values) as [CredentialFieldName, string][]) {
-    const trimmed = value.trim();
-    if (trimmed) typed[name] = trimmed;
-  }
-  return typed;
-};
-
-/** The vendor's most recent test, read from whichever of its stored rows carries it. */
-const latestTest = (fields: CredentialFieldStatus[]): CredentialFieldStatus | null =>
-  fields.reduce<CredentialFieldStatus | null>((latest, field) => {
-    if (!field.last_tested_at) return latest;
-    if (!latest?.last_tested_at || field.last_tested_at > latest.last_tested_at) return field;
-    return latest;
-  }, null);
-
-// A vendor's refusal can run to a sentence; let the chip wrap rather than clip it.
-const wrapLabel = { height: 'auto', '& .MuiChip-label': { whiteSpace: 'normal', py: 0.5 } };
-
-const OutcomeChips = ({ outcome }: { outcome: Outcome }) => {
-  if (outcome.kind === 'failed') {
-    return <Chip color="error" variant="outlined" label={outcome.message} sx={wrapLabel} />;
-  }
-  return (
-    <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>
-      {VENDORS.map((vendor) => (
-        <Chip
-          key={vendor}
-          color={outcome.result[vendor].ok ? 'success' : 'error'}
-          variant="outlined"
-          label={`${VENDOR_LABELS[vendor]}: ${outcome.result[vendor].message}`}
-          sx={wrapLabel}
-        />
-      ))}
-    </Stack>
-  );
-};
+type Action = 'test' | 'save';
 
 interface VendorCredentialsCardProps {
   vendor: CredentialVendor;
@@ -77,37 +35,48 @@ const VendorCredentialsCard = ({
   onSave,
 }: VendorCredentialsCardProps) => {
   const [values, setValues] = useState<CredentialValues>({});
-  const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const showToast = useToastStore((s) => s.showToast);
+  const [outcome, setOutcome] = useState<ConnectionOutcome | null>(null);
+  const [pending, setPending] = useState<Action | null>(null);
   const typed = typedValues(values);
+  const canSave = Object.keys(typed).length > 0;
   const lastTest = latestTest(fields);
+  const headingId = `${vendor}-credentials-heading`;
 
-  const runTest = async () => {
+  // A rejection carries the server's detail; the hook has already toasted a refused save.
+  const run = async (action: Action, task: () => Promise<void>, fallback: string) => {
+    setPending(action);
     try {
-      setOutcome({ kind: 'tested', result: await onTest(typed) });
+      await task();
     } catch (err) {
-      setOutcome({
-        kind: 'failed',
-        message: errorMessage(err) || 'The connection test did not run',
-      });
+      setOutcome({ kind: 'failed', message: errorMessage(err) || fallback });
+    } finally {
+      setPending(null);
     }
   };
 
-  const runSave = async () => {
-    try {
-      await onSave(typed);
-      setValues({});
-      setOutcome(null);
-    } catch (err) {
-      const message = errorMessage(err) || 'The credentials were not saved';
-      setOutcome({ kind: 'failed', message });
-      showToast(message, 'error');
-    }
-  };
+  const runTest = () =>
+    run(
+      'test',
+      async () => setOutcome({ kind: 'tested', result: await onTest(typed) }),
+      'The connection test did not run'
+    );
+
+  const runSave = () =>
+    run(
+      'save',
+      async () => {
+        await onSave(typed);
+        setValues({});
+        setOutcome(null);
+      },
+      'The credentials were not saved'
+    );
+
+  const spinner = <CircularProgress size={16} color="inherit" />;
 
   return (
-    <Paper component="section" variant="outlined" sx={{ p: 2, mb: 2 }}>
-      <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 600, mb: 2 }}>
+    <Paper component="section" aria-labelledby={headingId} variant="outlined" sx={{ p: 2, mb: 2 }}>
+      <Typography id={headingId} variant="subtitle1" component="h3" sx={{ fontWeight: 600, mb: 2 }}>
         {VENDOR_LABELS[vendor]}
       </Typography>
       <Stack sx={{ gap: 2 }}>
@@ -116,7 +85,7 @@ const VendorCredentialsCard = ({
             key={field.name}
             field={field}
             value={values[field.name] ?? ''}
-            disabled={disabled || busy}
+            disabled={disabled}
             onChange={(value) => setValues((current) => ({ ...current, [field.name]: value }))}
           />
         ))}
@@ -134,25 +103,23 @@ const VendorCredentialsCard = ({
         <Button
           variant="outlined"
           size="small"
+          startIcon={pending === 'test' ? spinner : undefined}
           onClick={() => void runTest()}
           disabled={disabled || busy}
         >
-          Test connection
+          {pending === 'test' ? 'Testing…' : 'Test connection'}
         </Button>
         <Button
           variant="contained"
           size="small"
+          startIcon={pending === 'save' ? spinner : undefined}
           onClick={() => void runSave()}
-          disabled={disabled || busy || Object.keys(typed).length === 0}
+          disabled={disabled || busy || !canSave}
         >
-          Save
+          {pending === 'save' ? 'Saving…' : 'Save'}
         </Button>
       </Box>
-      {outcome && (
-        <Box sx={{ mt: 2 }}>
-          <OutcomeChips outcome={outcome} />
-        </Box>
-      )}
+      {outcome && <ConnectionOutcomeChips outcome={outcome} />}
     </Paper>
   );
 };

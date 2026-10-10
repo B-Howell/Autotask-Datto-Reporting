@@ -1,10 +1,12 @@
-import { Paper, Typography } from '@mui/material';
-import type { CredentialVendor, CredentialsStatus } from '@/api';
+import { Button, Paper, Typography } from '@mui/material';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import type { CredentialsStatus } from '@/api';
 import { ErrorBanner, LoadingRow } from '@/components/report';
 import VendorCredentialsCard from './VendorCredentialsCard';
 import useCredentials from './useCredentials';
+import { VENDORS, vendorFields } from './vendors';
 
-const VENDORS: CredentialVendor[] = ['autotask', 'datto'];
+const HEADING_ID = 'vendor-credentials-heading';
 
 const KEY_SOURCE_TEXT: Record<CredentialsStatus['keySource'], string> = {
   environment: 'from APP_SECRET_KEY',
@@ -15,11 +17,11 @@ const DEMO_CAPTION = 'Demo mode simulates the vendor clients; credentials are no
 
 /** The Settings card where an operator enters, tests and saves the Autotask and Datto keys. */
 const CredentialsSection = () => {
-  const { status, loading, error, test, save, busy } = useCredentials();
+  const { status, loading, error, reload, test, save, busy } = useCredentials();
 
   return (
-    <Paper sx={{ p: 3, maxWidth: 600, mb: 3 }}>
-      <Typography variant="h6" sx={{ mb: 1 }}>
+    <Paper component="section" aria-labelledby={HEADING_ID} sx={{ p: 3, maxWidth: 600, mb: 3 }}>
+      <Typography id={HEADING_ID} variant="h6" sx={{ mb: 1 }}>
         Vendor credentials
       </Typography>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
@@ -27,6 +29,17 @@ const CredentialsSection = () => {
         tested against its vendor before it is saved, and a stored value is never shown again.
       </Typography>
       <ErrorBanner error={error} />
+      {error && (
+        <Button
+          variant="outlined"
+          size="small"
+          startIcon={<RefreshIcon />}
+          onClick={() => void reload()}
+          sx={{ mb: 2 }}
+        >
+          Retry
+        </Button>
+      )}
       {loading && <LoadingRow message="Loading credentials…" />}
       {status && (
         <>
@@ -42,7 +55,7 @@ const CredentialsSection = () => {
             <VendorCredentialsCard
               key={vendor}
               vendor={vendor}
-              fields={status.fields.filter((field) => field.vendor === vendor)}
+              fields={vendorFields(status.fields, vendor)}
               disabled={status.demoMode}
               busy={busy}
               onTest={test}
