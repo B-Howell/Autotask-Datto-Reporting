@@ -15,7 +15,6 @@ Like presets and schedules, these rows are user data with no upstream copy. The 
 | `get_all()` | Every row as a dict keyed by `name`. Each row carries `name`, `ciphertext` (bytes), `updated_at`, `last_tested_at` and `last_test_ok`, the last decoded to `True`, `False` or `None`. |
 | `upsert_many(entries)` | For every `(name, ciphertext)` pair, inserts the row or, when the name exists, replaces its ciphertext; `updated_at` is stamped with one timestamp for the whole call. All the writes go in one transaction, so a failure on any pair leaves every row as it was. The test columns are left as they were. |
 | `record_test(names, ok)` | Sets `last_tested_at` to now and `last_test_ok` to 1 or 0 on every row whose name is in `names`. A name with no row is skipped silently; an empty list is a no-op. |
-| `delete(name)` | Deletes the row; a missing name is harmless. |
 | `delete_all()` | Deletes every row in one statement, so no transaction is needed; an empty table is harmless. The service calls it to forget the stored credentials. |
 
 ## Uses
@@ -38,6 +37,7 @@ Like presets and schedules, these rows are user data with no upstream copy. The 
 ## Cleanup Notes
 
 - `record_test` could take the vendor name and own the `name IN (...)` list itself, but that would move knowledge of which field belongs to which vendor into the repository; the service passes the names instead so the mapping lives in one place.
+- There is no single-row delete: nothing in the application clears one value (a save replaces, a forget removes all), so the module offers only `delete_all`.
 
 ## Source
 

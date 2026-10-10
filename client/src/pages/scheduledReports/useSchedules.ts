@@ -45,7 +45,7 @@ const useSchedules = () => {
       setError(null);
     } catch (err) {
       if (ticket !== ticketRef.current) return;
-      setError(errorMessage(err) || 'Schedules could not be loaded');
+      setError(errorMessage(err, 'Schedules could not be loaded'));
     }
     setLoading(false);
   }, [selectedId]);
@@ -63,7 +63,7 @@ const useSchedules = () => {
       const updated = await schedulesApi.updateSchedule(id, { enabled });
       setSchedules((rows) => rows.map((row) => (row.id === id ? updated : row)));
     } catch (err) {
-      showToast(errorMessage(err) || 'The schedule could not be updated', 'error');
+      showToast(errorMessage(err, 'The schedule could not be updated'), 'error');
     }
   };
 
@@ -78,7 +78,7 @@ const useSchedules = () => {
       if (selectedId === id) setSelectedId(null);
       showToast('Schedule deleted; its preset is kept', 'info');
     } catch (err) {
-      showToast(errorMessage(err) || 'The schedule could not be deleted', 'error');
+      showToast(errorMessage(err, 'The schedule could not be deleted'), 'error');
     }
     setRemoving(false);
     setRemoveTarget(null);
@@ -92,7 +92,7 @@ const useSchedules = () => {
       showToast('Run started', 'info');
       setStatus({ running: true, schedule_id: id });
     } catch (err) {
-      showToast(errorMessage(err) || 'The run could not start', 'error');
+      showToast(errorMessage(err, 'The run could not start'), 'error');
     }
   };
 

@@ -85,9 +85,10 @@ export async function runReportJob<T>({
   }
 }
 
-export function errorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return String(err);
+/** The text of `err`, or `fallback` when it carries none (an `Error` with an empty message). */
+export function errorMessage(err: unknown, fallback = ''): string {
+  const message = err instanceof Error ? err.message : String(err);
+  return message || fallback;
 }
 
 export function isAbortError(err: unknown): boolean {

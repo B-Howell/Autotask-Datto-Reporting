@@ -1,6 +1,6 @@
 import pytest
 import requests
-from conftest import SAMPLE_DATTO
+from conftest import SAMPLE_DATTO, store_values
 
 from integrations import datto, http_errors
 from services import credentials
@@ -73,7 +73,7 @@ def test_a_save_drops_the_token_and_the_next_request_uses_the_new_values(configu
     client.get("account/devices")
 
     rotated = {"datto_api_secret": "rotated-secret-not-real", "datto_platform": "other"}
-    credentials.save(rotated)
+    store_values(rotated)
     client.get("account/devices")
 
     assert fake_requests.posts[-1] == _token_post(

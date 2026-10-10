@@ -40,7 +40,7 @@ const {
 - [API types](<../../api/Reporting API - types.md>) for `ReportSchedule`, `RunnerStatus` and `ScheduleRun`.
 - [usePolling](<../../hooks/Reporting Hook - usePolling.md>) for the refresh timer.
 - [toastStore](<../../store/Reporting Store - toastStore.md>) for every outcome message.
-- [reportJob util](<../../utils/Reporting Util - reportJob.md>) for `errorMessage`; each failure toast and the load error use it with a fallback sentence (`Schedules could not be loaded`, `The schedule could not be updated`, `The schedule could not be deleted`, `The run could not start`) for an error that carries no text.
+- [reportJob util](<../../utils/Reporting Util - reportJob.md>) for `errorMessage`; each failure toast and the load error pass it a fallback sentence (`Schedules could not be loaded`, `The schedule could not be updated`, `The schedule could not be deleted`, `The run could not start`) for an error that carries no text.
 
 ## Used By
 

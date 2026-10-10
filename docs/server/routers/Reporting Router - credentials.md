@@ -44,7 +44,7 @@ The Settings page is where an operator enters the Autotask and Datto credentials
 
 ## Cleanup Notes
 
-- There is no route to clear one stored value; `save` replaces values and never deletes them, and the repository's `delete` is not exposed. DELETE is all or nothing, so clearing one vendor means replacing its values or forgetting everything and re-entering the other vendor.
+- There is no route to clear one stored value; a save replaces values and never deletes them, and the repository has no single-row delete. DELETE is all or nothing, so clearing one vendor means replacing its values or forgetting everything and re-entering the other vendor.
 
 ## Source
 

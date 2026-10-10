@@ -94,12 +94,15 @@ Key properties:
   hundreds of paginated API calls and take minutes. The architecture treats a
   report as a job with a log stream, progress phases and cooperative
   cancellation, not as a request that returns quickly.
-- **Everything is configured from the environment.** Credentials, the Autotask
-  zone, the Datto platform, sync interval, CORS origins, the renderer's
-  address, the delivery flow URL and the schedule timezone come from `.env`.
-  Nothing tenant-specific is baked into code paths: presentation values live
-  in a data file, and the one module that holds tenant rules is overridden
-  from an untracked file (section 14).
+- **Nothing deployment-specific is in code.** The sync interval, CORS
+  origins, the renderer's address, the delivery flow URL and the schedule
+  timezone come from `.env` once at startup. The vendor credentials, the
+  Autotask zone and the Datto platform are resolved per request: from the
+  environment when a deployment injects them, otherwise from the encrypted
+  store the Settings page writes, so the server starts without them and a
+  rotation needs no restart (section 13). Presentation values live in a data
+  file, and the one module that holds tenant rules is overridden from an
+  untracked file (section 14).
 
 ## 3. The life of a report request
 
@@ -229,8 +232,11 @@ original code downloaded it five times per device report.
 
 `AutotaskClient` therefore offers `query_page`, `query_all` (cursor-paged,
 with a progress callback), `query_by_ids` (chunked), `get`, `patch` and
-`picklist`. Every service call maps onto one of those, and the base URL,
-credentials and timeout are set once from settings.
+`picklist`. Every service call maps onto one of those. The timeout is set
+once from settings; the base URL and credentials are asked of the
+credentials service before each request, so a value saved on the Settings
+page is used by the next call and the picklist cache is dropped when the
+values change.
 
 ### Datto RMM
 

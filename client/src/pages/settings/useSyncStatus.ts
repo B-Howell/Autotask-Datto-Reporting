@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { syncApi } from '@/api';
-import type { SyncStatus } from '@/api';
+import type { SyncRefusal, SyncStatus } from '@/api';
 import usePolling from '@/hooks/usePolling';
+import useToastStore from '@/store/toastStore';
 
 const IDLE_STATUS: SyncStatus = {
   running: false,
@@ -16,11 +17,18 @@ const IDLE_STATUS: SyncStatus = {
 
 const POLL_MS = 1500;
 
+// What the page says when the server started nothing; the sync log carries the detail.
+const REFUSALS: Record<SyncRefusal, string> = {
+  running: 'Sync skipped: one is already running',
+  credentials: 'Sync skipped: vendor credentials are not configured',
+};
+
 /** Sync status (polled while a sync runs) plus the live log stream of the sync we started. */
 const useSyncStatus = () => {
   const [status, setStatus] = useState<SyncStatus>(IDLE_STATUS);
   const [logs, setLogs] = useState<string[]>([]);
   const logSourceRef = useRef<EventSource | null>(null);
+  const showToast = useToastStore((s) => s.showToast);
 
   const refresh = useCallback(async () => {
     try {
@@ -49,7 +57,8 @@ const useSyncStatus = () => {
     src.onerror = () => src.close();
     logSourceRef.current = src;
     try {
-      await syncApi.triggerSync();
+      const { started, reason } = await syncApi.triggerSync();
+      if (!started && reason) showToast(REFUSALS[reason], 'warning');
     } catch (err) {
       console.error('Sync failed to start', err);
     }

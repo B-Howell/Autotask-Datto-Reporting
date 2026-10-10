@@ -11,7 +11,7 @@
 | Function | Server route | Parameters | Returns |
 |---|---|---|---|
 | `fetchSyncStatus` | `GET /api/sync/status` | none | `Promise<SyncStatus>` |
-| `triggerSync` | `POST /api/sync` | none | `Promise<SyncTriggerResponse>` (`SyncStatus` plus `started`) |
+| `triggerSync` | `POST /api/sync` | none | `Promise<SyncTriggerResponse>` (`SyncStatus` plus `started` and `reason`) |
 | `SYNC_LOGS_URL` | `GET /api/sync/logs` | constant | The SSE URL string |
 
 ## Uses
@@ -26,7 +26,7 @@
 ## Key Behavior
 
 - `triggerSync` posts with no body, so no `Content-Type` header is sent.
-- `started` is `false` when a sync was already running; the response still carries the current status so the page can render it without a second call.
+- `started` is `false` when the server started nothing, and `reason` then says why: `running` (a sync was already in flight) or `credentials` (a vendor has no credentials outside demo mode); it is `null` when the sync started. The response still carries the current status so the page can render it without a second call.
 - The sync is not a tracked report job: it does not go through `runReportJob` and does not appear in the status bar. The settings hook polls `fetchSyncStatus` and opens `SYNC_LOGS_URL` itself.
 - Timestamps (`started_at`, `finished_at`, `last_synced_at`) are ISO strings or `null`, formatted on the page with `formatDateTime`.
 - The server also exposes `GET /api/sync/state`, which this module does not call.

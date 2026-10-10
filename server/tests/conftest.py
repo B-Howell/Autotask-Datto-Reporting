@@ -78,9 +78,14 @@ def store(temp_db, tmp_path, monkeypatch):
     secrets.reset_cache()
 
 
+def store_values(values):
+    """Validate and store `values` as a tested save does, without the probes."""
+    credentials.store_changes(credentials.changes(values))
+
+
 @pytest.fixture
 def configured(store):
     """Both vendors configured from the store; returns the values in effect."""
     values = {**SAMPLE_AUTOTASK, **SAMPLE_DATTO}
-    store.save(values)
+    store_values(values)
     return values

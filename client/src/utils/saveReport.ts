@@ -9,8 +9,8 @@ export interface SaveReportArgs extends SavedReportMeta {
   filename: string;
 }
 
-/** The file name without its extension: what a saved report is called unless a title is given. */
-export function fileStem(filename: string): string {
+/** The file name without its last extension: what a saved report is called unless a title is given. */
+function fileStem(filename: string): string {
   return filename.replace(/\.[^.\s]+$/, '');
 }
 

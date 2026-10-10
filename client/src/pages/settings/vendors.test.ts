@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CredentialFieldName, CredentialFieldStatus } from '@/api';
-import { hasStoredField, vendorFields } from './vendors';
+import { VENDOR_LABELS, hasStoredField, vendorFields } from './vendors';
 
 const field = (name: CredentialFieldName): CredentialFieldStatus => ({
   name,
@@ -12,6 +12,13 @@ const field = (name: CredentialFieldName): CredentialFieldStatus => ({
   updated_at: null,
   last_tested_at: null,
   last_test_ok: null,
+});
+
+describe('VENDOR_LABELS', () => {
+  it('names exactly the two vendors with the words the server uses', () => {
+    // The server's VENDOR_LABELS in services/credentials.py is the other half of this.
+    expect(VENDOR_LABELS).toEqual({ autotask: 'Autotask', datto: 'Datto' });
+  });
 });
 
 describe('vendorFields', () => {

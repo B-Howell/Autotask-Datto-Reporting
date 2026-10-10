@@ -231,8 +231,12 @@ export interface SyncStatus {
   last_synced_at: string | null;
 }
 
+/** Why `POST /api/sync` started nothing: a sync is in flight, or a vendor has no credentials. */
+export type SyncRefusal = 'running' | 'credentials';
+
 export interface SyncTriggerResponse extends SyncStatus {
   started: boolean;
+  reason: SyncRefusal | null;
 }
 
 /** The two file types the Office and Windows report can be exported or mailed as. */

@@ -48,7 +48,7 @@ const VendorCredentialsCard = ({
     try {
       await task();
     } catch (err) {
-      setOutcome({ kind: 'failed', message: errorMessage(err) || fallback });
+      setOutcome({ kind: 'failed', message: errorMessage(err, fallback) });
     } finally {
       setPending(null);
     }

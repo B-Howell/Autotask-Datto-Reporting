@@ -13,11 +13,10 @@ section, the cards, the inputs and the outcome chips all agree without repeating
 
 | Export | Type | Description |
 |---|---|---|
-| `VENDOR_LABELS` | `Record<CredentialVendor, string>` | `Autotask` and `Datto`. |
+| `VENDOR_LABELS` | `Record<CredentialVendor, string>` | `Autotask` and `Datto`. Must match `VENDOR_LABELS` in the server's [credentials service](<../../../server/services/Reporting Service - credentials.md>), whose messages name the vendors the same way; a comment on each side points at the other and the test pins the pair. |
 | `VENDORS` | `CredentialVendor[]` | The vendors in card order, derived from the label map's keys. |
-| `VENDOR_FIELDS` | `Record<CredentialVendor, CredentialFieldName[]>` | Each vendor's fields in the order its card lists them. |
 | `FIELD_LABELS` | `Record<CredentialFieldName, string>` | `Username`, `Secret`, `Integration code`, `Zone API URL`, `API key`, `API secret`, `Platform`. |
-| `vendorFields` | `(fields: CredentialFieldStatus[], vendor: CredentialVendor) => CredentialFieldStatus[]` | The vendor's status entries in `VENDOR_FIELDS` order; a name the server did not list is left out. |
+| `vendorFields` | `(fields: CredentialFieldStatus[], vendor: CredentialVendor) => CredentialFieldStatus[]` | The vendor's status entries in card order, from the module-private `VENDOR_FIELDS` table; a name the server did not list is left out. |
 | `hasStoredField` | `(fields: CredentialFieldStatus[]) => boolean` | True when any entry's `source` is `stored`; environment and missing fields do not count. |
 
 ## Uses
@@ -36,7 +35,8 @@ section, the cards, the inputs and the outcome chips all agree without repeating
 - `vendorFields` walks `VENDOR_FIELDS` rather than the server's list, so the cards keep their
   layout whatever order the server serializes; a status entry under a name this module does
   not know is dropped, which is where a newly added server field surfaces as a missing input
-  until it is listed here.
+  until it is listed here. The table is not exported: `vendorFields` is its only reader, so
+  the card order has one owner.
 - `hasStoredField` looks only at `source`, not `configured`, because a field the environment
   supplies is configured but has no row to forget.
 - Both records are typed on the closed unions from `types.ts`, so adding a vendor or field
@@ -44,7 +44,7 @@ section, the cards, the inputs and the outcome chips all agree without repeating
 
 ## Cleanup Notes
 
-- Covered by `vendors.test.ts`.
+- Covered by `vendors.test.ts`, which also pins `VENDOR_LABELS` to the server's words.
 
 ## Source
 

@@ -1,3 +1,4 @@
+from conftest import store_values
 from fastapi.testclient import TestClient
 
 from core import secrets
@@ -39,7 +40,7 @@ def test_a_report_without_credentials_is_a_503_naming_settings(store):
 
 
 def test_a_report_whose_stored_credentials_cannot_be_read_is_a_503(store, tmp_path):
-    credentials.save({"autotask_username": "u"})
+    store_values({"autotask_username": "u"})
     (tmp_path / "secret.key").unlink()
     secrets.reset_cache()
     credentials.invalidate()

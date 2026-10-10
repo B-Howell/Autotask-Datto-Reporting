@@ -11,8 +11,7 @@
 | Export | Signature | Description |
 |---|---|---|
 | `SaveReportArgs` | interface | `SavedReportMeta` plus `blob` and `filename`. |
-| `fileStem` | `(filename) => string` | The name without its last extension (`Patch Summary 10-9-26.pdf` to `Patch Summary 10-9-26`); a name with no extension is returned as is. |
-| `saveReportBlob` | `(args) => Promise<SaveReportResponse>` | Uploads, toasts `<title> saved to app` or `Save failed: <reason>`, rethrows on failure. The title defaults to `fileStem(filename)`. |
+| `saveReportBlob` | `(args) => Promise<SaveReportResponse>` | Uploads, toasts `<title> saved to app` or `Save failed: <reason>`, rethrows on failure. The title defaults to the file name without its last extension (`Patch Summary 10-9-26.pdf` to `Patch Summary 10-9-26`; a name with no extension is used as is), computed by the module-private `fileStem`. |
 | `downloadBlob` | `(blob, filename) => void` | Object URL, hidden anchor click, URL revoked. |
 | `DeliverArgs` | interface | `blob`, `filename`, `save?` (default `false`), `meta?`. |
 | `deliverBlob` | `(args) => Promise<SaveReportResponse \| null>` | Download unless `save`, then upload; `null` if the upload failed. |
@@ -42,7 +41,7 @@
 
 ## Cleanup Notes
 
-- `saveReport.test.ts` covers `fileStem` and the default title; `downloadBlob` and `deliverBlob` are exercised only through the pages.
+- `saveReport.test.ts` covers the default title (and through it the stem rule, including a dotted name and one with no extension); `downloadBlob` and `deliverBlob` are exercised only through the pages.
 
 ## Source
 

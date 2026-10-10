@@ -1,6 +1,6 @@
 import pytest
 import requests
-from conftest import SAMPLE_AUTOTASK, SAMPLE_DATTO
+from conftest import SAMPLE_AUTOTASK, SAMPLE_DATTO, store_values
 
 from integrations import autotask, datto, http_errors
 from services import connection_tests, credentials
@@ -142,7 +142,7 @@ def test_a_short_plain_value_does_not_blank_unrelated_words(probes):
 
 
 def test_a_stored_value_left_blank_on_the_form_is_blanked_too(probes):
-    credentials.save(VALUES)
+    store_values(VALUES)
     probes.setattr(datto, "probe", _refusing(401, f"Key {SAMPLE_DATTO['datto_api_key']}"))
 
     result = connection_tests.test_connection({"datto_api_key": ""})
@@ -152,7 +152,7 @@ def test_a_stored_value_left_blank_on_the_form_is_blanked_too(probes):
 
 def test_an_incomplete_vendor_is_reported_without_a_probe_or_a_record(probes):
     probes.setattr(datto, "probe", _never_called)
-    credentials.save({"datto_platform": "example"})
+    store_values({"datto_platform": "example"})
 
     result = connection_tests.test_connection(SAMPLE_AUTOTASK)
 
@@ -164,7 +164,7 @@ def test_an_incomplete_vendor_is_reported_without_a_probe_or_a_record(probes):
 
 
 def test_test_connection_records_only_the_vendors_tested_with_their_stored_values(probes):
-    credentials.save(VALUES)
+    store_values(VALUES)
     probes.setattr(datto, "probe", _refusing(401, "Unauthorized"))
 
     connection_tests.test_connection({"datto_api_key": "submitted-not-real"})

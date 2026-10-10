@@ -1,5 +1,8 @@
 import type { CredentialFieldName, CredentialFieldStatus, CredentialVendor } from '@/api';
 
+// Must match VENDOR_LABELS in server/services/credentials.py: the server names
+// the vendors with these in its messages, and the cards are titled the same
+// way, so a refusal reads as coming from the card it belongs to.
 export const VENDOR_LABELS: Record<CredentialVendor, string> = {
   autotask: 'Autotask',
   datto: 'Datto',
@@ -8,8 +11,8 @@ export const VENDOR_LABELS: Record<CredentialVendor, string> = {
 /** The vendors in the order the Settings page lists their cards. */
 export const VENDORS = Object.keys(VENDOR_LABELS) as CredentialVendor[];
 
-/** Each vendor's fields in the order its card lists them. */
-export const VENDOR_FIELDS: Record<CredentialVendor, CredentialFieldName[]> = {
+/** Each vendor's fields in the order its card lists them; `vendorFields` is the way in. */
+const VENDOR_FIELDS: Record<CredentialVendor, CredentialFieldName[]> = {
   autotask: [
     'autotask_username',
     'autotask_secret',

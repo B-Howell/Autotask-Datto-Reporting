@@ -7,6 +7,7 @@ it is cached once on first view and left alone.
 """
 
 import threading
+from dataclasses import dataclass
 from datetime import datetime
 from threading import Lock
 
@@ -27,6 +28,21 @@ from services import (
 
 STREAM = "sync"
 _VENDORS = (credentials.AUTOTASK, credentials.DATTO)
+
+# Why `SyncRunner.start()` refused, for the route to pass to the page.
+ALREADY_RUNNING = "running"
+CREDENTIALS_MISSING = "credentials"
+
+
+@dataclass(frozen=True)
+class StartOutcome:
+    """Whether `SyncRunner.start()` started a sync and, when it did not, why."""
+
+    started: bool
+    reason: str | None = None
+
+
+STARTED = StartOutcome(True)
 
 
 def _require_vendors():
@@ -145,22 +161,23 @@ class SyncRunner:
     def start(self):
         """Start a sync on a worker thread.
 
-        Returns False, starting nothing, when one is already running or when a
-        vendor has no usable credentials; the skip is written to the sync
-        stream so the Settings page shows why nothing happened.
+        Returns a `StartOutcome`: `STARTED`, or `started=False` with the reason
+        `CREDENTIALS_MISSING` when a vendor has no usable credentials (the skip
+        is written to the sync stream too, so the Settings page shows why
+        nothing happened) or `ALREADY_RUNNING` when one is in flight.
         """
         try:
             _require_vendors()
         except (credentials.CredentialsMissing, secrets.SecretsError) as exc:
             streams.report_logger(STREAM, clear=False)(f"[WARN] Sync skipped: {exc}")
-            return False
+            return StartOutcome(False, CREDENTIALS_MISSING)
         with self._lock:
             if self._status["running"]:
-                return False
+                return StartOutcome(False, ALREADY_RUNNING)
             self._status = {**self._idle(), "running": True, "started_at": sqlite.iso_now()}
         streams.get_buffer(STREAM).clear()
         threading.Thread(target=self._run, daemon=True).start()
-        return True
+        return STARTED
 
     def _on_progress(self, done, total, current):
         with self._lock:

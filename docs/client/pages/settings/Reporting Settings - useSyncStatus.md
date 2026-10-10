@@ -20,7 +20,7 @@ Returns `{ status, logs, startSync }`:
 |---|---|---|
 | `status` | `SyncStatus` | Latest server status; starts as `IDLE_STATUS` (not running, zero counts, null timestamps). |
 | `logs` | `string[]` | Lines received on the SSE stream since `startSync` was last called. |
-| `startSync` | `() => Promise<void>` | Opens the log stream, posts the trigger, then refreshes status. |
+| `startSync` | `() => Promise<void>` | Opens the log stream, posts the trigger, toasts a refusal, then refreshes status. |
 
 `POLL_MS` is 1500.
 
@@ -30,7 +30,8 @@ Returns `{ status, logs, startSync }`:
 - [usePolling](<../../hooks/Reporting Hook - usePolling.md>) for the running-only poll.
 - [sync API](<../../api/Reporting API - sync.md>) for `fetchSyncStatus`, `triggerSync` and
   `SYNC_LOGS_URL`.
-- [API types](<../../api/Reporting API - types.md>) for `SyncStatus`.
+- [toastStore](<../../store/Reporting Store - toastStore.md>) for the refusal toast.
+- [API types](<../../api/Reporting API - types.md>) for `SyncStatus` and `SyncRefusal`.
 
 ## Used By
 
@@ -48,6 +49,9 @@ Returns `{ status, logs, startSync }`:
 - `startSync` clears `logs`, closes any previous stream, opens a new `EventSource` on
   `SYNC_LOGS_URL` before calling `triggerSync`, so the first lines are not missed. Each
   message appends `e.data`; an `onerror` closes the source (no reconnect).
+- A trigger the server refuses (`started: false`) is toasted as a warning from `REFUSALS`:
+  `Sync skipped: one is already running` or `Sync skipped: vendor credentials are not
+  configured`; the sync log stream carries the server's own line naming the vendor.
 - A failed trigger is logged to the console and the hook still refreshes status, so the UI
   reflects whatever the server believes.
 - `startSync` is not memoised, so it is a new function each render; the section's button
@@ -58,6 +62,7 @@ Returns `{ status, logs, startSync }`:
 - The log stream is never closed on completion, only on error or unmount; the browser keeps
   the SSE connection open until the page is left.
 - A sync that was started elsewhere (scheduler or another tab) shows progress but no log.
+- Covered by `useSyncStatus.test.ts`, with `EventSource` stubbed since jsdom has none.
 
 ## Source
 

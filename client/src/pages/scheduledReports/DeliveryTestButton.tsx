@@ -30,7 +30,7 @@ const DeliveryTestButton = () => {
       showToast(`Test message sent to ${recipient}`);
       setOpen(false);
     } catch (err) {
-      showToast(errorMessage(err) || 'The test message was not sent', 'error');
+      showToast(errorMessage(err, 'The test message was not sent'), 'error');
     }
     setSending(false);
   };

@@ -29,7 +29,7 @@ const useCredentials = () => {
       setError(null);
       setUnreadable(false);
     } catch (err) {
-      setError(errorMessage(err) || 'The credential status could not be loaded');
+      setError(errorMessage(err, 'The credential status could not be loaded'));
       setUnreadable(credentialsApi.isUnreadable(err));
     }
     setLoading(false);
@@ -62,7 +62,7 @@ const useCredentials = () => {
         setStatus(await credentialsApi.saveCredentials(values));
         showToast('Credentials saved');
       } catch (err) {
-        showToast(errorMessage(err) || 'The credentials were not saved', 'error');
+        showToast(errorMessage(err, 'The credentials were not saved'), 'error');
         throw err;
       }
     });
@@ -74,7 +74,7 @@ const useCredentials = () => {
       try {
         await credentialsApi.forgetCredentials();
       } catch (err) {
-        showToast(errorMessage(err) || 'The stored credentials were not forgotten', 'error');
+        showToast(errorMessage(err, 'The stored credentials were not forgotten'), 'error');
         return;
       }
       showToast('Stored credentials forgotten');

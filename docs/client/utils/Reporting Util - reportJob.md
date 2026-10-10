@@ -15,7 +15,7 @@ The design decision is the split between structured progress and human log lines
 | `PROGRESS_PREFIX` | `'[PROGRESS] '` | Must match `PROGRESS_PREFIX` in `server/core/progress.py`. |
 | `ReportJobOptions<T>` | interface | `label`, `logsUrl?`, `run(signal)`, `onLogs?(lines)`, `route?`. |
 | `runReportJob<T>` | `(options) => Promise<T>` | Runs the job and resolves with `run`'s result; rethrows its error. |
-| `errorMessage` | `(err: unknown) => string` | `err.message` for an `Error`, otherwise `String(err)`. |
+| `errorMessage` | `(err: unknown, fallback?: string) => string` | `err.message` for an `Error`, otherwise `String(err)`; when that text is empty, `fallback` (default `''`). |
 | `isAbortError` | `(err: unknown) => boolean` | True for a `DOMException` named `AbortError`. |
 
 ## Uses
@@ -29,7 +29,8 @@ The design decision is the split between structured progress and human log lines
 - [useTrackedReport](<../hooks/Reporting Hook - useTrackedReport.md>) wraps `runReportJob` for every report hook and uses `isAbortError` and `errorMessage`.
 - [useReportingData](<../hooks/Reporting Hook - useReportingData.md>) and [SavedReportViewer](<../components/Reporting Component - SavedReportViewer.md>) use `errorMessage` for toasts.
 - [saveReport util](<Reporting Util - saveReport.md>) uses `errorMessage`.
-- [useSchedules](<../pages/scheduledReports/Reporting Scheduled Reports - useSchedules.md>), [RendererStatusChip](<../pages/scheduledReports/Reporting Scheduled Reports - RendererStatusChip.md>) and [DeliveryTestButton](<../pages/scheduledReports/Reporting Scheduled Reports - DeliveryTestButton.md>) use `errorMessage` with an `|| <fallback>` for an error that carries no text.
+- [useSchedules](<../pages/scheduledReports/Reporting Scheduled Reports - useSchedules.md>), [RendererStatusChip](<../pages/scheduledReports/Reporting Scheduled Reports - RendererStatusChip.md>), [DeliveryTestButton](<../pages/scheduledReports/Reporting Scheduled Reports - DeliveryTestButton.md>), [useCredentials](<../pages/settings/Reporting Settings - useCredentials.md>) and [VendorCredentialsCard](<../pages/settings/Reporting Settings - VendorCredentialsCard.md>) pass `errorMessage` a fallback sentence for an error that carries no text.
+- [client/src/utils/reportJob.test.ts](../../../client/src/utils/reportJob.test.ts) covers `errorMessage` and `isAbortError`.
 
 ## Key Behavior
 
@@ -44,6 +45,7 @@ The design decision is the split between structured progress and human log lines
 ## Cleanup Notes
 
 - `PROGRESS_PREFIX` is exported but only used within this file; the export exists to document the contract with the server.
+- `runReportJob` itself has no unit test; it is exercised through the report hooks.
 
 ## Source
 

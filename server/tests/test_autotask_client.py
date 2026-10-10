@@ -1,6 +1,6 @@
 import pytest
 import requests
-from conftest import SAMPLE_AUTOTASK
+from conftest import SAMPLE_AUTOTASK, store_values
 
 from integrations import autotask, http_errors
 from integrations.autotask import ID_CHUNK_SIZE, AutotaskClient, Connection
@@ -131,7 +131,7 @@ def test_a_rotated_secret_is_used_by_the_next_request(configured):
     client._session = session
     client.get("Tickets", 7)
 
-    credentials.save({"autotask_secret": "rotated-secret-not-real"})
+    store_values({"autotask_secret": "rotated-secret-not-real"})
     client.query_page("Tickets", [])
 
     assert session.requests[-1][1]["Secret"] == "rotated-secret-not-real"
@@ -146,7 +146,7 @@ def test_a_save_clears_the_picklist_cache(configured, monkeypatch):
     client.picklist("Tickets", "priority")
     assert len(session.requests) == 1
 
-    credentials.save({"autotask_base_url": "https://other.example.test/ATServicesRest"})
+    store_values({"autotask_base_url": "https://other.example.test/ATServicesRest"})
     client.picklist("Tickets", "priority")
 
     assert len(session.requests) == 2

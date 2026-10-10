@@ -9,8 +9,9 @@ router = APIRouter(prefix="/api/sync", tags=["sync"])
 
 @router.post("")
 def trigger_sync():
-    started = runner.start()
-    return {"started": started, **runner.status()}
+    """Start a sync; `reason` says why not (`running` or `credentials`) when `started` is false."""
+    outcome = runner.start()
+    return {"started": outcome.started, "reason": outcome.reason, **runner.status()}
 
 
 @router.get("/status")

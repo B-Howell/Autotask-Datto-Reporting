@@ -10,8 +10,8 @@ The sync refreshes every report's cached snapshot from the live APIs, on the sch
 
 | Method | Path | Query/body | Returns | Error mapping |
 |---|---|---|---|---|
-| POST | `/api/sync` | none | `{started: bool, running, started_at, finished_at, error, done, total, current, last_synced_at}` | none |
-| GET | `/api/sync/status` | none | the same status object without `started` | none |
+| POST | `/api/sync` | none | `{started: bool, reason: "running" or "credentials" or null, running, started_at, finished_at, error, done, total, current, last_synced_at}` | none |
+| GET | `/api/sync/status` | none | the same status object without `started` and `reason` | none |
 | GET | `/api/sync/state` | none | `{sync_state: [{report_type, params_key, last_synced_at, status, error}], device_office_coverage: [{company_id, site_id, devices, blank_office, synced_at}]}` | none |
 | GET | `/api/sync/logs` | none | SSE stream of the `sync` buffer | none |
 
@@ -31,7 +31,7 @@ The sync is not a report job: it does not use `run_report`, has no job record, a
 
 ## Key Behavior
 
-- POST answers `started: false` with the current status when a sync is already running, and likewise when a vendor has no credentials outside demo mode (the runner writes `[WARN] Sync skipped: ...` to the sync stream, so `/logs` shows why); it never queues a second one. The same runner is what the scheduler in `main.py` calls, so a manual trigger and a scheduled one cannot overlap.
+- POST answers `started: false` with the current status when a sync is already running (`reason: "running"`), and likewise when a vendor has no credentials outside demo mode (`reason: "credentials"`; the runner also writes `[WARN] Sync skipped: ...` to the sync stream, so `/logs` shows which vendor); it never queues a second one. `reason` is `null` when the sync started, so the key is always present. The route reads the runner's `StartOutcome` and passes its two fields through; the Settings page turns the reason into a toast. The same runner is what the scheduler in `main.py` calls, so a manual trigger and a scheduled one cannot overlap.
 - Starting a sync clears the `sync` buffer, then logs on a daemon thread with `clear=False`; `/logs` followers see `[INFO] Sync starting: N steps`, one `[INFO] (i/N) label` per step, `[WARN]` for a step that failed, and `[DONE] Sync complete`.
 - `done`, `total` and `current` in the status come from the runner's progress callback and advance per step; `last_synced_at` is read from `sync_state` on every status call, so it persists across restarts while the rest of the status does not.
 - A step that raises is logged and skipped; `error` in the status is only set if the sync loop itself fails.

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 import requests
-from conftest import SAMPLE_AUTOTASK, SAMPLE_DATTO
+from conftest import SAMPLE_AUTOTASK, SAMPLE_DATTO, store_values
 from fastapi.testclient import TestClient
 
 from config import settings
@@ -69,7 +69,7 @@ def _field(fields, name):
 
 
 def test_get_reports_every_field_without_any_secret(live):
-    credentials.save(VALUES)
+    store_values(VALUES)
     with TestClient(app) as client:
         response = client.get("/api/credentials")
     assert response.status_code == 200
@@ -191,7 +191,7 @@ def test_demo_mode_shows_status_but_refuses_tests_and_saves(store, monkeypatch):
 
 
 def test_get_is_a_503_when_the_stored_values_cannot_be_read(live, tmp_path):
-    credentials.save({"autotask_username": "u"})
+    store_values({"autotask_username": "u"})
     (tmp_path / "secret.key").unlink()
     secrets.reset_cache()
     credentials.invalidate()
@@ -204,7 +204,7 @@ def test_get_is_a_503_when_the_stored_values_cannot_be_read(live, tmp_path):
 
 
 def test_delete_forgets_every_stored_value_and_answers_the_fresh_status(live):
-    credentials.save(VALUES)
+    store_values(VALUES)
     with TestClient(app) as client:
         response = client.delete("/api/credentials")
     assert response.status_code == 200
@@ -218,7 +218,7 @@ def test_delete_forgets_every_stored_value_and_answers_the_fresh_status(live):
 
 
 def test_delete_recovers_from_a_lost_key(live, tmp_path):
-    credentials.save({"autotask_username": "u"})
+    store_values({"autotask_username": "u"})
     (tmp_path / "secret.key").unlink()
     secrets.reset_cache()
     credentials.invalidate()
@@ -236,7 +236,7 @@ def test_delete_is_refused_in_demo_mode(store, monkeypatch):
     monkeypatch.setattr(
         credentials_router, "settings", dataclasses.replace(settings, demo_mode=True)
     )
-    credentials.save({"autotask_username": "u"})
+    store_values({"autotask_username": "u"})
     with TestClient(app) as client:
         response = client.delete("/api/credentials")
     assert response.status_code == 409 and response.json()["detail"] == DEMO_REFUSAL

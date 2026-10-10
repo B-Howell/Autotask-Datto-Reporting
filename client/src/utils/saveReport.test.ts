@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { savedReportsApi } from '@/api';
 import useToastStore from '@/store/toastStore';
-import { fileStem, saveReportBlob } from './saveReport';
+import { saveReportBlob } from './saveReport';
 
 vi.mock('@/api', () => ({
   savedReportsApi: { uploadSavedReport: vi.fn() },
@@ -12,20 +12,23 @@ afterEach(() => {
   useToastStore.getState().hideToast();
 });
 
-describe('fileStem', () => {
-  it('drops the extension and keeps the rest of the name', () => {
-    expect(fileStem('Harbor Point Health Computer Inventory 10-9-26.xlsx')).toBe(
+describe('saveReportBlob', () => {
+  it('titles a report by its file name without the last extension', async () => {
+    const upload = vi.mocked(savedReportsApi.uploadSavedReport);
+    upload.mockResolvedValue({ id: 1, deduped: false });
+    const blob = new Blob(['x']);
+    const titleOf = async (filename: string) => {
+      await saveReportBlob({ blob, filename });
+      return upload.mock.lastCall?.[2]?.title;
+    };
+
+    expect(await titleOf('Harbor Point Health Computer Inventory 10-9-26.xlsx')).toBe(
       'Harbor Point Health Computer Inventory 10-9-26'
     );
-    expect(fileStem('report.final.pdf')).toBe('report.final');
+    expect(await titleOf('report.final.pdf')).toBe('report.final');
+    expect(await titleOf('Quarterly Utilization')).toBe('Quarterly Utilization');
   });
 
-  it('leaves a name without an extension alone', () => {
-    expect(fileStem('Quarterly Utilization')).toBe('Quarterly Utilization');
-  });
-});
-
-describe('saveReportBlob', () => {
   it('titles the upload and the toast with the file stem unless a title is given', async () => {
     const upload = vi.mocked(savedReportsApi.uploadSavedReport);
     upload.mockResolvedValue({ id: 1, deduped: false });

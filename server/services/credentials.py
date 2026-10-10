@@ -7,7 +7,7 @@ entered on the Settings page and stored encrypted. The resolved values are
 cached here, and `invalidate()` tells the registered listeners (the vendor
 clients) to drop anything they derived from the old values. The connection
 tests the Settings page runs live in `services/connection_tests.py`, built
-on `merged`, `changes` and `complete` from here.
+on `changes`, `merged_from`, `complete` and `store_changes` from here.
 """
 
 import os
@@ -20,6 +20,9 @@ from repositories import credentials as repo
 
 AUTOTASK = "autotask"
 DATTO = "datto"
+# Must match VENDOR_LABELS in client/src/pages/settings/vendors.ts: the page
+# titles its cards with these and the messages below name the vendors the
+# same way, so the two must stay the same words.
 VENDOR_LABELS = {AUTOTASK: "Autotask", DATTO: "Datto"}
 
 SOURCE_ENVIRONMENT = "environment"
@@ -203,17 +206,17 @@ def changes(values):
 
 
 def store_changes(cleaned):
-    """Write changes `changes()` cleaned, in one transaction; the listeners only hear of a write."""
+    """Write changes `changes()` cleaned, in one transaction; the listeners only hear of a write.
+
+    `changes` followed by this is a save: every entry validated before the
+    first write, blanks leaving their stored rows alone, and no listener
+    run when nothing was written.
+    """
     entries = [(name, secrets.encrypt(value)) for name, value in cleaned.items()]
     if not entries:
         return
     repo.upsert_many(entries)
     invalidate()
-
-
-def save(values):
-    """Store the non-blank entries after validating all of them; blanks keep what is stored."""
-    store_changes(changes(values))
 
 
 def forget_stored():
@@ -231,11 +234,6 @@ def merged_from(cleaned):
     return {**current(), **cleaned}
 
 
-def merged(values):
-    """`current()` with the non-blank entries of `values` over it, validated as `save` would."""
-    return merged_from(changes(values))
-
-
 def record_test(vendor, ok):
     repo.record_test(_names_for(vendor), ok)
 
@@ -243,10 +241,6 @@ def record_test(vendor, ok):
 def complete(values, vendor):
     """True when every field of the vendor is non-blank in `values`."""
     return all(values[name] for name in _names_for(vendor))
-
-
-def is_configured(vendor):
-    return complete(current(), vendor)
 
 
 def _not_configured(vendors):

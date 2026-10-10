@@ -17,7 +17,7 @@ const checkHealth = async (): Promise<Health> => {
       ? { ok: true }
       : { ok: false, message: 'The renderer reported itself unhealthy' };
   } catch (err) {
-    return { ok: false, message: errorMessage(err) || 'No response' };
+    return { ok: false, message: errorMessage(err, 'No response') };
   }
 };
 
