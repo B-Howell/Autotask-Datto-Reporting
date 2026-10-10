@@ -124,6 +124,23 @@ def test_a_value_cut_by_the_length_cap_leaves_no_fragment(probes):
     assert len(message) == len("HTTP 401: ") + http_errors.ERROR_TEXT_LIMIT
 
 
+def test_an_encoded_echo_is_blanked_too(probes):
+    encoded = "&#x68;unter2-not-a-real-secret by api%2Duser"
+    probes.setattr(autotask, "probe", _refusing(401, f"<p>{encoded}</p>"))
+
+    message = connection_tests.test_connection(VALUES)["autotask"]["message"]
+
+    assert message == "HTTP 401: <p>[hidden] by [hidden]</p>"
+
+
+def test_a_short_plain_value_does_not_blank_unrelated_words(probes):
+    probes.setattr(datto, "probe", _refusing(401, "Unexpected error"))
+
+    result = connection_tests.test_connection({**VALUES, "datto_platform": "ex"})
+
+    assert result["datto"]["message"] == "HTTP 401: Unexpected error"
+
+
 def test_a_stored_value_left_blank_on_the_form_is_blanked_too(probes):
     credentials.save(VALUES)
     probes.setattr(datto, "probe", _refusing(401, f"Key {SAMPLE_DATTO['datto_api_key']}"))
@@ -146,13 +163,18 @@ def test_an_incomplete_vendor_is_reported_without_a_probe_or_a_record(probes):
     assert _entry("datto_platform")["last_tested_at"] is None
 
 
-def test_test_connection_records_each_probed_vendors_outcome(probes):
+def test_test_connection_records_only_the_vendors_tested_with_their_stored_values(probes):
     credentials.save(VALUES)
     probes.setattr(datto, "probe", _refusing(401, "Unauthorized"))
 
+    connection_tests.test_connection({"datto_api_key": "submitted-not-real"})
+
+    # Datto was probed with a submitted key, so its stored rows were not tested.
+    assert _entry("autotask_secret")["last_test_ok"] is True
+    assert _entry("datto_api_key")["last_tested_at"] is None
+
     connection_tests.test_connection({})
 
-    assert _entry("autotask_secret")["last_test_ok"] is True
     assert _entry("datto_api_key")["last_test_ok"] is False
 
 

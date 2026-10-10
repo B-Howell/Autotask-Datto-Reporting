@@ -23,7 +23,9 @@ The connection tests the Settings page runs on top of these values live in the [
 | `status()` | One dict per field for the Settings page: `name`, `vendor`, `secret`, `configured`, `source`, `last4`, `updated_at`, `last_tested_at`, `last_test_ok`. Never carries a full value. |
 | `save(values)` | Validates every entry, then stores the non-blank ones encrypted in one transaction and calls `invalidate()`; when every entry is blank nothing is written and no listener runs. Raises `ValueError` and writes nothing when any entry is unknown, environment-managed or malformed. |
 | `changes(values)` | `{name: cleaned value}` for the non-blank entries of `values`, after validating every entry as `save` does (so an unknown name or an environment-managed field raises `ValueError` even when its value is blank). Nothing is stored; `save` is `changes` followed by the write. |
-| `merged(values)` | `current()` with `changes(values)` laid over it: the values a test runs with. Nothing is stored. |
+| `merged(values)` | `merged_from(changes(values))`. Nothing is stored. |
+| `merged_from(cleaned)` | `current()` with changes already cleaned by `changes` laid over it: the values a test runs with. Lets a caller that needs both the changes and the merge validate once. |
+| `store_changes(cleaned)` | The write half of `save`: stores changes already cleaned by `changes`, encrypted, in one transaction, and calls `invalidate()` when anything was written. Takes only what `changes` returned. |
 | `complete(values, vendor)` | True when every field of the vendor is non-blank in `values`; `is_configured` is `complete` of `current()`. |
 | `VENDOR_LABELS` | `{AUTOTASK: "Autotask", DATTO: "Datto"}`, the names used in messages. |
 | `invalidate()` | Drops the cached values and runs every registered listener. |

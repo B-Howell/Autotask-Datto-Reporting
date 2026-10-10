@@ -9,6 +9,9 @@ play reaches a message: each is blanked before the integration cuts the
 vendor's refusal to length.
 """
 
+import html
+from urllib.parse import unquote
+
 from integrations import autotask, datto
 from services import credentials
 
@@ -16,6 +19,9 @@ from services import credentials
 # report would.
 PROBE_TIMEOUT_SECONDS = 15
 HIDDEN = "[hidden]"
+# A plain value this short (a two-letter platform, say) would blank unrelated
+# words; a secret is blanked whatever its length.
+MIN_PLAIN_LENGTH = 4
 
 
 class ConnectionTestFailed(ValueError):
@@ -39,14 +45,21 @@ def _probe_datto(values, redact):
 _PROBES = {credentials.AUTOTASK: _probe_autotask, credentials.DATTO: _probe_datto}
 
 
+def _worth_blanking(name, value):
+    return bool(value) and (credentials.FIELDS[name].secret or len(value) >= MIN_PLAIN_LENGTH)
+
+
 def redacted(text, values):
-    """`text` with every non-blank value in play blanked, longest first.
+    """`text` with every value in play blanked, longest first, after HTML and URL unescaping.
 
     A vendor's refusal may quote what it was sent, and a username or host is
-    no more the page's business than a secret; longest first, so a value that
-    contains another is blanked whole.
+    no more the page's business than a secret. The body is unescaped first
+    because an HTML error page or a URL in it can carry the value encoded;
+    longest first, so a value that contains another is blanked whole.
     """
-    for value in sorted({value for value in values.values() if value}, key=len, reverse=True):
+    text = unquote(html.unescape(text))
+    in_play = {value for name, value in values.items() if _worth_blanking(name, value)}
+    for value in sorted(in_play, key=len, reverse=True):
         text = text.replace(value, HIDDEN)
     return text
 
@@ -77,26 +90,29 @@ def _report(vendor, outcome):
     return {"ok": outcome.ok, "message": outcome.message}
 
 
-def _record(outcomes):
-    """Stamp each probed vendor's outcome on its stored rows."""
-    for vendor, outcome in outcomes.items():
-        if outcome is not None:
-            credentials.record_test(vendor, outcome.ok)
-
-
-def test_connection(values):
-    """Probe both vendors with `values` laid over the stored ones, and record the outcomes.
-
-    A vendor whose values did not change is tested too: the page wants to
-    know that the stored keys still work.
-    """
-    outcomes = _probe_all(credentials.merged(values))
-    _record(outcomes)
-    return {vendor: _report(vendor, outcome) for vendor, outcome in outcomes.items()}
+def _record(outcomes, vendors):
+    """Stamp the outcome of each listed vendor that was probed on its stored rows."""
+    for vendor in vendors:
+        if outcomes[vendor] is not None:
+            credentials.record_test(vendor, outcomes[vendor].ok)
 
 
 def _vendors_of(changes):
     return {credentials.FIELDS[name].vendor for name in changes}
+
+
+def test_connection(values):
+    """Probe both vendors with `values` laid over the stored ones; nothing is saved.
+
+    A vendor whose values did not change is tested too, so the page learns
+    whether the stored keys still work, and only those outcomes are
+    recorded: a vendor tested with submitted values was not tested against
+    what its rows hold.
+    """
+    changes = credentials.changes(values)
+    outcomes = _probe_all(credentials.merged_from(changes))
+    _record(outcomes, set(outcomes) - _vendors_of(changes))
+    return {vendor: _report(vendor, outcome) for vendor, outcome in outcomes.items()}
 
 
 def _refusal(vendor, outcome):
@@ -114,10 +130,10 @@ def save_tested(values):
     carries its own result. Returns the status entries after the save.
     """
     changes = credentials.changes(values)
-    outcomes = _probe_all(credentials.merged(values))
+    outcomes = _probe_all(credentials.merged_from(changes))
     for vendor in sorted(_vendors_of(changes)):
         if not _passed(outcomes[vendor]):
             raise _refusal(vendor, outcomes[vendor])
-    credentials.save(changes)
-    _record(outcomes)
+    credentials.store_changes(changes)
+    _record(outcomes, outcomes)
     return credentials.status()

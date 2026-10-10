@@ -202,8 +202,8 @@ def changes(values):
     return {name: value for name, value in _accepted(values).items() if value is not None}
 
 
-def _store(cleaned):
-    """Write the cleaned changes in one transaction; the listeners are only told of a write."""
+def store_changes(cleaned):
+    """Write changes `changes()` cleaned, in one transaction; the listeners only hear of a write."""
     entries = [(name, secrets.encrypt(value)) for name, value in cleaned.items()]
     if not entries:
         return
@@ -213,12 +213,17 @@ def _store(cleaned):
 
 def save(values):
     """Store the non-blank entries after validating all of them; blanks keep what is stored."""
-    _store(changes(values))
+    store_changes(changes(values))
+
+
+def merged_from(cleaned):
+    """`current()` with changes `changes()` cleaned laid over it."""
+    return {**current(), **cleaned}
 
 
 def merged(values):
     """`current()` with the non-blank entries of `values` over it, validated as `save` would."""
-    return {**current(), **changes(values)}
+    return merged_from(changes(values))
 
 
 def record_test(vendor, ok):

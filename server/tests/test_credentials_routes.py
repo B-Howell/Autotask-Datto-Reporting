@@ -10,7 +10,7 @@ from core import secrets
 from integrations import autotask, datto, http_errors
 from main import app
 from routers import credentials as credentials_router
-from services import credentials
+from services import connection_tests, credentials
 
 SECRET = SAMPLE_AUTOTASK["autotask_secret"]
 VALUES = {**SAMPLE_AUTOTASK, **SAMPLE_DATTO}
@@ -120,6 +120,30 @@ def test_put_stores_tested_values_and_blank_fields_keep_what_is_stored(live, pro
     values = credentials.current()
     assert values["autotask_username"] == SAMPLE_AUTOTASK["autotask_username"]
     assert values["autotask_secret"] == "rotated-not-real"
+
+
+def test_the_routes_pass_the_service_answers_through_and_map_its_refusal(live, monkeypatch):
+    seen = {}
+    report = {
+        "autotask": {"ok": True, "message": "Connected"},
+        "datto": {"ok": False, "message": "x"},
+    }
+    monkeypatch.setattr(
+        connection_tests, "test_connection", lambda values: seen.update(tested=values) or report
+    )
+
+    def refuse(values):
+        seen.update(saved=values)
+        raise connection_tests.ConnectionTestFailed("Datto refused the credentials: x")
+
+    monkeypatch.setattr(connection_tests, "save_tested", refuse)
+    with TestClient(app) as client:
+        tested = client.post("/api/credentials/test", json={"values": {"datto_api_key": "k"}})
+        saved = client.put("/api/credentials", json={"values": {"datto_api_key": "k"}})
+    assert tested.status_code == 200 and tested.json() == report
+    assert saved.status_code == 400
+    assert saved.json()["detail"] == "Datto refused the credentials: x"
+    assert seen == {"tested": {"datto_api_key": "k"}, "saved": {"datto_api_key": "k"}}
 
 
 def test_put_rejects_bad_input_before_any_probe(live, probes):

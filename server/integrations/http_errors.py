@@ -61,6 +61,9 @@ def probe(call, redact=unchanged):
         return ProbeResult(False, described(exc, redact))
     except KeyError:
         # A 200 whose JSON lacks the field the client reads (`access_token`).
+        # No other mapping is read inside a probe: the caller builds the
+        # client from a values dict that holds every field (the credentials
+        # service's `complete` guards that before a probe is made).
         return ProbeResult(False, NOT_JSON)
     except ValueError as exc:
         # The request never left: a header value the transport cannot encode, say.
