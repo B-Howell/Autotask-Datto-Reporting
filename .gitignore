@@ -25,7 +25,7 @@ yarn-error.log*
 *.pyc
 
 # python virtualenv / locally-installed packages
-# NOTE: do NOT use a bare "Scripts" pattern — on case-insensitive Windows git
+# NOTE: do NOT use a bare "Scripts" pattern: on case-insensitive Windows git
 # it matches the server/scripts SOURCE dir and silently un-tracks our code.
 /server/Lib/
 /server/Include/

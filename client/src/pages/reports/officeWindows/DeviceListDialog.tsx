@@ -19,7 +19,7 @@ interface DeviceListDialogProps {
 const DeviceListDialog = ({ open, title, devices, onClose }: DeviceListDialogProps) => (
   <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
     <DialogTitle>
-      {title} — {devices.length} {devices.length === 1 ? 'device' : 'devices'}
+      {title}: {devices.length} {devices.length === 1 ? 'device' : 'devices'}
     </DialogTitle>
     <DialogContent dividers>
       {devices.length === 0 ? (

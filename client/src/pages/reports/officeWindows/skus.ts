@@ -8,7 +8,7 @@ export const M365_PREFIX = 'Microsoft 365';
 export const M365_GROUP_LABEL = 'Office 365';
 
 // Every Office 365 subscription that entitles a user to install the desktop
-// apps. Web-and-mobile-only plans are deliberately absent — Business Basic,
+// apps. Web-and-mobile-only plans are deliberately absent: Business Basic,
 // Office 365 E1 and Microsoft 365 F3 all look like Office licences but grant no
 // desktop install, so a licence figure against them would not belong here.
 //

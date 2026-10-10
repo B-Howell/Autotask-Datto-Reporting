@@ -12,7 +12,7 @@ const SkuSettingsButton = ({ enabled, onClick }: SkuSettingsButtonProps) => (
     title={
       enabled
         ? 'Choose which Office 365 subscriptions appear'
-        : 'Generate a report first — these settings are saved per agency'
+        : 'Generate a report first; these settings are saved per agency'
     }
   >
     {/* span so the tooltip still fires while the button is disabled */}

@@ -8,4 +8,6 @@ services:
   server:
     environment:
       DEMO_MODE: "1"
+      # Schedules are shown in this zone; change it to yours.
+      SCHEDULE_TIMEZONE: America/New_York
     command: ["sh", "-c", "python -m demo.seed && uvicorn main:app --host 0.0.0.0 --port 8000"]

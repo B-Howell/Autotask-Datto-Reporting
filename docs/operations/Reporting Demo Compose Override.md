@@ -15,6 +15,7 @@ docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build
 | Override | Effect |
 |---|---|
 | `environment.DEMO_MODE=1` | the settings loader stops requiring credentials and the vendor clients are replaced by the demo generators |
+| `environment.SCHEDULE_TIMEZONE=America/New_York` | the zone schedules are read and displayed in for the demo; the production stack takes it from `.env` |
 | `command` | `python -m demo.seed && uvicorn main:app --host 0.0.0.0 --port 8000` |
 
 ## Uses

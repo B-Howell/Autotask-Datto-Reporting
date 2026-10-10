@@ -346,7 +346,7 @@ def _init_schema(conn):
 
 
 def init_db():
-    """Public entry point — call once on app startup."""
+    """Public entry point; call once on app startup."""
     get_conn()
 
 

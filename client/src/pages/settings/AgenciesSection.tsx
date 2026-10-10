@@ -36,7 +36,7 @@ const AgenciesSection = () => {
           >
             <ListItemText
               primary={agency.name}
-              secondary={`ID: ${agency.id} — Site: ${agency.site}`}
+              secondary={`ID: ${agency.id}, site: ${agency.site}`}
             />
           </ListItem>
         ))}

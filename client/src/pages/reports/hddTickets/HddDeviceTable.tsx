@@ -24,7 +24,7 @@ interface HddDeviceTableProps {
 const HddDeviceTable = ({ label, devices, deviceCount }: HddDeviceTableProps) => (
   <Paper sx={{ p: 2 }}>
     <Typography variant="h6" sx={{ mb: 1 }}>
-      {label} — {deviceCount} device{deviceCount === 1 ? '' : 's'}
+      {label}: {deviceCount} device{deviceCount === 1 ? '' : 's'}
     </Typography>
     <DataTable columns={COLUMNS} rows={devices} rowKey={(d, i) => `${d.device_name}-${i}`} />
   </Paper>
