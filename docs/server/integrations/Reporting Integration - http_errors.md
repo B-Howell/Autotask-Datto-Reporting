@@ -28,14 +28,14 @@ A `requests` exception quotes the request URL in its message. For the delivery f
 - [autotask integration](<Reporting Integration - autotask.md>) (`probe` around its smallest query)
 - [datto integration](<Reporting Integration - datto.md>) (`probe` around a token fetch)
 - [delivery integration](<Reporting Integration - delivery.md>) (`trimmed` for a refusal whose body is not the flow's error shape)
-- [credentials service](<../services/Reporting Service - credentials.md>) (`ProbeResult`, to rebuild a result with the secrets blanked)
+- [connection_tests service](<../services/Reporting Service - connection_tests.md>) reads `ok` and `message` of the `ProbeResult` each probe answers and supplies the redaction the probes apply
 - [server/tests/test_http_errors.py](../../../server/tests/test_http_errors.py)
 
 ## Key Behavior
 
 - `described` reads `exc.response`, which `requests` sets on an `HTTPError` from `raise_for_status` and leaves `None` on a `ConnectionError` or `Timeout`; the branch on `None` is what keeps the URL out of a transport failure's text, because the exception's own message is never used.
 - The body is trimmed, not parsed: a vendor's JSON error is shown as its one-line text. The delivery client parses the flow's `{"error": {"message"}}` shape itself before falling back to `trimmed`, because that shape is documented for Power Automate and not for the vendors.
-- `redact` runs over the whole body before `trimmed` cuts it. Blanking after the cut would let a hidden value survive as the fragment that straddles the 300th character, which is why the caller's redaction is a parameter here rather than a pass over the finished message. The module does not know which values were sent; the credentials service, which does, supplies the redaction.
+- `redact` runs over the whole body before `trimmed` cuts it. Blanking after the cut would let a hidden value survive as the fragment that straddles the 300th character, which is why the caller's redaction is a parameter here rather than a pass over the finished message. The module does not know which values were sent; the connection_tests service, which does, supplies the redaction.
 - A `requests.JSONDecodeError` is a `RequestException` that `Response.json()` raises without a response attached, so it is matched first; it would otherwise read as `Vendor unreachable`. `KeyError` is caught because the Datto client reads `response.json()["access_token"]` after `raise_for_status`, and a 200 with the wrong body would otherwise reach the Settings page as a 500. Any other `ValueError` is a request that could not be built, named by its class only, since its text can quote the value. Everything else propagates: a bug is not a failed test.
 
 ## Cleanup Notes

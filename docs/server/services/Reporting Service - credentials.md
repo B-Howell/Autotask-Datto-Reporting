@@ -1,6 +1,6 @@
 # Credentials service
 
-> Resolves each vendor credential from the environment first and the encrypted store second, validates what the Settings page saves, tests submitted or stored values against the vendors through throwaway clients, and tells the vendor clients when the values change.
+> Resolves each vendor credential from the environment first and the encrypted store second, validates what the Settings page saves, and tells the vendor clients when the values change.
 
 ## Purpose
 
@@ -8,7 +8,7 @@ The Autotask and Datto clients need a username, secrets and a hostname. Until no
 
 The seven fields carry the same variable names [config](<../Reporting Server - config.md>) once loaded, so a deployment that already sets them sees no change in behaviour. The vendor integrations read this module at call time, so config no longer holds the values and nothing is required at startup.
 
-A connection test builds throwaway vendor clients from the submitted values laid over the stored ones, through the injection points the integrations expose, so the Settings page can prove a key before it is saved and prove that the stored keys still work. A save through `save_tested` is that test followed by the write, and a vendor that refuses the values it was given blocks the save.
+The connection tests the Settings page runs on top of these values live in the [connection_tests service](<Reporting Service - connection_tests.md>), which reads `merged`, `changes` and `complete` from here; this module imports no integration, so the integrations can import it at load time without a cycle.
 
 ## Interface
 
@@ -22,11 +22,10 @@ A connection test builds throwaway vendor clients from the submitted values laid
 | `current()` | `{name: value}` for every field: the trimmed environment value when non-blank, else the decrypted stored value, else `""`. Cached; returns a copy. |
 | `status()` | One dict per field for the Settings page: `name`, `vendor`, `secret`, `configured`, `source`, `last4`, `updated_at`, `last_tested_at`, `last_test_ok`. Never carries a full value. |
 | `save(values)` | Validates every entry, then stores the non-blank ones encrypted in one transaction and calls `invalidate()`; when every entry is blank nothing is written and no listener runs. Raises `ValueError` and writes nothing when any entry is unknown, environment-managed or malformed. |
-| `merged(values)` | `current()` with the non-blank entries of `values` laid over it, after the same validation as `save` (so an unknown name or an environment-managed field raises `ValueError`). Nothing is stored. |
-| `test_connection(values)` | `{"autotask": {ok, message}, "datto": {ok, message}}` after probing both vendors with `merged(values)`; records each probed vendor's outcome with `record_test`. The message is `Connected`, the integration's failure text with every secret value blanked, or `<Vendor> credentials are incomplete` when a field of that vendor is still blank, in which case no request is made and nothing is recorded for it. |
-| `save_tested(values)` | Runs the same probes, raises `ConnectionTestFailed` naming the first changed vendor (in name order) that did not pass, otherwise stores the values as `save` would, records the outcomes and returns `status()`. |
-| `ConnectionTestFailed` | `ValueError` subclass: a vendor refused the values submitted for it, so nothing was saved. The message is `<Vendor> refused the credentials: <message>` or `<Vendor> credentials are incomplete`. |
-| `PROBE_TIMEOUT_SECONDS` | 15: the timeout of the throwaway clients, so a Settings page test gives up well before a report would. |
+| `changes(values)` | `{name: cleaned value}` for the non-blank entries of `values`, after validating every entry as `save` does (so an unknown name or an environment-managed field raises `ValueError` even when its value is blank). Nothing is stored; `save` is `changes` followed by the write. |
+| `merged(values)` | `current()` with `changes(values)` laid over it: the values a test runs with. Nothing is stored. |
+| `complete(values, vendor)` | True when every field of the vendor is non-blank in `values`; `is_configured` is `complete` of `current()`. |
+| `VENDOR_LABELS` | `{AUTOTASK: "Autotask", DATTO: "Datto"}`, the names used in messages. |
 | `invalidate()` | Drops the cached values and runs every registered listener. |
 | `on_change(callback)` | Registers a no-argument callable to run after `invalidate()`. |
 | `record_test(vendor, ok)` | Stamps the outcome of a connection test on that vendor's stored rows. |
@@ -43,7 +42,6 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 
 - [secrets](<../core/Reporting Core - secrets.md>) for `encrypt` and `decrypt`.
 - [credentials repository](<../repositories/Reporting Repository - credentials.md>), imported as `repo`, for `get_all`, `upsert_many` and `record_test`.
-- The [autotask](<../integrations/Reporting Integration - autotask.md>) and [datto](<../integrations/Reporting Integration - datto.md>) integrations, imported inside the two probe helpers rather than at load time: both import this module at load time and register listeners as they load, and the throwaway clients are only wanted while a test runs.
 - `os.environ`, read directly rather than through `settings`: the `Settings` object is frozen at import, and this module must see a variable that is set or cleared afterwards (the tests vary it per case, and an operator clearing a variable to take over a value in the app expects the next restart to honour that).
 
 ## Used By
@@ -52,7 +50,8 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 - [routers/common](<../routers/Reporting Router - common.md>) maps `CredentialsMissing` to 503.
 - [sync service](<Reporting Service - sync.md>) calls `require_all` for both vendors before starting a live sync.
 - [server/tests/test_credentials.py](../../../server/tests/test_credentials.py); the `store` and `configured` fixtures in [server/tests/conftest.py](../../../server/tests/conftest.py) serve every test that needs stored values.
-- [credentials router](<../routers/Reporting Router - credentials.md>) (`status` for GET, `test_connection` for the test route, `save_tested` for PUT; its `ConnectionTestFailed` is a 400 through [routers/common](<../routers/Reporting Router - common.md>)).
+- [credentials router](<../routers/Reporting Router - credentials.md>) (`status` for GET).
+- [connection_tests service](<Reporting Service - connection_tests.md>) (`merged`, `changes`, `complete`, `save`, `status`, `record_test`, `FIELDS`, `VENDOR_LABELS`).
 - The Settings page's credentials form builds on the router in a later change.
 
 ## Key Behavior
@@ -65,16 +64,11 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 - `autotask_base_url` loses any trailing slash and must start with `https://`; `datto_platform` must match `^[a-z0-9-]+$`, which rejects a full hostname or a URL pasted by mistake. Values are stored after cleaning, so `current()` returns them in the shape the clients expect.
 - Listeners run outside the lock, after the cache is cleared, so a listener that calls `current()` sees the new values (a test does exactly that). They are iterated over a copy of the list, so a listener that registers another listener while running does not disturb the loop; the new one runs from the next `invalidate()`. They are stored in module state and are registered once at import by the client that needs them.
 - `record_test` stamps only the vendor's stored rows; a vendor configured through the environment has no rows to stamp, so its status entries keep `last_tested_at` as `None`.
-- A test is the submitted values over the stored ones: `merged` runs every entry through `_accept` (the validators `save` uses) and lays the non-blank results over `current()`, so the form can re-post every field with the secrets left blank and still test what is stored. Both vendors are probed every time, including one whose fields were not touched, because the page wants to know that the stored keys still work; a vendor with a blank field after the merge is reported as incomplete without a request, since the clients would raise `CredentialsMissing` or send a request to a host built from an empty platform.
-- The probes go through the integrations' injection points: `AutotaskClient(connection=lambda: connection_from(values))` and `DattoTokenProvider(token_request=lambda: token_request_from(values))`, each with `PROBE_TIMEOUT_SECONDS`, then `autotask.probe` (one `Companies/query` for at most one record) and `datto.probe` (one token fetch). The process-wide clients are never touched, so a failed test cannot disturb a report that is running on the stored values, and the module never sees a URL or header.
-- Every message that leaves the service has the secret values blanked: `_probe` hands each integration a redaction (`_without_secrets`, longest value first, replaced with `[hidden]`) that runs over a refusal's whole body before the integration cuts it to 300 characters, so a value straddling the cut cannot leave a fragment. The integrations already keep the URL out of their text, but a vendor's refusal can quote what it was sent; the route tests assert that a refusal body containing the submitted secret, including one placed across the cut, never reaches the response.
-- `save_tested` orders its steps so a new row carries its own result: validate, probe, refuse if a changed vendor failed, store, record. Recording before the store would stamp rows that do not exist yet. Only vendors with a non-blank accepted entry can block the save; the other vendor's failure is recorded and reported through `status()` (`last_test_ok` false) but does not stop a rotation of the first vendor's secret.
+- `changes` is the one validation pass: every entry goes through `_accept` before any value is used, so `merged` and `save` agree on what a submitted dict means, and a form that re-posts every field with the secrets left blank merges to exactly the stored values.
 
 ## Cleanup Notes
 
 - `on_change` has no `off` counterpart and the listener list is never reset outside the tests, which is fine for the one registration per process it is meant for.
-- The probes make this module depend on the integrations that depend on it; the in-function imports keep that cycle out of load time. A registry the integrations fill at import, the way they register `on_change` listeners, would remove the cycle altogether.
-- A save that is refused records nothing for the untouched vendor, although its probe ran: the refusal is raised before the recording step, so the stored rows keep their previous outcome.
 
 ## Source
 

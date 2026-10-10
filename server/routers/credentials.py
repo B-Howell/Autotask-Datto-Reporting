@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from config import settings
 from core import secrets
 from routers.common import call_or_http_error
-from services import credentials
+from services import connection_tests, credentials
 
 router = APIRouter(prefix="/api/credentials", tags=["credentials"])
 
@@ -47,11 +47,11 @@ def credentials_status():
 def test_credentials(body: CredentialValues):
     """Probe both vendors with the submitted values over the stored ones; nothing is saved."""
     _refuse_in_demo_mode()
-    return call_or_http_error(lambda: credentials.test_connection(body.values))
+    return call_or_http_error(lambda: connection_tests.test_connection(body.values))
 
 
 @router.put("")
 def save_credentials(body: CredentialValues):
     """Save the submitted values once every vendor they change accepts them."""
     _refuse_in_demo_mode()
-    return call_or_http_error(lambda: credentials.save_tested(body.values))
+    return call_or_http_error(lambda: connection_tests.save_tested(body.values))

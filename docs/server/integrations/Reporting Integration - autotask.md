@@ -36,7 +36,7 @@ Autotask's query endpoint returns at most 500 records, has no page token, and fo
 ## Used By
 
 - [devices service](<../services/Reporting Service - devices.md>), [office_windows service](<../services/Reporting Service - office_windows.md>), [hdd_tickets service](<../services/Reporting Service - hdd_tickets.md>), [tickets service](<../services/Reporting Service - tickets.md>), [sla service](<../services/Reporting Service - sla.md>), [utilization service](<../services/Reporting Service - utilization.md>)
-- [credentials service](<../services/Reporting Service - credentials.md>) builds a throwaway `AutotaskClient(connection=lambda: connection_from(values))` and calls `probe` on it for a Settings page test.
+- [connection_tests service](<../services/Reporting Service - connection_tests.md>) builds a throwaway `AutotaskClient(connection=lambda: connection_from(values))` and calls `probe` on it for a Settings page test.
 - [server/tests/test_autotask_client.py](../../../server/tests/test_autotask_client.py) exercises paging and chunking against a stubbed session with a fixed `Connection`, proves the default connection carries the stored credentials, uses a rotated secret on the next request, drops the picklist cache when a credential is saved, and refuses with `CredentialsMissing` when a field is blank, and proves the probe's exact request and its wording of a refusal.
 
 ## Key Behavior

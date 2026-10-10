@@ -38,7 +38,7 @@ Datto rate-limits an account to 600 reads a minute and a full sync audits well o
 - [devices service](<../services/Reporting Service - devices.md>) (`account_devices` for last-seen)
 - [office_windows service](<../services/Reporting Service - office_windows.md>) (`site_devices` for live OS strings)
 - [patch_management service](<../services/Reporting Service - patch_management.md>) (`site_devices`)
-- [credentials service](<../services/Reporting Service - credentials.md>) builds a throwaway `DattoTokenProvider(token_request=lambda: token_request_from(values))` and calls `probe` on it for a Settings page test.
+- [connection_tests service](<../services/Reporting Service - connection_tests.md>) builds a throwaway `DattoTokenProvider(token_request=lambda: token_request_from(values))` and calls `probe` on it for a Settings page test.
 - [server/tests/test_datto_client.py](../../../server/tests/test_datto_client.py) drives `datto()` with a stand-in for `requests`, and the probe with a throwaway provider.
 
 ## Key Behavior
@@ -50,7 +50,7 @@ Datto rate-limits an account to 600 reads a minute and a full sync audits well o
 - Retry: up to `attempts` (3) tries with a delay starting at 1 second and doubling. A `requests.RequestException` (timeout, connection error) retries; 429 and any 5xx retry, honouring a numeric `Retry-After` header as the delay; 401 and 403 call `invalidate()` and retry so the next try re-authenticates. Any other 4xx (such as 404) is returned immediately for the caller to interpret. When the last attempt fails the method logs a `[WARN]` with the caller's `tag` and returns None.
 - `get_json` folds "no response" and "non-200 response" into None, which is why the audit helpers treat None as "audit unavailable" and log it loudly: a timed-out audit would otherwise look like a device with no Office.
 - `paged` walks `page` from 0 with `pageSize` 200 until a page has no `devices`; one failed page aborts the whole listing with `RuntimeError`, so a device list is never silently truncated.
-- Timeouts: `datto_timeout` (settings, default 30 seconds) applies to every GET; the token POST has its own fixed `_TOKEN_TIMEOUT_SECONDS` (30), and a probe's provider is built with the credentials service's shorter `PROBE_TIMEOUT_SECONDS`.
+- Timeouts: `datto_timeout` (settings, default 30 seconds) applies to every GET; the token POST has its own fixed `_TOKEN_TIMEOUT_SECONDS` (30), and a probe's provider is built with the connection_tests service's shorter `PROBE_TIMEOUT_SECONDS`.
 - The connection test is the token POST alone: the password grant to `https://<platform>-api.centrastage.net/auth/oauth/token` with the key and secret, which is the one call that proves all three Datto fields at once. The provider is a throwaway, so the token it earns is never cached for a report, and the process-wide provider is untouched by a failed test. A 401 from a bad key, a name resolution failure from a platform label that is not a Datto host, or a 200 without `access_token` each come back as a `ProbeResult` with a message that holds the status and trimmed body, the failure's kind, or the not-JSON wording, never the URL.
 
 ## Cleanup Notes
