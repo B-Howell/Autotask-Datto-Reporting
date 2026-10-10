@@ -4,7 +4,7 @@
 
 ## Purpose
 
-Everything tenant-specific that is not a business rule comes from the environment: Autotask and Datto credentials, the Autotask zone URL, the Datto platform, how hard the Datto audit API may be hit, CORS origins, the sync interval, the data directory, and the scheduled-delivery settings (where the renderer listens, the mail flow's trigger URL, the schedule timezone and the poll interval). `config.py` reads them exactly once at import, validates that the required ones are present outside demo mode, and exposes a single `settings` object. The one design decision is that the object is frozen and module-level: no code path can change configuration at runtime, and a missing credential fails at startup with a message naming the example file, not deep inside a report.
+Everything tenant-specific that is not a business rule comes from the environment: Autotask and Datto credentials, the Autotask zone URL, the Datto platform, how hard the Datto audit API may be hit, CORS origins, the sync interval, the data directory, and the scheduled-delivery settings (where the renderer listens, the mail flow's trigger URL, the schedule timezone and the poll interval), and the optional master key that encrypts credentials stored in the database. `config.py` reads them exactly once at import, validates that the required ones are present outside demo mode, and exposes a single `settings` object. The one design decision is that the object is frozen and module-level: no code path can change configuration at runtime, and a missing credential fails at startup with a message naming the example file, not deep inside a report.
 
 ## Interface
 
@@ -28,6 +28,7 @@ Everything tenant-specific that is not a business rule comes from the environmen
 | `delivery_webhook_url` | `DELIVERY_WEBHOOK_URL` | empty | HTTP trigger URL of the Power Automate flow that sends scheduled mail. The URL carries its own signature, so it is a secret; empty means delivery is not configured. |
 | `schedule_timezone` | `SCHEDULE_TIMEZONE` | `UTC` | IANA zone a schedule's day of month and hour are read in. |
 | `schedule_poll_seconds` | `SCHEDULE_POLL_SECONDS` | `60` | How often the scheduler checks for due schedules. |
+| `app_secret_key` | `APP_SECRET_KEY` | empty | Fernet master key for the vendor credentials stored in the database. Empty means [secrets](<core/Reporting Core - secrets.md>) generates `secret.key` in the data directory on first use. The field records what the deployment supplied; the secrets module reads the variable itself at key-load time. |
 
 Functions: `_flag(name, default)` parses booleans, `_required(name, demo_mode)` returns the value or raises `RuntimeError` outside demo mode, `load_settings()` builds the dataclass, `settings` is the singleton.
 
@@ -44,6 +45,7 @@ Functions: `_flag(name, default)` parses booleans, `_required(name, demo_mode)` 
 - [schedules service](<services/Reporting Service - schedules.md>) (`schedule_timezone`)
 - [renderer integration](<integrations/Reporting Integration - renderer.md>) (`renderer_url`)
 - [delivery integration](<integrations/Reporting Integration - delivery.md>) (`delivery_webhook_url`)
+- [secrets](<core/Reporting Core - secrets.md>) (`data_dir` for the key file location; it reads `APP_SECRET_KEY` from the environment directly, not through `app_secret_key`)
 - [server/tests/conftest.py](../../server/tests/conftest.py), which sets `DEMO_MODE=1` before the first import and overrides `demo_mode` per test with `dataclasses.replace`
 - [server/tests/test_config.py](../../server/tests/test_config.py), which calls `load_settings()` directly to prove the scheduled-delivery defaults and the trailing-slash strip on `RENDERER_URL`
 
@@ -59,7 +61,7 @@ Functions: `_flag(name, default)` parses booleans, `_required(name, demo_mode)` 
 
 ## Cleanup Notes
 
-- `server/.env.example` documents the credentials, `DEMO_MODE`, `RENDERER_URL`, `DELIVERY_WEBHOOK_URL` and `SCHEDULE_TIMEZONE` but not `DATTO_MAX_WORKERS`, `DATTO_MIN_REQUEST_INTERVAL`, `DATTO_TIMEOUT`, `CORS_ORIGINS`, `SYNC_INTERVAL_HOURS` or `SCHEDULE_POLL_SECONDS`; those are discoverable only from this module. `DATA_DIR` is mentioned there in the closing note on deployment files.
+- `server/.env.example` documents the credentials, `DEMO_MODE`, `RENDERER_URL`, `DELIVERY_WEBHOOK_URL`, `SCHEDULE_TIMEZONE` and `APP_SECRET_KEY` but not `DATTO_MAX_WORKERS`, `DATTO_MIN_REQUEST_INTERVAL`, `DATTO_TIMEOUT`, `CORS_ORIGINS`, `SYNC_INTERVAL_HOURS` or `SCHEDULE_POLL_SECONDS`; those are discoverable only from this module. `DATA_DIR` is mentioned there in the closing note on deployment files.
 - `load_settings()` is re-callable and the tests rely on that, but the module-level `settings` singleton is built once at import; a test that changes the environment sees the change only through its own `load_settings()` call.
 - `datto_token_url` is always derivable from `datto_api_base`; carrying both as settings is redundant.
 

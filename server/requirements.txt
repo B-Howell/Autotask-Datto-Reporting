@@ -6,3 +6,5 @@ python-dotenv==1.2.2
 python-multipart==0.0.31
 # Windows has no system zoneinfo database, so the schedule timezone needs this.
 tzdata==2026.5
+# Encrypts the vendor credentials stored in the database (core/secrets.py).
+cryptography==42.0.7

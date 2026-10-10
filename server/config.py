@@ -61,6 +61,13 @@ class Settings:
     schedule_timezone: str
     schedule_poll_seconds: int
 
+    # Master key for the vendor credentials stored in the database: a Fernet
+    # key, kept outside the database so a copied file is useless on its own.
+    # When unset the server generates secret.key in the data directory on
+    # first use. core/secrets.py reads the variable itself at key-load time;
+    # this field records whether the deployment provided one.
+    app_secret_key: str
+
 
 def _required(name, demo_mode):
     value = os.environ.get(name, "")
@@ -97,6 +104,7 @@ def load_settings():
         delivery_webhook_url=os.environ.get("DELIVERY_WEBHOOK_URL", ""),
         schedule_timezone=os.environ.get("SCHEDULE_TIMEZONE", "UTC"),
         schedule_poll_seconds=int(os.environ.get("SCHEDULE_POLL_SECONDS", "60")),
+        app_secret_key=os.environ.get("APP_SECRET_KEY", ""),
     )
 
 

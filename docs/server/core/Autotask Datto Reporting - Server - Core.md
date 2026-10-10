@@ -19,6 +19,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Core - jobs.md](<Reporting Core - jobs.md>)
 - [Reporting Core - log_buffer.md](<Reporting Core - log_buffer.md>)
 - [Reporting Core - progress.md](<Reporting Core - progress.md>)
+- [Reporting Core - secrets.md](<Reporting Core - secrets.md>)
 - [Reporting Core - streams.md](<Reporting Core - streams.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->
