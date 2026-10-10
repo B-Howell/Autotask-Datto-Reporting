@@ -17,6 +17,7 @@ so there is nothing to merge and no stale rows can survive a refresh.
 
 import os
 import sqlite3
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from threading import Lock
 
@@ -379,6 +380,24 @@ def execute(sql, params=()):
         return cur.lastrowid
 
 
+@contextmanager
+def transaction():
+    """One write transaction under the lock: yields the connection, commits, rolls back on error.
+
+    Statements inside run on the yielded connection directly; `execute` and
+    `query` take the same lock and would deadlock.
+    """
+    conn = get_conn()
+    with _lock:
+        try:
+            conn.execute("BEGIN")
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+
+
 def replace_scope(table, scope, rows):
     """Replace all rows in `table` for a scope (a snapshot swap).
 
@@ -388,25 +407,18 @@ def replace_scope(table, scope, rows):
     with the scope columns merged in. Runs in one transaction so a report never
     sees a half-written snapshot.
     """
-    conn = get_conn()
     where = " AND ".join(f"{col}=?" for col in scope)
     where_vals = tuple(scope.values())
-    with _lock:
-        try:
-            conn.execute("BEGIN")
-            conn.execute(f"DELETE FROM {table} WHERE {where}", where_vals)
-            for row in rows:
-                merged = {**scope, **row}
-                cols = list(merged.keys())
-                placeholders = ",".join("?" for _ in cols)
-                conn.execute(
-                    f"INSERT INTO {table} ({','.join(cols)}) VALUES ({placeholders})",
-                    tuple(merged[c] for c in cols),
-                )
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
+    with transaction() as conn:
+        conn.execute(f"DELETE FROM {table} WHERE {where}", where_vals)
+        for row in rows:
+            merged = {**scope, **row}
+            cols = list(merged.keys())
+            placeholders = ",".join("?" for _ in cols)
+            conn.execute(
+                f"INSERT INTO {table} ({','.join(cols)}) VALUES ({placeholders})",
+                tuple(merged[c] for c in cols),
+            )
 
 
 def update_row(table, row_id, fields, allowed):

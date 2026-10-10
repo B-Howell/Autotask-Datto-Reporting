@@ -59,4 +59,7 @@ def health():
         raise RenderError(f"Renderer unreachable at {settings.renderer_url}: {exc}") from exc
     if response.status_code != 200:
         raise _failure("health check", response)
-    return response.json()
+    try:
+        return response.json()
+    except ValueError as exc:
+        raise RenderError("Renderer answered with a body that is not JSON") from exc

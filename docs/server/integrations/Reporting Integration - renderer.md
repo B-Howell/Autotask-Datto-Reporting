@@ -11,7 +11,7 @@ Scheduled deliveries have to produce the same xlsx, docx and pdf bytes a user ge
 | Name | Description |
 |---|---|
 | `render(report_type, data, options, filename, logo_base64=None)` | `POST {renderer_url}/render` with the renderer's request shape; returns `(bytes, content_type)`. |
-| `health()` | `GET {renderer_url}/health`; returns the parsed body, `{"ok": true, "reportTypes": [...]}`. |
+| `health()` | `GET {renderer_url}/health`; returns the parsed body, `{"ok": true, "reportTypes": [...]}`. A 200 whose body is not JSON is a `RenderError` (`Renderer answered with a body that is not JSON`), not a `ValueError`. |
 | `RenderError` | Raised by both when the renderer is unreachable or answers anything but 200. |
 | `TIMEOUT`, `HEALTH_TIMEOUT` | 120 and 5 seconds. |
 
@@ -32,7 +32,7 @@ Scheduled deliveries have to produce the same xlsx, docx and pdf bytes a user ge
 - Only a 200 is a success. The renderer answers 400 for a malformed request or an unknown report type, 413 when the body exceeds its 50 MB cap and 500 for a builder failure, each with a JSON `{error}` body. The client does not parse that body; it puts the status and the first 500 characters of the text into the `RenderError` message, so `Unknown report type: x` reads through unchanged while a stack trace cannot bloat the stored error.
 - The content type comes from the response header, falling back to `application/octet-stream` if the renderer ever omits it; the renderer sets it from the builder (`XLSX_MIME`, `DOCX_MIME` or `application/pdf`), and the delivery message passes it on as the attachment's `contentType`.
 - A `requests.RequestException` (connection refused, DNS, timeout) is wrapped in a `RenderError` that names the configured URL, because the most common cause is the renderer not running or `RENDERER_URL` pointing at the wrong host.
-- `health` uses a short timeout so a status page does not hang on a down renderer, and raises rather than returning a flag so callers handle the down case the same way they handle a failed render.
+- `health` uses a short timeout so a status page does not hang on a down renderer, and raises rather than returning a flag so callers handle the down case the same way they handle a failed render. The body is parsed inside a `try`: a reverse proxy answering 200 with an HTML page would otherwise surface as a bare `ValueError`, which the routers map to a 400 as if the caller were at fault; wrapped as `RenderError` it reaches the page as the 502 it is.
 - `settings` is read at call time through the module's name, so a test can swap the URL with `dataclasses.replace` and the same pattern will serve a future reload.
 
 ## Cleanup Notes

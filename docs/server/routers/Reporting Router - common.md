@@ -39,7 +39,7 @@ The scheduled-delivery routes run no job, but they share the other half of the p
 - `fastapi.HTTPException`
 - [jobs](<../core/Reporting Core - jobs.md>) and [streams](<../core/Reporting Core - streams.md>)
 - [presets service](<../services/Reporting Service - presets.md>) for `InUseError`
-- [renderer integration](<../integrations/Reporting Integration - renderer.md>) for `RenderError` and [delivery integration](<../integrations/Reporting Integration - delivery.md>) for `DeliveryError`
+- [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) for `RenderError` and `DeliveryError`, which it re-exports from the integrations; the routers package imports only `core` and `services`
 
 ## Used By
 

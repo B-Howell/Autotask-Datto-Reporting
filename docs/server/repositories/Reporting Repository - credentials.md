@@ -13,13 +13,13 @@ Like presets and schedules, these rows are user data with no upstream copy. The 
 | Name | Description |
 |---|---|
 | `get_all()` | Every row as a dict keyed by `name`. Each row carries `name`, `ciphertext` (bytes), `updated_at`, `last_tested_at` and `last_test_ok`, the last decoded to `True`, `False` or `None`. |
-| `upsert(name, ciphertext)` | Inserts the row or, when the name exists, replaces its ciphertext; `updated_at` is stamped either way. The test columns are left as they were. |
+| `upsert_many(entries)` | For every `(name, ciphertext)` pair, inserts the row or, when the name exists, replaces its ciphertext; `updated_at` is stamped with one timestamp for the whole call. All the writes go in one transaction, so a failure on any pair leaves every row as it was. The test columns are left as they were. |
 | `record_test(names, ok)` | Sets `last_tested_at` to now and `last_test_ok` to 1 or 0 on every row whose name is in `names`. A name with no row is skipped silently; an empty list is a no-op. |
 | `delete(name)` | Deletes the row; a missing name is harmless. |
 
 ## Uses
 
-- [sqlite repository](<Reporting Repository - sqlite.md>) for `query`, `execute` and `iso_now`.
+- [sqlite repository](<Reporting Repository - sqlite.md>) for `query`, `execute`, `transaction` and `iso_now`.
 
 ## Used By
 
@@ -28,7 +28,7 @@ Like presets and schedules, these rows are user data with no upstream copy. The 
 
 ## Key Behavior
 
-- `name` is the primary key, so `upsert` is a single `INSERT ... ON CONFLICT(name) DO UPDATE` and the table can never hold two rows for one field. The service only ever passes names from its `FIELDS` table.
+- `name` is the primary key, so each pair in `upsert_many` is one `INSERT ... ON CONFLICT(name) DO UPDATE` and the table can never hold two rows for one field. The pairs run on the connection the sqlite repository's `transaction()` yields, under its lock, and the transaction rolls back on the first failure (a `NULL` ciphertext trips the `NOT NULL` constraint, and the test shows the earlier pair is not kept). The service only ever passes names from its `FIELDS` table.
 - `ciphertext` is a `BLOB NOT NULL`; SQLite hands it back as `bytes`, which is what `secrets.decrypt` takes. The repository has no key and cannot read it.
 - `record_test` interpolates only the placeholder count into the `IN (...)` clause; the names and the timestamp stay bound parameters. Bandit reports the f-string as B608 at medium severity and medium confidence, which CI (gated at high) allows; the comment above the statement is the record of why it is safe.
 - `last_test_ok` is stored as an integer and decoded to a bool on the way out, so callers never compare against `1`. A row that has never been tested has `NULL` in both test columns and decodes to `None`.

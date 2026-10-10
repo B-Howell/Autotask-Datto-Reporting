@@ -137,6 +137,53 @@ def test_invalidate_and_save_notify_listeners(store):
     assert calls == ["called", "called"]
 
 
+def test_a_save_that_writes_nothing_does_not_notify(store):
+    calls = []
+    credentials.on_change(lambda: calls.append("called"))
+    credentials.save({"autotask_username": "   ", "autotask_secret": ""})
+    assert calls == [] and repo.get_all() == {}
+
+
+def test_a_listener_may_read_the_new_values_while_it_runs(store):
+    seen = []
+    credentials.on_change(lambda: seen.append(credentials.current()["autotask_username"]))
+    credentials.save({"autotask_username": "fresh"})
+    assert seen == ["fresh"]
+
+
+def test_a_listener_registered_during_a_callback_runs_next_time(store):
+    calls = []
+    credentials.on_change(lambda: credentials.on_change(lambda: calls.append("late")))
+    credentials.invalidate()
+    assert calls == []
+    credentials.invalidate()
+    assert calls == ["late"]
+
+
+def test_a_short_secret_shows_no_hint(store):
+    credentials.save({"autotask_secret": "elevenchars"})
+    assert _status("autotask_secret")["last4"] == ""
+    credentials.save({"autotask_secret": "twelve-chars"})
+    assert _status("autotask_secret")["last4"] == "hars"
+
+
+def test_a_save_is_one_transaction(store):
+    with pytest.raises(Exception, match="NOT NULL"):
+        repo.upsert_many([("autotask_username", b"token"), ("autotask_secret", None)])
+    assert repo.get_all() == {}
+
+
+def test_a_stored_value_that_no_longer_decrypts_fails_loudly(store, tmp_path):
+    credentials.save({"autotask_username": "u"})
+    (tmp_path / "secret.key").unlink()
+    secrets.reset_cache()
+    credentials.invalidate()
+    with pytest.raises(secrets.SecretsError, match="current key"):
+        credentials.current()
+    with pytest.raises(secrets.SecretsError, match="current key"):
+        credentials.status()
+
+
 def test_current_is_cached_until_invalidated(store, monkeypatch):
     assert credentials.current()["autotask_username"] == ""
     monkeypatch.setenv("AUTOTASK_USERNAME", "later")

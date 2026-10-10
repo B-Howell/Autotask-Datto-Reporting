@@ -3,8 +3,7 @@
 from fastapi import HTTPException
 
 from core import jobs, streams
-from integrations import delivery, renderer
-from services import presets
+from services import presets, scheduled_runs
 
 # nginx's "client closed request": the caller asked for the cancellation and
 # has already stopped waiting for an answer.
@@ -54,5 +53,5 @@ def call_or_http_error(fn):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except (renderer.RenderError, delivery.DeliveryError) as exc:
+    except (scheduled_runs.RenderError, scheduled_runs.DeliveryError) as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

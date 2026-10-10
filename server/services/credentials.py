@@ -31,6 +31,14 @@ class Field:
     vendor: str
 
 
+@dataclass(frozen=True)
+class Resolved:
+    """One field's value in effect and where it came from, decided in one pass."""
+
+    value: str
+    source: str
+
+
 FIELDS = {
     "autotask_username": Field("AUTOTASK_USERNAME", secret=False, vendor=AUTOTASK),
     "autotask_secret": Field("AUTOTASK_PASSWORD", secret=True, vendor=AUTOTASK),
@@ -45,9 +53,12 @@ FIELDS = {
 _PLATFORM = re.compile(r"^[a-z0-9-]+$")
 _HTTPS = "https://"
 _HINT_LENGTH = 4
+# A hint must leave most of the secret unknown: the tail is only shown when
+# it is at most a third of the value.
+_MIN_HINTED_LENGTH = 3 * _HINT_LENGTH
 
 _lock = threading.Lock()
-_values = None
+_resolved_values = None
 _listeners = []
 
 
@@ -66,22 +77,32 @@ def _env_value(field):
     return os.environ.get(field.env, "").strip()
 
 
-def _stored_value(rows, name):
-    return secrets.decrypt(rows[name]["ciphertext"]) if name in rows else ""
+def _resolve_field(name, field, rows):
+    env_value = _env_value(field)
+    if env_value:
+        return Resolved(env_value, SOURCE_ENVIRONMENT)
+    if name in rows:
+        return Resolved(secrets.decrypt(rows[name]["ciphertext"]), SOURCE_STORED)
+    return Resolved("", SOURCE_MISSING)
 
 
 def _resolve():
     rows = repo.get_all()
-    return {name: _env_value(field) or _stored_value(rows, name) for name, field in FIELDS.items()}
+    return {name: _resolve_field(name, field, rows) for name, field in FIELDS.items()}
+
+
+def _resolved():
+    """Every field's `Resolved`, from the cache or one fresh pass over the sources."""
+    global _resolved_values
+    with _lock:
+        if _resolved_values is None:
+            _resolved_values = _resolve()
+        return dict(_resolved_values)
 
 
 def current():
     """Every field's value in effect: the environment, else the store, else ""."""
-    global _values
-    with _lock:
-        if _values is None:
-            _values = _resolve()
-        return dict(_values)
+    return {name: resolved.value for name, resolved in _resolved().items()}
 
 
 def on_change(callback):
@@ -91,35 +112,30 @@ def on_change(callback):
 
 def invalidate():
     """Forget the cached values and tell every listener to do the same."""
-    global _values
+    global _resolved_values
     with _lock:
-        _values = None
-    for callback in _listeners:
+        _resolved_values = None
+    # A copy, so a listener that registers another listener while running
+    # does not change the list being iterated.
+    for callback in list(_listeners):
         callback()
-
-
-def _source(field, name, rows):
-    if _env_value(field):
-        return SOURCE_ENVIRONMENT
-    return SOURCE_STORED if name in rows else SOURCE_MISSING
 
 
 def _hint(field, value):
     """The tail of a secret so the page can tell which one is in place, never the whole thing."""
-    if not field.secret or len(value) <= _HINT_LENGTH:
+    if not field.secret or len(value) < _MIN_HINTED_LENGTH:
         return ""
     return value[-_HINT_LENGTH:]
 
 
-def _entry(name, field, value, rows):
-    row = rows.get(name, {})
+def _entry(name, field, resolved, row):
     return {
         "name": name,
         "vendor": field.vendor,
         "secret": field.secret,
-        "configured": bool(value),
-        "source": _source(field, name, rows),
-        "last4": _hint(field, value),
+        "configured": bool(resolved.value),
+        "source": resolved.source,
+        "last4": _hint(field, resolved.value),
         "updated_at": row.get("updated_at"),
         "last_tested_at": row.get("last_tested_at"),
         "last_test_ok": row.get("last_test_ok"),
@@ -128,9 +144,11 @@ def _entry(name, field, value, rows):
 
 def status():
     """One entry per field for the Settings page; no entry carries a full value."""
-    values = current()
+    resolved = _resolved()
     rows = repo.get_all()
-    return [_entry(name, field, values[name], rows) for name, field in FIELDS.items()]
+    return [
+        _entry(name, field, resolved[name], rows.get(name, {})) for name, field in FIELDS.items()
+    ]
 
 
 def _base_url(value):
@@ -168,11 +186,18 @@ def _accept(name, raw):
 
 
 def save(values):
-    """Store the non-blank entries after validating all of them; blanks keep what is stored."""
+    """Store the non-blank entries after validating all of them; blanks keep what is stored.
+
+    The writes go in one transaction, and the listeners are only told when
+    something was written.
+    """
     accepted = {name: _accept(name, raw) for name, raw in values.items()}
-    for name, value in accepted.items():
-        if value is not None:
-            repo.upsert(name, secrets.encrypt(value))
+    entries = [
+        (name, secrets.encrypt(value)) for name, value in accepted.items() if value is not None
+    ]
+    if not entries:
+        return
+    repo.upsert_many(entries)
     invalidate()
 
 

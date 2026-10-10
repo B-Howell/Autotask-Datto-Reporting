@@ -7,6 +7,12 @@ precedence is decided by the credentials service.
 
 from repositories import sqlite
 
+_UPSERT = """
+    INSERT INTO credentials (name, ciphertext, updated_at) VALUES (?, ?, ?)
+    ON CONFLICT(name) DO UPDATE SET ciphertext = excluded.ciphertext,
+                                    updated_at = excluded.updated_at
+"""
+
 
 def _decode(row):
     row = dict(row)
@@ -20,15 +26,12 @@ def get_all():
     return {row["name"]: _decode(row) for row in sqlite.query("SELECT * FROM credentials")}
 
 
-def upsert(name, ciphertext):
-    sqlite.execute(
-        """
-        INSERT INTO credentials (name, ciphertext, updated_at) VALUES (?, ?, ?)
-        ON CONFLICT(name) DO UPDATE SET ciphertext = excluded.ciphertext,
-                                        updated_at = excluded.updated_at
-        """,
-        (name, ciphertext, sqlite.iso_now()),
-    )
+def upsert_many(entries):
+    """Store every `(name, ciphertext)` pair in one transaction, so a save is all or nothing."""
+    now = sqlite.iso_now()
+    with sqlite.transaction() as conn:
+        for name, ciphertext in entries:
+            conn.execute(_UPSERT, (name, ciphertext, now))
 
 
 def record_test(names, ok):

@@ -16,6 +16,7 @@ A schedule is only a promise until something runs it. This module is the one pla
 | `renderer_health()` | The renderer's `/health` body, passed through; raises `RenderError` when the renderer is down or answers badly. The page's pre-flight check. |
 | `send_test_message(to)` | Sends `TEST_SUBJECT` and `TEST_BODY` to the given addresses with an empty `cc` and no attachment, so the page can prove the delivery flow accepts mail; raises `DeliveryError`. |
 | `TEST_SUBJECT`, `TEST_BODY` | `Reporting: delivery test` and its one-line body. |
+| `RenderError`, `DeliveryError` | The two integration error classes, re-exported from the [renderer](<../integrations/Reporting Integration - renderer.md>) and [delivery](<../integrations/Reporting Integration - delivery.md>) integrations so the routers can map them without importing an integration module themselves. |
 | `GATHERERS` | Report type to its gatherer, `_gather_<type>(preset, logger)`, each returning `(data for the renderer, filename, period label)`. Keyed exactly like the presets service's `REPORT_TYPES`; a test asserts the two key sets are equal, so a report type cannot be added to one table without the other. |
 | `NO_PERIOD` | `""`, the period label of the reports that have none, so `{period}` fills as empty. |
 
@@ -25,7 +26,7 @@ The private helpers are the stages, each at one level: `_gather(preset, logger)`
 
 ## Uses
 
-- Standard library `base64`, `calendar`, `html`, `re` and `datetime`.
+- Standard library `base64`, `calendar`, `html`, `os` (`splitext`, for the saved copy's title and format) and `re`.
 - [schedules service](<Reporting Service - schedules.md>) for `existing`, `advance`, `record_result`, `tz` and `now_utc` (this module keeps no clock of its own); [schedules repository](<../repositories/Reporting Repository - schedules.md>) for `insert_run`, `finish_run`, `list_runs` and the `TRIGGER_SCHEDULE`, `STATUS_OK` and `STATUS_ERROR` constants.
 - [presets service](<Reporting Service - presets.md>) for `get`: the preset supplies `report_type`, `agency_key`, `agency_name` and `options`.
 - [tenant service](<Reporting Service - tenant.md>) for `resolve_agency` (the members behind a company id or `group:<name>` key), `logo_path` (the agency logo the Word and PDF reports carry) and `get_tenant()["ratedDepartments"]` (the annual report's departments).
@@ -38,6 +39,7 @@ The private helpers are the stages, each at one level: `_gather(preset, logger)`
 
 - [server/tests/test_scheduled_runs.py](../../../server/tests/test_scheduled_runs.py).
 - [schedules router](<../routers/Reporting Router - schedules.md>): `renderer_health` behind `/renderer-health` and `send_test_message` behind `/test-delivery`, so the router never imports the integrations itself.
+- [routers/common](<../routers/Reporting Router - common.md>): the re-exported `RenderError` and `DeliveryError`, which `call_or_http_error` maps to 502.
 - [schedule_runner service](<Reporting Service - schedule_runner.md>): its worker thread calls `run_schedule` for each due schedule with `trigger="schedule"`, and for the page's run-now with `trigger="manual"`, passing the `schedules` stream logger.
 
 ## Key Behavior

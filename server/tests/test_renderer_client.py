@@ -105,3 +105,12 @@ def test_health_raises_when_the_renderer_is_down_or_unhappy(monkeypatch):
     monkeypatch.setattr(renderer.requests, "get", lambda *a, **k: FakeResponse(500, text="boom"))
     with pytest.raises(renderer.RenderError, match="500"):
         renderer.health()
+
+
+def test_health_rejects_a_body_that_is_not_json(monkeypatch):
+    """A proxy's HTML error page with a 200 is a renderer fault, not a 400 to the caller."""
+    monkeypatch.setattr(
+        renderer.requests, "get", lambda *a, **k: FakeResponse(200, text="<html>ok</html>")
+    )
+    with pytest.raises(renderer.RenderError, match="not JSON"):
+        renderer.health()

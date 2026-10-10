@@ -10,9 +10,14 @@ the same day replaces it rather than sitting beside it.
 import base64
 import calendar
 import html
+import os
 import re
 
 from integrations import delivery, renderer
+
+# Re-exported so the routers can map these without importing the integrations.
+from integrations.delivery import DeliveryError as DeliveryError
+from integrations.renderer import RenderError as RenderError
 from repositories import manual_inputs
 from repositories import schedules as schedule_repo
 from services import (
@@ -218,7 +223,7 @@ def _render(preset, data, filename):
 
 def _save_copy(preset, filename, content):
     """File the rendered bytes in Saved Reports as the browser would; returns the saved row."""
-    title, extension = filename.rsplit(".", 1)
+    title, extension = os.path.splitext(filename)
     return saved_reports.save(
         content,
         filename,
@@ -226,7 +231,7 @@ def _save_copy(preset, filename, content):
             "agency_name": preset["agency_name"] or "All Agencies",
             "agency_id": preset["agency_key"] or "",
             "report_type": SAVED_REPORT_TYPES.get(preset["report_type"], preset["report_type"]),
-            "format": extension,
+            "format": extension.lstrip("."),
             "title": title,
         },
     )
