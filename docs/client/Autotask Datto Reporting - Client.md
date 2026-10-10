@@ -20,6 +20,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Autotask Datto Reporting - Client - Components](<components/Autotask Datto Reporting - Client - Components.md>)
 - [Autotask Datto Reporting - Client - Hooks](<hooks/Autotask Datto Reporting - Client - Hooks.md>)
 - [Autotask Datto Reporting - Client - Pages](<pages/Autotask Datto Reporting - Client - Pages.md>)
+- [Autotask Datto Reporting - Client - Renderer](<renderer/Autotask Datto Reporting - Client - Renderer.md>)
 - [Autotask Datto Reporting - Client - Store](<store/Autotask Datto Reporting - Client - Store.md>)
 - [Autotask Datto Reporting - Client - Utils](<utils/Autotask Datto Reporting - Client - Utils.md>)
 

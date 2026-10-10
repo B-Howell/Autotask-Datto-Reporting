@@ -17,6 +17,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 ### Child documentation areas
 
 - [Autotask Datto Reporting - Client - Pages - Reports](<reports/Autotask Datto Reporting - Client - Pages - Reports.md>)
+- [Autotask Datto Reporting - Client - Pages - Scheduled Reports](<scheduledReports/Autotask Datto Reporting - Client - Pages - Scheduled Reports.md>)
 - [Autotask Datto Reporting - Client - Pages - Settings](<settings/Autotask Datto Reporting - Client - Pages - Settings.md>)
 
 ### Documents and artifacts in this area

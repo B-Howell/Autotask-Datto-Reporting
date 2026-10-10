@@ -17,8 +17,8 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 ### Documents and artifacts in this area
 
 - [Reporting Integration - autotask.md](<Reporting Integration - autotask.md>)
-- [Reporting Integration - delivery.md](<Reporting Integration - delivery.md>)
 - [Reporting Integration - datto.md](<Reporting Integration - datto.md>)
+- [Reporting Integration - delivery.md](<Reporting Integration - delivery.md>)
 - [Reporting Integration - renderer.md](<Reporting Integration - renderer.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->

@@ -23,9 +23,9 @@ and assets, with every page linking the exact source file it describes.
 <!-- BEGIN DOCUMENTATION COVERAGE -->
 ## Coverage status
 
-- Project files: **256**
-- Linked from reachable lower-level docs: **256**
-- Narratively documented: **256**
+- Project files: **339**
+- Linked from reachable lower-level docs: **339**
+- Narratively documented: **339**
 - Missing a lower-level doc link: **0**
 - Sensitive files excluded from links: **2**
 
