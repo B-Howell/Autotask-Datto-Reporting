@@ -24,7 +24,7 @@ def _schedule(preset_id, **overrides):
 
 
 def _freeze(monkeypatch, instant):
-    monkeypatch.setattr(schedules, "_now", lambda: instant)
+    monkeypatch.setattr(schedules, "now_utc", lambda: instant)
 
 
 def test_next_run_is_the_coming_occurrence_in_the_schedule_timezone():

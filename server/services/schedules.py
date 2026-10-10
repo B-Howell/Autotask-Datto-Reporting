@@ -20,9 +20,13 @@ from repositories import schedules as repo
 from repositories import sqlite
 
 _EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# A schedule that names no hour runs at 07:00 in the schedule zone; the
+# schema's column default says the same.
+DEFAULT_HOUR = 7
 
 
-def _now():
+def now_utc():
+    """The clock every schedule computation reads; tests replace it to freeze time."""
     return datetime.now(UTC)
 
 
@@ -98,7 +102,7 @@ def _validated(schedule):
     if preset_repo.get(schedule.get("preset_id")) is None:
         raise ValueError("No such preset")
     day = _whole_number(schedule, "day_of_month", 0)
-    hour = _whole_number(schedule, "hour", 7)
+    hour = _whole_number(schedule, "hour", DEFAULT_HOUR)
     if not 1 <= day <= 31:
         raise ValueError("day_of_month must be between 1 and 31")
     if not 0 <= hour <= 23:
@@ -123,7 +127,7 @@ def _validated(schedule):
 
 def _with_next_run(fields):
     fields["next_run_at"] = (
-        next_run_after(_now(), fields["day_of_month"], fields["hour"], tz())
+        next_run_after(now_utc(), fields["day_of_month"], fields["hour"], tz())
         if fields["enabled"]
         else None
     )
@@ -178,7 +182,11 @@ def advance(schedule):
     """After a scheduled run: move next_run_at to the following occurrence."""
     repo.update(
         schedule["id"],
-        {"next_run_at": next_run_after(_now(), schedule["day_of_month"], schedule["hour"], tz())},
+        {
+            "next_run_at": next_run_after(
+                now_utc(), schedule["day_of_month"], schedule["hour"], tz()
+            )
+        },
     )
 
 

@@ -42,16 +42,7 @@ def insert(preset):
 
 
 def update(preset_id, changes):
-    fields = _fields(changes)
-    if not fields:
-        return
-    # The column names interpolated here come only from the COLUMNS allow-list
-    # above, never from the caller; the values stay bound parameters.
-    assignments = ", ".join(f"{k} = :{k}" for k in fields)
-    sqlite.execute(
-        f"UPDATE report_presets SET {assignments}, updated_at = :now WHERE id = :id",
-        {**fields, "now": sqlite.iso_now(), "id": preset_id},
-    )
+    sqlite.update_row("report_presets", preset_id, _fields(changes), COLUMNS)
 
 
 def get(preset_id):

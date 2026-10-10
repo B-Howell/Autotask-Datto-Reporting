@@ -11,6 +11,14 @@ import json
 
 from repositories import sqlite
 
+# What started a run, stored in `schedule_runs.trigger`.
+TRIGGER_SCHEDULE = "schedule"
+TRIGGER_MANUAL = "manual"
+# A run's `status`, and a schedule's `last_status` once it has finished.
+STATUS_RUNNING = "running"
+STATUS_OK = "ok"
+STATUS_ERROR = "error"
+
 JSON_COLUMNS = ("recipients_to", "recipients_cc")
 COLUMNS = (
     "preset_id",
@@ -63,16 +71,7 @@ def insert(schedule):
 
 
 def update(schedule_id, changes):
-    fields = _encode({k: v for k, v in changes.items() if k in COLUMNS})
-    if not fields:
-        return
-    # The column names interpolated here come only from the COLUMNS allow-list
-    # above, never from the caller; the values stay bound parameters.
-    assignments = ", ".join(f"{k} = :{k}" for k in fields)
-    sqlite.execute(
-        f"UPDATE report_schedules SET {assignments}, updated_at = :now WHERE id = :id",
-        {**fields, "now": sqlite.iso_now(), "id": schedule_id},
-    )
+    sqlite.update_row("report_schedules", schedule_id, _encode(changes), COLUMNS)
 
 
 def get(schedule_id):
@@ -112,8 +111,8 @@ def delete(schedule_id):
 
 def insert_run(schedule_id, trigger):
     return sqlite.execute(
-        "INSERT INTO schedule_runs (schedule_id, trigger, started_at) VALUES (?, ?, ?)",
-        (schedule_id, trigger, sqlite.iso_now()),
+        "INSERT INTO schedule_runs (schedule_id, trigger, started_at, status) VALUES (?, ?, ?, ?)",
+        (schedule_id, trigger, sqlite.iso_now(), STATUS_RUNNING),
     )
 
 
@@ -127,14 +126,16 @@ def finish_run(run_id, status, error=None, saved_report_id=None):
 
 def list_running():
     """Runs still open, oldest first; after a restart these are the ones nobody will close."""
-    return sqlite.query("SELECT * FROM schedule_runs WHERE status = 'running' ORDER BY id")
+    return sqlite.query(
+        "SELECT * FROM schedule_runs WHERE status = ? ORDER BY id", (STATUS_RUNNING,)
+    )
 
 
 def close_running(error):
-    """Finish every open run as `error` with the given message; returns how many were closed."""
+    """Finish every open run as an error with the given message; returns how many were closed."""
     rows = list_running()
     for row in rows:
-        finish_run(row["id"], "error", error=error, saved_report_id=row["saved_report_id"])
+        finish_run(row["id"], STATUS_ERROR, error=error, saved_report_id=row["saved_report_id"])
     return len(rows)
 
 

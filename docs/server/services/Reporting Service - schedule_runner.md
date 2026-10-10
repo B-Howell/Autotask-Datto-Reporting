@@ -18,9 +18,10 @@ The [scheduled_runs service](<Reporting Service - scheduled_runs.md>) knows how 
 
 ## Uses
 
-- Standard library `threading` and `datetime` (the tick's `now` is `datetime.now(UTC).isoformat()`, the same offset-bearing format the repository's `due()` compares as text).
+- Standard library `threading`.
+- [sqlite repository](<../repositories/Reporting Repository - sqlite.md>) `iso_now`, the tick's `now`: the same offset-bearing UTC format every writer of `next_run_at` uses, which is what makes the repository's `due()` text comparison correct.
 - [streams](<../core/Reporting Core - streams.md>) `report_logger(STREAM, clear=True)`: one logger per batch, so a tick that starts three schedules writes them one after another into a buffer cleared at the start of the batch.
-- [schedules repository](<../repositories/Reporting Repository - schedules.md>) `due` and `close_running`.
+- [schedules repository](<../repositories/Reporting Repository - schedules.md>) `due`, `close_running`, and the `TRIGGER_SCHEDULE` and `TRIGGER_MANUAL` constants a batch is started with.
 - [schedules service](<Reporting Service - schedules.md>) `get`, to re-read each schedule just before it runs.
 - [scheduled_runs service](<Reporting Service - scheduled_runs.md>) `run_schedule`, with the trigger and the batch logger.
 

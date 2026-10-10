@@ -14,7 +14,7 @@ Unlike the per-report snapshot tables, presets are user data with no upstream co
 |---|---|
 | `COLUMNS` | The five writable columns: `name`, `report_type`, `agency_key`, `agency_name`, `options`. Both `insert` and `update` filter their input to these, so stray keys such as `id` or `created_at` are ignored rather than written. |
 | `insert(preset)` | Inserts a row from a dict; missing columns become `NULL` (the schema rejects a missing `name` or `report_type`). `created_at` and `updated_at` are stamped here. Returns the new id. |
-| `update(preset_id, changes)` | Updates only the keys in `changes` that are real columns and bumps `updated_at`; a dict with no usable keys is a no-op. |
+| `update(preset_id, changes)` | Encodes `options` and hands the changes to `sqlite.update_row` with `COLUMNS` as the allow-list, so only real columns are written and `updated_at` is bumped; a dict with no usable keys is a no-op. |
 | `get(preset_id)` | One decoded row or None. |
 | `list_presets()` | Every row ordered by name. |
 | `delete(preset_id)` | Deletes the row; a missing id is harmless. |
@@ -24,7 +24,7 @@ A decoded row carries the table columns with `options` already parsed from JSON 
 ## Uses
 
 - Standard library `json`.
-- [sqlite repository](<Reporting Repository - sqlite.md>) for `query`, `execute` and `iso_now`.
+- [sqlite repository](<Reporting Repository - sqlite.md>) for `query`, `execute`, `update_row` and `iso_now`.
 
 ## Used By
 
@@ -35,7 +35,7 @@ A decoded row carries the table columns with `options` already parsed from JSON 
 ## Key Behavior
 
 - `options` is stored as a JSON object string and defaults to `{}`; `None` or a missing value is written as `{}`, and an empty or null column decodes to `{}` so callers never see `None` there.
-- Column names in the `UPDATE` statement are interpolated into the SQL, but only from the `COLUMNS` allow-list; every value is a bound parameter. Bandit reports the f-string as B608 at medium severity and medium confidence; CI gates bandit at high for both, and the server carries no suppression comments, so the comment above the statement is the record of why it is safe.
+- The `UPDATE` statement is built by the [sqlite repository](<Reporting Repository - sqlite.md>)'s `update_row`, which interpolates column names only from the `COLUMNS` allow-list this module passes it and binds every value; the note on why that is safe lives on that page. `_fields` runs first so `options` reaches it already encoded as JSON.
 - `agency_key` is `TEXT` for the same reason as `manual_inputs.agency_key`: it holds either a single agency id (`"1000"`) or a group key (`group:<name>`), and it is `NULL` for reports that are not scoped to an agency.
 - Ordering by `name` is SQLite's default binary collation, so upper-case names sort before lower-case ones.
 - `delete` here does not look at schedules; the [presets service](<../services/Reporting Service - presets.md>) refuses to delete a preset while any schedule references it (it asks the [schedules repository](<Reporting Repository - schedules.md>) with `list_for_preset`), so callers must go through the service. The schema has no foreign key enforcing this.

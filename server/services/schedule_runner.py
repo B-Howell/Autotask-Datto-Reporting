@@ -8,10 +8,10 @@ scheduled_runs service advances and stamps each schedule as part of the run.
 """
 
 import threading
-from datetime import UTC, datetime
 
 from core import streams
 from repositories import schedules as schedule_repo
+from repositories import sqlite
 from services import scheduled_runs, schedules
 
 STREAM = "schedules"
@@ -58,7 +58,7 @@ class ScheduleRunner:
                 if schedule is None:
                     logger(f"[INFO] Schedule {schedule_id} no longer exists; skipped")
                     continue
-                if trigger == "schedule" and not schedule["enabled"]:
+                if trigger == schedule_repo.TRIGGER_SCHEDULE and not schedule["enabled"]:
                     logger(f"[INFO] Schedule {schedule_id} is disabled; skipped")
                     continue
                 scheduled_runs.run_schedule(schedule_id, trigger=trigger, logger=logger)
@@ -76,14 +76,13 @@ class ScheduleRunner:
         with `<=`, so whatever was due is picked up on the next tick after
         it finishes.
         """
-        now_iso = datetime.now(UTC).isoformat()
-        due = [s["id"] for s in schedule_repo.due(now_iso)]
+        due = [s["id"] for s in schedule_repo.due(sqlite.iso_now())]
         if due:
-            self._start(due, "schedule")
+            self._start(due, schedule_repo.TRIGGER_SCHEDULE)
 
     def run_now(self, schedule_id):
         """Start one schedule from the page. False when a run is already in flight."""
-        return self._start([schedule_id], "manual")
+        return self._start([schedule_id], schedule_repo.TRIGGER_MANUAL)
 
     def join(self, timeout=5):
         thread = self._thread

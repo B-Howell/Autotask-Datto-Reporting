@@ -142,7 +142,7 @@ def test_today_is_the_calendar_day_in_the_schedule_zone(run_env, monkeypatch):
     from config import settings
 
     monkeypatch.setattr(scheduled_runs, "_today", REAL_TODAY)
-    monkeypatch.setattr(scheduled_runs, "_now", lambda: datetime(2026, 11, 1, 2, 30, tzinfo=UTC))
+    monkeypatch.setattr(schedules, "now_utc", lambda: datetime(2026, 11, 1, 2, 30, tzinfo=UTC))
     monkeypatch.setattr(
         schedules, "settings", dataclasses.replace(settings, schedule_timezone="America/New_York")
     )
@@ -267,12 +267,12 @@ def test_the_flow_receives_the_rendered_file_and_the_html_body(run_env, monkeypa
 def test_a_scheduled_trigger_moves_next_run_past_the_run(run_env, monkeypatch):
     from datetime import UTC, datetime
 
-    monkeypatch.setattr(schedules, "_now", lambda: datetime(2026, 10, 9, 15, 0, tzinfo=UTC))
+    monkeypatch.setattr(schedules, "now_utc", lambda: datetime(2026, 10, 9, 15, 0, tzinfo=UTC))
     schedule = _schedule()
     assert schedule["next_run_at"] == "2026-11-01T07:00:00+00:00"
     _device_sheet(monkeypatch)
 
-    monkeypatch.setattr(schedules, "_now", lambda: datetime(2026, 11, 1, 7, 0, 10, tzinfo=UTC))
+    monkeypatch.setattr(schedules, "now_utc", lambda: datetime(2026, 11, 1, 7, 0, 10, tzinfo=UTC))
     run = scheduled_runs.run_schedule(schedule["id"], trigger="schedule", logger=lambda m: None)
 
     assert run["status"] == "ok"
@@ -350,3 +350,7 @@ def test_an_annual_run_passes_the_tenant_departments(run_env, monkeypatch):
 def test_a_missing_schedule_raises(temp_db):
     with pytest.raises(LookupError):
         scheduled_runs.run_schedule(999, trigger="manual", logger=lambda m: None)
+
+
+def test_every_report_type_a_preset_can_name_has_a_gatherer():
+    assert set(scheduled_runs.GATHERERS) == set(presets.REPORT_TYPES)

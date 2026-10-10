@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS report_schedules (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
     preset_id      INTEGER NOT NULL,
     day_of_month   INTEGER NOT NULL,
-    hour           INTEGER NOT NULL DEFAULT 7,
+    hour           INTEGER NOT NULL DEFAULT 7,  -- services/schedules.py DEFAULT_HOUR
     recipients_to  TEXT NOT NULL DEFAULT '[]',
     recipients_cc  TEXT NOT NULL DEFAULT '[]',
     subject        TEXT NOT NULL DEFAULT '',
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS schedule_runs (
     trigger          TEXT NOT NULL,
     started_at       TEXT NOT NULL,
     finished_at      TEXT,
-    status           TEXT NOT NULL DEFAULT 'running',
+    status           TEXT NOT NULL DEFAULT 'running',  -- repositories/schedules.py STATUS_RUNNING
     error            TEXT,
     saved_report_id  INTEGER
 );
@@ -407,6 +407,23 @@ def replace_scope(table, scope, rows):
         except Exception:
             conn.rollback()
             raise
+
+
+def update_row(table, row_id, fields, allowed):
+    """Set the allow-listed `fields` on the row with `id` and stamp `updated_at`.
+
+    Nothing to set is a no-op. The column names interpolated into the SQL
+    come only from `allowed`, never from the caller's keys as given; every
+    value stays a bound parameter.
+    """
+    columns = {k: v for k, v in fields.items() if k in allowed}
+    if not columns:
+        return
+    assignments = ", ".join(f"{k} = :{k}" for k in columns)
+    execute(
+        f"UPDATE {table} SET {assignments}, updated_at = :now WHERE id = :id",
+        {**columns, "now": iso_now(), "id": row_id},
+    )
 
 
 def iso_now():
