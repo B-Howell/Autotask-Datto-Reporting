@@ -1,6 +1,7 @@
 import os
 import stat
 import sys
+import time
 
 import pytest
 
@@ -22,6 +23,23 @@ def test_round_trip(key_dir):
     assert secrets.decrypt(blob) == "hunter2-not-a-real-key"
 
 
+def test_a_token_read_back_as_text_still_decrypts(key_dir):
+    blob = secrets.encrypt("value")
+    assert secrets.decrypt(blob.decode("ascii")) == "value"
+
+
+def test_a_value_that_is_not_a_token_raises_a_clear_error(key_dir):
+    with pytest.raises(secrets.SecretsError, match="not a token"):
+        secrets.decrypt(12345)
+
+
+def test_tokens_never_expire(key_dir, monkeypatch):
+    blob = secrets.encrypt("value")
+    years_ahead = time.time() + 10 * 365 * 24 * 3600
+    monkeypatch.setattr(time, "time", lambda: years_ahead)
+    assert secrets.decrypt(blob) == "value"
+
+
 def test_key_file_is_created_once_with_owner_only_permissions(key_dir):
     secrets.encrypt("x")
     path = key_dir / "secret.key"
@@ -39,6 +57,8 @@ def test_key_source_reports_where_the_key_came_from(key_dir, monkeypatch):
     from cryptography.fernet import Fernet
 
     monkeypatch.setenv("APP_SECRET_KEY", Fernet.generate_key().decode())
+    # The answer describes the key in use, not the environment right now.
+    assert secrets.key_source() == "file"
     secrets.reset_cache()
     assert secrets.key_source() == "environment"
 
@@ -69,6 +89,25 @@ def test_a_key_file_created_by_another_worker_is_reused(key_dir, monkeypatch):
     blob = secrets.encrypt("value")
     assert (key_dir / "secret.key").read_bytes() == other_key
     assert Fernet(other_key).decrypt(blob).decode() == "value"
+
+
+def test_an_empty_key_file_is_read_again_once_the_other_worker_has_written_it(key_dir, monkeypatch):
+    from cryptography.fernet import Fernet
+
+    path = key_dir / "secret.key"
+    path.write_bytes(b"")
+    other_key = Fernet.generate_key()
+    monkeypatch.setattr(secrets, "_EMPTY_FILE_RETRY_SECONDS", 0)
+    monkeypatch.setattr(secrets.time, "sleep", lambda _s: path.write_bytes(other_key))
+    blob = secrets.encrypt("value")
+    assert Fernet(other_key).decrypt(blob).decode() == "value"
+
+
+def test_a_key_file_that_stays_empty_is_rejected_with_its_path(key_dir, monkeypatch):
+    (key_dir / "secret.key").write_bytes(b"")
+    monkeypatch.setattr(secrets, "_EMPTY_FILE_RETRY_SECONDS", 0)
+    with pytest.raises(secrets.SecretsError, match="secret.key is empty"):
+        secrets.encrypt("value")
 
 
 def test_wrong_key_raises_a_clear_error(key_dir, monkeypatch):

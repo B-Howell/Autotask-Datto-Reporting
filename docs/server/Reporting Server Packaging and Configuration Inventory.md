@@ -15,7 +15,7 @@ The non-code files that build, configure and lint the FastAPI server, plus the p
 
 ## Dependencies
 
-- [server/requirements.txt](../../server/requirements.txt) pins the eight runtime packages: FastAPI, uvicorn with its standard extras, requests for the vendor APIs, sse-starlette for the log streams, python-dotenv for `server/.env`, python-multipart for the saved-report upload route, tzdata because Windows has no system zoneinfo database for the schedule timezone to resolve against, and cryptography for the Fernet encryption that [secrets](<core/Reporting Core - secrets.md>) applies to vendor credentials stored in the database. Every version is exact so `pip-audit` in CI has a fixed target. Active.
+- [server/requirements.txt](../../server/requirements.txt) pins the eight runtime packages: FastAPI, uvicorn with its standard extras, requests for the vendor APIs, sse-starlette for the log streams, python-dotenv for `server/.env`, python-multipart for the saved-report upload route, tzdata because Windows has no system zoneinfo database for the schedule timezone to resolve against, and cryptography for the Fernet encryption that [secrets](<core/Reporting Core - secrets.md>) applies to vendor credentials stored in the database. Every version is exact so `pip-audit` in CI has a fixed target, and cryptography in particular is pinned to a current release because older lines carry published advisories that would fail that audit. Active.
 - [server/requirements-dev.txt](../../server/requirements-dev.txt) pins the tooling CI runs and the image never installs: ruff, bandit, pip-audit, pytest and httpx (needed by FastAPI's `TestClient`). Active.
 
 ## Lint, security and test configuration
