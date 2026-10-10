@@ -127,6 +127,17 @@ CREATE TABLE IF NOT EXISTS schedule_runs (
     saved_report_id  INTEGER
 );
 
+-- Vendor credentials entered on the Settings page, one row per field, the
+-- value encrypted by core/secrets.py. User data with no upstream copy: never
+-- list this table in _STALE_ON_UPGRADE.
+CREATE TABLE IF NOT EXISTS credentials (
+    name            TEXT PRIMARY KEY,
+    ciphertext      BLOB NOT NULL,
+    updated_at      TEXT NOT NULL,
+    last_tested_at  TEXT,
+    last_test_ok    INTEGER
+);
+
 -- Devices: one row per merged device (display columns from build_spreadsheet_data).
 -- Scope = (company_id, site_id), the exact params the /api/devices endpoint gets.
 CREATE TABLE IF NOT EXISTS device_rows (

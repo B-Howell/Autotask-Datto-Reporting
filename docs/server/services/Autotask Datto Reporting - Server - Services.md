@@ -20,6 +20,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 
 - [Reporting Service - agencies.md](<Reporting Service - agencies.md>)
 - [Reporting Service - common.md](<Reporting Service - common.md>)
+- [Reporting Service - credentials.md](<Reporting Service - credentials.md>)
 - [Reporting Service - device_audit.md](<Reporting Service - device_audit.md>)
 - [Reporting Service - devices.md](<Reporting Service - devices.md>)
 - [Reporting Service - hdd_tickets.md](<Reporting Service - hdd_tickets.md>)

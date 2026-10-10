@@ -16,6 +16,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 
 ### Documents and artifacts in this area
 
+- [Reporting Repository - credentials.md](<Reporting Repository - credentials.md>)
 - [Reporting Repository - manual_inputs.md](<Reporting Repository - manual_inputs.md>)
 - [Reporting Repository - presets.md](<Reporting Repository - presets.md>)
 - [Reporting Repository - saved_reports.md](<Reporting Repository - saved_reports.md>)

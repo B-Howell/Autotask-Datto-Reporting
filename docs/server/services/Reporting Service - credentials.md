@@ -1,0 +1,59 @@
+# Credentials service
+
+> Resolves each vendor credential from the environment first and the encrypted store second, validates what the Settings page saves, and tells the vendor clients when the values change.
+
+## Purpose
+
+The Autotask and Datto clients need a username, secrets and a hostname. Until now those came only from environment variables, so rotating a key meant a redeploy. This module lets them be entered in the app instead while keeping a deployment that injects its secrets in charge: a non-blank environment variable always wins and cannot be edited on the page, everything else is stored encrypted through [secrets](<../core/Reporting Core - secrets.md>) in the [credentials repository](<../repositories/Reporting Repository - credentials.md>). The resolved values are cached once per process, and `invalidate()` notifies registered listeners so a client that derived something from the old values (the Datto token provider, for one) can drop it.
+
+The seven fields are the same ones [config](<../Reporting Server - config.md>) loads today, under the same variable names, so a deployment that already sets them sees no change in behaviour; the integrations move over to this module in a later change.
+
+## Interface
+
+| Name | Description |
+|---|---|
+| `Field(env, secret, vendor)` | Frozen dataclass describing one field: its environment variable, whether the Settings page must mask it, and the vendor it belongs to (`AUTOTASK` or `DATTO`). |
+| `FIELDS` | Map of field name to `Field`: `autotask_username` (`AUTOTASK_USERNAME`), `autotask_secret` (`AUTOTASK_PASSWORD`, secret), `autotask_integration_code` (`AUTOTASK_TRACKING_ID`, secret), `autotask_base_url` (`AUTOTASK_BASE_URL`), `datto_api_key` (`DATTO_API_KEY`, secret), `datto_api_secret` (`DATTO_API_SECRET`, secret), `datto_platform` (`DATTO_PLATFORM`). |
+| `AUTOTASK`, `DATTO` | The vendor names. |
+| `SOURCE_ENVIRONMENT`, `SOURCE_STORED`, `SOURCE_MISSING` | The three values of `source` in a status entry. |
+| `current()` | `{name: value}` for every field: the trimmed environment value when non-blank, else the decrypted stored value, else `""`. Cached; returns a copy. |
+| `status()` | One dict per field for the Settings page: `name`, `vendor`, `secret`, `configured`, `source`, `last4`, `updated_at`, `last_tested_at`, `last_test_ok`. Never carries a full value. |
+| `save(values)` | Validates every entry, then stores the non-blank ones encrypted and calls `invalidate()`. Raises `ValueError` and writes nothing when any entry is unknown, environment-managed or malformed. |
+| `invalidate()` | Drops the cached values and runs every registered listener. |
+| `on_change(callback)` | Registers a no-argument callable to run after `invalidate()`. |
+| `record_test(vendor, ok)` | Stamps the outcome of a connection test on that vendor's stored rows. |
+| `is_configured(vendor)` | True when every field of the vendor has a non-blank value in `current()`. |
+| `datto_api_base()`, `datto_token_url()` | `https://<platform>-api.centrastage.net` and `<base>/auth/oauth/token`, from the current `datto_platform`, exactly as config derives them from `DATTO_PLATFORM`. |
+
+Validation failures raise `ValueError` with a message meant for the user: `Unknown credential: <name>`, `<VARIABLE> is set by the environment; clear it to manage this value here`, `The Autotask base URL must start with https://`, `The Datto platform is the first label of the host you sign in to`.
+
+## Uses
+
+- [secrets](<../core/Reporting Core - secrets.md>) for `encrypt` and `decrypt`.
+- [credentials repository](<../repositories/Reporting Repository - credentials.md>), imported as `repo`.
+- `os.environ`, read directly rather than through `settings`: the `Settings` object is frozen at import, and this module must see a variable that is set or cleared afterwards (the tests vary it per case, and an operator clearing a variable to take over a value in the app expects the next restart to honour that).
+
+## Used By
+
+- [server/tests/test_credentials.py](../../../server/tests/test_credentials.py).
+- The vendor integrations, the credentials router and the Settings page build on this module in later changes; until they land nothing else imports it.
+
+## Key Behavior
+
+- Precedence is decided per field, not per vendor: a deployment can inject `DATTO_API_SECRET` and leave the platform to be entered in the app. The environment value is trimmed, and a variable that is set but blank counts as unset.
+- `current()` resolves every field on the first call and caches the dict under a lock; later calls return a copy without touching the environment, the database or the key. Only `invalidate()` clears it, so a variable changed in a running process is not seen until something calls `invalidate()` (every `save` does). `secrets.SecretsError` from a stored value that no longer decrypts under the loaded key propagates out of `current()` and everything built on it; the router maps it when it lands.
+- `source` is `environment` when the variable is non-blank, `stored` when a row exists for the field, otherwise `missing`. `configured` is simply whether the value is non-blank. Because a blank save never writes a row, a stored row always holds a non-blank value and `stored` always implies `configured`.
+- `last4` is the last four characters of a secret field's value, for environment and stored values alike, so the page can tell which key is in place without showing it. It is `""` for non-secret fields, for missing values, and for a secret of four characters or fewer, where the tail would be the whole value. `status()` is the only read path meant for the browser and the test asserts the plaintext never appears in its JSON.
+- `save` cleans and validates every entry before the first write, so a request with one bad field stores nothing. An unknown name is refused even when its value is blank. A blank or missing value leaves the stored row alone, which is how a form that re-posts every field without retyping a secret keeps it; it also means a value cannot be cleared through `save`, only replaced (the repository's `delete` exists for that). A non-blank value for a field whose variable is set is refused with the variable's name, so the page can say which one to clear.
+- `autotask_base_url` loses any trailing slash and must start with `https://`; `datto_platform` must match `^[a-z0-9-]+$`, which rejects a full hostname or a URL pasted by mistake. Values are stored after cleaning, so `current()` returns them in the shape the clients expect.
+- Listeners run outside the lock, after the cache is cleared, so a listener that calls `current()` sees the new values. They are stored in module state and are registered once at import by the client that needs them.
+- `record_test` stamps only the vendor's stored rows; a vendor configured through the environment has no rows to stamp, so its status entries keep `last_tested_at` as `None`.
+
+## Cleanup Notes
+
+- `FIELDS` names the same variables as `config.load_settings()`; nothing checks the two lists against each other until the integrations switch to this module and the config fields are retired.
+- `on_change` has no `off` counterpart and the listener list is never reset outside the tests, which is fine for the one registration per process it is meant for.
+
+## Source
+
+[server/services/credentials.py](../../../server/services/credentials.py)

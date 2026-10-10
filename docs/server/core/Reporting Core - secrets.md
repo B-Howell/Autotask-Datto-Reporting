@@ -27,7 +27,8 @@ Vendor credentials entered in the app's Settings page are stored in SQLite so a 
 ## Used By
 
 - [server/tests/test_secrets.py](../../../server/tests/test_secrets.py)
-- The credentials repository, service, router and Settings page that store and read vendor credentials build on this module; until they land nothing else imports it.
+- [credentials service](<../services/Reporting Service - credentials.md>) (`encrypt` when a value is saved, `decrypt` when the stored values are resolved; its `SecretsError` is allowed to propagate).
+- The credentials router and Settings page build on the service in later changes.
 
 ## Key Behavior
 
