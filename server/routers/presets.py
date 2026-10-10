@@ -50,6 +50,8 @@ def update_preset(preset_id: int, body: PresetBody):
 
 @router.delete("/{preset_id}")
 def delete_preset(preset_id: int):
+    if presets.get(preset_id) is None:
+        raise HTTPException(status_code=404, detail="No such preset")
     # The service refuses while a schedule still renders this preset; that
     # is a conflict with existing state, not a malformed request.
     try:

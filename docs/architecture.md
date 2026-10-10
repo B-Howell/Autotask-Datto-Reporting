@@ -478,9 +478,12 @@ takes the previous calendar quarter; the annual utilization takes the
 reporting year that the previous month falls in, so a run in the first month
 of a new reporting year still sends the year that just closed. Current-state
 reports (devices, licensing, patch, disk-space tickets) have no period; they
-say what the snapshot says on the day. The arithmetic reuses the utilization
-service's quarter and fiscal-year helpers rather than duplicating the
-calendar.
+say what the snapshot says on the day. "The day" is the calendar day in
+`SCHEDULE_TIMEZONE`, the zone the schedule was written in, not the
+container's clock, so a deployment whose containers run in UTC still
+chooses the period and dates the filename the way the person who set the
+schedule expects. The arithmetic reuses the utilization service's quarter
+and fiscal-year helpers rather than duplicating the calendar.
 
 ### The renderer
 

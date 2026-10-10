@@ -18,7 +18,7 @@ The scheduled reports page needs two things: the schedule rows themselves, and a
 | GET | `/api/schedules/renderer-health` | none | the renderer's `/health` body (`ok`, `reportTypes`) | 502 with the `RenderError` text when the renderer is down or answers badly |
 | POST | `/api/schedules/test-delivery` | JSON `{to: [address, ...]}`, at least one | `{sent: true}` after the flow accepted a message with subject `Reporting: delivery test`, a one-line body and no attachment | 502 with the `DeliveryError` text (`DELIVERY_WEBHOOK_URL is not set...`, `Delivery flow unreachable at <host>: ...`, `Delivery flow returned <status>: ...`); 422 when `to` is missing or empty |
 | PUT | `/api/schedules/{schedule_id}` | path `schedule_id: int`; JSON `ScheduleBody` with only the fields to change | the stored row after the change, joined with its preset; `next_run_at` is recomputed, or `null` when disabled | 404 `No such schedule`; 400 when the merged row fails validation |
-| DELETE | `/api/schedules/{schedule_id}` | path `schedule_id: int` | `{deleted: true}` | none; an unknown id still answers `deleted: true` |
+| DELETE | `/api/schedules/{schedule_id}` | path `schedule_id: int` | `{deleted: true}` | 404 `No such schedule` |
 | GET | `/api/schedules/{schedule_id}/runs` | path `schedule_id: int` | that schedule's runs, newest first, at most 50 | 404 `No such schedule` |
 | POST | `/api/schedules/{schedule_id}/run` | path `schedule_id: int` | 202 `{started: true}`; the run proceeds on the runner's thread with trigger `manual` | 404 `No such schedule`; 409 `A run of schedule <id> is already in flight` (or `of another schedule` when the runner has no id to report) |
 
@@ -50,7 +50,7 @@ The scheduled reports page needs two things: the schedule rows themselves, and a
 - `/logs` follows the `schedules` buffer, which the runner clears at the start of each batch; a page that opens it mid-run receives the whole retained window first, as every `/logs` route does.
 - The delivery test sends to the addresses given, with an empty `cc`, the fixed subject `Reporting: delivery test`, a one-line body and `attachments: []`, so the message exercises the flow's trigger schema and the mailbox without a file. A `DeliveryError` becomes a 502 carrying the integration's text, which never includes the signed webhook URL.
 - The renderer check passes the renderer's own `/health` JSON through unchanged, so the page can list `reportTypes` and compare them with the presets it holds.
-- Delete answers `deleted: true` for an unknown id, matching the saved-reports router; the service's delete is idempotent and the repository removes the schedule's runs first.
+- Delete checks the schedule exists through `_existing` before calling the service, so a stale page gets a 404 for a schedule that is already gone rather than a success it cannot tell from its own; the repository removes the schedule's runs first.
 
 ## Cleanup Notes
 

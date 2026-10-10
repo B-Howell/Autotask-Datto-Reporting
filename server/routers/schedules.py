@@ -122,6 +122,7 @@ def update_schedule(schedule_id: int, body: ScheduleBody):
 
 @router.delete("/{schedule_id}")
 def delete_schedule(schedule_id: int):
+    _existing(schedule_id)
     schedules.delete(schedule_id)
     return {"deleted": True}
 

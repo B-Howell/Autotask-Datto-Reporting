@@ -1,9 +1,10 @@
 """Test fixtures.
 
-DEMO_MODE is set before config is imported so the settings load without
-vendor credentials. Tests that exercise the cache against a real SQLite file
-point the repository at a temporary database and switch demo mode off, so the
-fetch callback they pass is the one that runs.
+DEMO_MODE and SCHEDULE_TIMEZONE are set before config is imported so the
+settings load without vendor credentials and in the zone the tests assume.
+Tests that exercise the cache against a real SQLite file point the repository
+at a temporary database and switch demo mode off, so the fetch callback they
+pass is the one that runs.
 """
 
 import dataclasses
@@ -12,6 +13,11 @@ import sys
 import types
 
 os.environ.setdefault("DEMO_MODE", "1")
+# The suite asserts UTC instants and calendar days, so the zone is pinned
+# rather than defaulted: neither a developer's server/.env (loaded by config,
+# which never overrides a variable already set) nor a value exported in the
+# shell may change what those tests expect.
+os.environ["SCHEDULE_TIMEZONE"] = "UTC"
 # The suite must test the default rules even on a machine that has a real
 # report_rules_local.py, so an empty module takes that name before anything
 # imports report_rules.

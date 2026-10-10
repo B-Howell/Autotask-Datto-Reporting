@@ -13,7 +13,7 @@ A preset is one report, one agency and the options its export takes, kept so a s
 | GET | `/api/presets` | none | list of preset rows (`id, name, report_type, agency_key, agency_name, options, created_at, updated_at`), ordered by id | none |
 | POST | `/api/presets` | JSON `PresetBody`: `name`, `report_type`, `agency_key` (string or int), `agency_name`, `options` (object); all optional in the schema, the service requires `name` and a known `report_type` | 201 with the stored row | 400 with the service's message (`Unknown report type: ...`, `This report needs an agency`, `A preset needs a name`, an options message) |
 | PUT | `/api/presets/{preset_id}` | path `preset_id: int`; JSON `PresetBody` with only the fields to change | the stored row after the change | 404 `No such preset`; 400 when the merged row fails validation |
-| DELETE | `/api/presets/{preset_id}` | path `preset_id: int` | `{deleted: true}` | 409 `Delete its schedules first` while a schedule references the preset; an unknown id still answers `deleted: true` |
+| DELETE | `/api/presets/{preset_id}` | path `preset_id: int` | `{deleted: true}` | 404 `No such preset`; 409 `Delete its schedules first` while a schedule references the preset |
 
 `PresetBody` is one Pydantic model with every field optional, serialized with `exclude_unset=True`, so a PUT carrying only `name` reaches the service as `{"name": ...}` and the service merges it over the stored row. A field of the wrong JSON type (an `options` that is a list, say) is a 422 from FastAPI before the service sees it.
 
@@ -31,7 +31,7 @@ A preset is one report, one agency and the options its export takes, kept so a s
 ## Key Behavior
 
 - `_or_error` wraps each service call: `LookupError` is a 404 and `ValueError` a 400, both carrying the service's own message as `detail`, so the page shows `hour must be between 0 and 23` rather than a generic failure. The same helper appears in the [schedules router](<Reporting Router - schedules.md>); it is three lines and the two routers would otherwise share nothing.
-- Delete maps `ValueError` to 409 rather than 400: the request is well formed, it conflicts with a schedule that exists. The page is expected to delete or re-point the schedule first.
+- Delete first asks the service's `get` and answers 404 for an unknown id, then maps the service's `ValueError` to 409 rather than 400: the request is well formed, it conflicts with a schedule that exists. The page is expected to delete or re-point the schedule first.
 - `agency_key` accepts a string or an integer because the client sends whatever the agency dropdown holds (a company id or a `group:<name>` key); the service stores it as text.
 - Nothing here runs a report, so there is no job, no stream and no `run_report`.
 

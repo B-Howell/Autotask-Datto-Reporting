@@ -10,7 +10,7 @@ the same day replaces it rather than sitting beside it.
 import base64
 import html
 import re
-from datetime import date
+from datetime import UTC, datetime
 
 from integrations import delivery, renderer
 from repositories import manual_inputs
@@ -60,8 +60,19 @@ MONTHS = [
 ]
 
 
+def _now():
+    return datetime.now(UTC)
+
+
 def _today():
-    return date.today()
+    """The calendar day in the deployment's schedule zone.
+
+    The period a run reports on and the date in its filename follow the
+    day the schedule was set for, not the container's clock: a run at
+    02:30 UTC on 1 Nov is still 31 Oct in New York, and must send
+    September's SLA report, not October's.
+    """
+    return _now().astimezone(schedules.tz()).date()
 
 
 def _stamp():

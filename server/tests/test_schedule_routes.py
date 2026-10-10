@@ -73,6 +73,8 @@ def test_preset_and_schedule_lifecycle_over_http(temp_db):
         assert client.delete(f"/api/schedules/{schedule['id']}").json() == {"deleted": True}
         assert client.delete(f"/api/presets/{preset['id']}").json() == {"deleted": True}
         assert client.get("/api/schedules").json() == []
+        assert client.delete(f"/api/schedules/{schedule['id']}").status_code == 404
+        assert client.delete(f"/api/presets/{preset['id']}").status_code == 404
 
 
 def test_run_now_starts_a_run_or_reports_why_not(temp_db, monkeypatch):

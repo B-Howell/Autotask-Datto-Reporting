@@ -26,7 +26,8 @@ def _now():
     return datetime.now(UTC)
 
 
-def _tz():
+def tz():
+    """The deployment's schedule zone, or a ValueError naming the bad setting."""
     try:
         return ZoneInfo(settings.schedule_timezone)
     except (ZoneInfoNotFoundError, ValueError) as exc:
@@ -117,7 +118,7 @@ def _validated(schedule):
 
 def _with_next_run(fields):
     fields["next_run_at"] = (
-        next_run_after(_now(), fields["day_of_month"], fields["hour"], _tz())
+        next_run_after(_now(), fields["day_of_month"], fields["hour"], tz())
         if fields["enabled"]
         else None
     )
@@ -154,7 +155,7 @@ def advance(schedule):
     """After a scheduled run: move next_run_at to the following occurrence."""
     repo.update(
         schedule["id"],
-        {"next_run_at": next_run_after(_now(), schedule["day_of_month"], schedule["hour"], _tz())},
+        {"next_run_at": next_run_after(_now(), schedule["day_of_month"], schedule["hour"], tz())},
     )
 
 

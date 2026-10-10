@@ -98,8 +98,8 @@ The design decisions that matter, and why I made them:
 - **Scheduled reports reuse the browser's exporters.** The Excel, Word and
   PDF builders are pure functions of their input, so a small Node service
   runs the same modules without a browser and hands the server the file. One
-  implementation per document, and a scheduled file is byte-for-byte what
-  the export button would have produced. A run advances its schedule before
+  implementation per document, built by the same code the export buttons
+  run, so the layout never drifts. A run advances its schedule before
   it starts, so a crash cannot send twice, and the mail goes out through a
   Power Automate flow so the app never holds a mailbox credential.
 - **Deployment values never live in tracked source.** Credentials, the

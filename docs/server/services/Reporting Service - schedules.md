@@ -11,6 +11,7 @@ A schedule says "render this preset on the 1st at 07:00 and mail it to these peo
 | Name | Description |
 |---|---|
 | `next_run_after(now, day_of_month, hour, tz)` | The ISO UTC string of the first occurrence of `day_of_month` at `hour:00` in `tz` strictly after the aware datetime `now`. A day past the end of a month runs on that month's last day. |
+| `tz()` | The `ZoneInfo` for `settings.schedule_timezone`, or a `ValueError` naming `SCHEDULE_TIMEZONE` when the zone is unknown. Shared with the [scheduled runs service](<Reporting Service - scheduled_runs.md>), which uses it to decide a run's calendar day. |
 | `create(schedule)` | Validates, computes `next_run_at`, inserts and returns the stored row. |
 | `update(schedule_id, changes)` | Loads the current row, lays `changes` over it, re-validates the whole thing, recomputes `next_run_at` and writes it back; returns the stored row. Raises `LookupError` when the id does not exist. |
 | `get(schedule_id)` | The stored row or None. |
@@ -46,7 +47,7 @@ Validation failures raise `ValueError` with a message meant for the user: `No su
 - `day_of_month` and `hour` are parsed as numbers and must be integral: a bool or `None` is refused first, so `True` is not silently accepted as day 1 and a missing hour defaults to 7 only when the key is absent, not when it is sent as null; `7.5` (or `"7.5"`) is refused rather than truncated to 7, while `7.0` is accepted. A string that is not a number gets the same `must be a whole number` message rather than a bare `int()` traceback.
 - `enabled` defaults to true on create. A disabled schedule gets `next_run_at = None`, which also takes it out of the repository's `due()` query; re-enabling recomputes it from now, so a schedule paused across its usual day does not fire late the moment it is resumed.
 - `update` validates the merged row, not the delta, and always recomputes `next_run_at`: changing only the subject still moves `next_run_at` to the next occurrence from now, which is the same value unless the previous one has passed. The consequence is that editing any field of a schedule whose run is overdue but not yet picked up by the loop skips that run; this is acceptable because the loop ticks every minute, so the window is at most one tick. Keys other than the validated fields (the `last_*` columns, `id`, timestamps) are not touched by `update`; only `record_result` writes the `last_*` columns.
-- `_tz()` resolves the zone on every call rather than at import, so a bad `SCHEDULE_TIMEZONE` is reported as a `ValueError` naming the setting when a schedule is first created, updated or advanced, instead of preventing the server from starting. On Windows and slim containers the zone database comes from the `tzdata` package; a missing database raises the same error.
+- `tz()` resolves the zone on every call rather than at import, so a bad `SCHEDULE_TIMEZONE` is reported as a `ValueError` naming the setting when a schedule is first created, updated or advanced, instead of preventing the server from starting. On Windows and slim containers the zone database comes from the `tzdata` package; a missing database raises the same error.
 - `list_schedules` fetches every preset once and joins in Python; with a handful of schedules this is cheaper than a query per row and avoids adding a join to the repository.
 
 ## Cleanup Notes

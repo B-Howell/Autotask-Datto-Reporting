@@ -1,4 +1,5 @@
-from datetime import date
+import dataclasses
+from datetime import UTC, date, datetime
 
 import pytest
 
@@ -7,6 +8,7 @@ from repositories import schedules as schedule_repo
 from services import presets, saved_reports, scheduled_runs, schedules
 
 REAL_SEND = delivery.send
+REAL_TODAY = scheduled_runs._today
 AGENCY = "Harbor Point Health"
 MEMBER = {"id": 1000, "site": "site-a", "name": AGENCY}
 
@@ -133,6 +135,37 @@ def test_the_period_placeholder_names_the_previous_month_for_sla(run_env, monkey
     assert run["status"] == "ok" and asked == [(2026, 10)]
     assert run_env["sent"]["subject"] == "SLA performance October 2026"
     assert run_env["rendered"]["args"][3] == "SLA Performance By Ticket October2026.xlsx"
+
+
+def test_today_is_the_calendar_day_in_the_schedule_zone(run_env, monkeypatch):
+    """02:30 UTC on 1 Nov is still 31 Oct in New York, so the SLA run is September's."""
+    from config import settings
+
+    monkeypatch.setattr(scheduled_runs, "_today", REAL_TODAY)
+    monkeypatch.setattr(scheduled_runs, "_now", lambda: datetime(2026, 11, 1, 2, 30, tzinfo=UTC))
+    monkeypatch.setattr(
+        schedules, "settings", dataclasses.replace(settings, schedule_timezone="America/New_York")
+    )
+    assert scheduled_runs._today() == date(2026, 10, 31)
+
+    schedule = _schedule(report_type="sla", agency_key=None, subject="{report} {period}")
+    asked = []
+    monkeypatch.setattr(
+        scheduled_runs.sla,
+        "get_sla_report",
+        lambda y, m, logger=print: asked.append((y, m)) or {"tickets": []},
+    )
+
+    run = scheduled_runs.run_schedule(schedule["id"], trigger="test", logger=lambda m: None)
+
+    assert run["status"] == "ok" and asked == [(2026, 9)]
+    assert run_env["sent"]["subject"] == "SLA performance September 2026"
+
+    monkeypatch.setattr(
+        schedules, "settings", dataclasses.replace(settings, schedule_timezone="Nowhere/Land")
+    )
+    with pytest.raises(ValueError, match="SCHEDULE_TIMEZONE"):
+        scheduled_runs._today()
 
 
 def test_an_unknown_placeholder_is_left_literally(run_env, monkeypatch):
