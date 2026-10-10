@@ -19,6 +19,9 @@ interface DataTableProps<Row> {
   stickyHeader?: boolean;
   maxHeight?: number | string;
   sx?: SxProps<Theme>;
+  /** Makes every row clickable; the row whose key equals `selectedKey` renders selected. */
+  onRowClick?: (row: Row) => void;
+  selectedKey?: string | number | null;
 }
 
 /** Plain MUI table with bold headers, the shape every simple report list uses. */
@@ -30,6 +33,8 @@ function DataTable<Row>({
   stickyHeader = false,
   maxHeight,
   sx,
+  onRowClick,
+  selectedKey = null,
 }: DataTableProps<Row>) {
   return (
     <TableContainer sx={{ maxHeight, ...sx }}>
@@ -48,15 +53,24 @@ function DataTable<Row>({
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={rowKey(row, index)} hover>
-              {columns.map((col) => (
-                <TableCell key={col.key} align={col.align ?? 'left'}>
-                  {col.render(row, index)}
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
+          {rows.map((row, index) => {
+            const key = rowKey(row, index);
+            return (
+              <TableRow
+                key={key}
+                hover
+                selected={selectedKey !== null && key === selectedKey}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                sx={onRowClick ? { cursor: 'pointer' } : undefined}
+              >
+                {columns.map((col) => (
+                  <TableCell key={col.key} align={col.align ?? 'left'}>
+                    {col.render(row, index)}
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
           {footer}
         </TableBody>
       </Table>

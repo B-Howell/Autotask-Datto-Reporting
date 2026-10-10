@@ -23,6 +23,7 @@
 ## Used By
 
 - [useScheduleDialog](<../components/report/Reporting Report Component - useScheduleDialog.md>) creates the preset a new schedule points at, and deletes it again if the schedule itself cannot be saved.
+- The [Scheduled Reports page](<../pages/Reporting Page - ScheduledReports.md>) reads presets only through the schedule rows they are joined to; deleting a schedule there leaves its preset in place, so this module is not called from that page.
 
 ## Key Behavior
 

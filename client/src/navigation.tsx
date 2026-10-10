@@ -5,6 +5,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import FolderIcon from '@mui/icons-material/Folder';
 import HomeIcon from '@mui/icons-material/Home';
 import InsightsIcon from '@mui/icons-material/Insights';
+import ScheduleSendIcon from '@mui/icons-material/ScheduleSend';
 import SecurityUpdateGoodIcon from '@mui/icons-material/SecurityUpdateGood';
 import StorageIcon from '@mui/icons-material/Storage';
 import WindowIcon from '@mui/icons-material/DesktopWindows';
@@ -86,5 +87,12 @@ export const NAV_ITEMS: NavItem[] = [
     path: '/reports/saved-reports',
     icon: <FolderIcon />,
     description: 'Every report saved from the app, viewable in place or downloadable.',
+  },
+  {
+    label: 'Scheduled Reports',
+    path: '/scheduled',
+    icon: <ScheduleSendIcon />,
+    description:
+      'Reports that generate themselves on a day of the month and go out by email, with every run on record.',
   },
 ];

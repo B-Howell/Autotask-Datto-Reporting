@@ -7,6 +7,7 @@ import NavBar from '@/components/NavBar';
 import RunningReportBar from '@/components/RunningReportBar';
 import Toaster from '@/components/Toaster';
 import Home from '@/pages/Home';
+import ScheduledReports from '@/pages/ScheduledReports';
 import Settings from '@/pages/Settings';
 import AgencyUtilization from '@/pages/reports/AgencyUtilization';
 import AnnualUtilization from '@/pages/reports/AnnualUtilization';
@@ -77,6 +78,7 @@ function App() {
                   <Route path="hdd-tickets" element={<HddTickets />} />
                   <Route path="saved-reports" element={<SavedReports />} />
                 </Route>
+                <Route path="/scheduled" element={<ScheduledReports />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/" element={<Home />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

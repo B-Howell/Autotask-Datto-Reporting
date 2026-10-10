@@ -19,6 +19,8 @@ Generic over `Row`.
 | `stickyHeader` | `boolean` | no | MUI sticky header. Default false. |
 | `maxHeight` | `number \| string` | no | Container max height, pairs with `stickyHeader`. |
 | `sx` | `SxProps<Theme>` | no | Extra container styles. |
+| `onRowClick` | `(row) => void` | no | Makes every row clickable with a pointer cursor. |
+| `selectedKey` | `string \| number \| null` | no | The row whose `rowKey` equals this renders with MUI's `selected` style. |
 
 Exports the `DataColumn` type.
 
@@ -32,12 +34,14 @@ Exports the `DataColumn` type.
 - [annualUtilization RawEntriesTable](<../../pages/reports/annualUtilization/Reporting Annual Utilization - RawEntriesTable.md>)
 - [hddTickets HddDeviceTable](<../../pages/reports/hddTickets/Reporting HDD Tickets - HddDeviceTable.md>)
 - [patchManagement WorkstationTable](<../../pages/reports/patchManagement/Reporting Patch Management - WorkstationTable.md>)
+- [SchedulesTable](<../../pages/scheduledReports/Reporting Scheduled Reports - SchedulesTable.md>), which uses `onRowClick` and `selectedKey`, and [RunsTable](<../../pages/scheduledReports/Reporting Scheduled Reports - RunsTable.md>)
 
 ## Key Behavior
 
 - Header cells are bold, `nowrap`, and take `width` from the column; body cells only take `align`.
 - `footer` is placed inside `TableBody`, so it must be a `TableRow` (or fragment of rows) to render validly.
 - `size="small"` throughout; there is no pagination, so callers paginate or cap rows themselves.
+- `onRowClick` fires for a click anywhere in the row; a cell with its own controls must stop propagation itself, as `SchedulesTable` does for its action cell.
 
 ## Cleanup Notes
 

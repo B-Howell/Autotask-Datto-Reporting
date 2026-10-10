@@ -20,7 +20,6 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Settings - AgenciesSection.md](<Reporting Settings - AgenciesSection.md>)
 - [Reporting Settings - AppearanceSection.md](<Reporting Settings - AppearanceSection.md>)
 - [Reporting Settings - DataSyncSection.md](<Reporting Settings - DataSyncSection.md>)
-- [Reporting Settings - SyncLogPanel.md](<Reporting Settings - SyncLogPanel.md>)
 - [Reporting Settings - useSyncStatus.md](<Reporting Settings - useSyncStatus.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->

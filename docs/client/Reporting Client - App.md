@@ -23,6 +23,7 @@ The design decision is that the shell never scrolls. The outer `Box` is `100vh` 
 | `/reports/patch-management` | `PatchManagement` |
 | `/reports/hdd-tickets` | `HddTickets` |
 | `/reports/saved-reports` | `SavedReports` |
+| `/scheduled` | `ScheduledReports` |
 | `/settings` | `Settings` |
 | `*` | `Navigate` to `/` with `replace` |
 
@@ -36,7 +37,7 @@ The component takes no props and is the default export.
 - [agencyStore](<store/Reporting Store - agencyStore.md>) for `fetchAgencies`.
 - [tenant API](<api/Reporting API - tenant.md>) via `tenantApi.fetchTenant` and [tenantStore](<store/Reporting Store - tenantStore.md>) for `setTenant`.
 - [NavBar](<components/Reporting Component - NavBar.md>), [RunningReportBar](<components/Reporting Component - RunningReportBar.md>), [Toaster](<components/Reporting Component - Toaster.md>).
-- [Home](<pages/Reporting Page - Home.md>), [Settings](<pages/Reporting Page - Settings.md>), the [Reports layout route](<pages/reports/Reporting Page - Reports.md>) and each report page under `docs/client/pages/reports/`.
+- [Home](<pages/Reporting Page - Home.md>), [ScheduledReports](<pages/Reporting Page - ScheduledReports.md>), [Settings](<pages/Reporting Page - Settings.md>), the [Reports layout route](<pages/reports/Reporting Page - Reports.md>) and each report page under `docs/client/pages/reports/`.
 
 ## Used By
 

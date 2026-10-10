@@ -1,8 +1,8 @@
 import { Box, Button, CircularProgress, LinearProgress, Paper, Typography } from '@mui/material';
 import SyncIcon from '@mui/icons-material/Sync';
 import type { SyncStatus } from '@/api';
+import LogTailPanel from '@/components/LogTailPanel';
 import { formatDateTime } from '@/utils/dates';
-import SyncLogPanel from './SyncLogPanel';
 import useSyncStatus from './useSyncStatus';
 
 const formatWhen = (iso: string | null): string => (iso ? formatDateTime(iso) : 'never');
@@ -51,7 +51,7 @@ const DataSyncSection = () => {
         </Typography>
       </Box>
       {status.running && <SyncProgress status={status} />}
-      {(status.running || logs.length > 0) && <SyncLogPanel logs={logs} />}
+      {(status.running || logs.length > 0) && <LogTailPanel logs={logs} />}
     </Paper>
   );
 };

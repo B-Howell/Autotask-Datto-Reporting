@@ -22,7 +22,9 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 
 - [Reporting Component - AppDataGrid.md](<Reporting Component - AppDataGrid.md>)
 - [Reporting Component - ColumnChooser.md](<Reporting Component - ColumnChooser.md>)
+- [Reporting Component - ConfirmDialog.md](<Reporting Component - ConfirmDialog.md>)
 - [Reporting Component - DeviceSpreadsheet.md](<Reporting Component - DeviceSpreadsheet.md>)
+- [Reporting Component - LogTailPanel.md](<Reporting Component - LogTailPanel.md>)
 - [Reporting Component - NavBar.md](<Reporting Component - NavBar.md>)
 - [Reporting Component - PostData.md](<Reporting Component - PostData.md>)
 - [Reporting Component - RunningReportBar.md](<Reporting Component - RunningReportBar.md>)

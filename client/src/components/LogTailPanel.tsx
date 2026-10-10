@@ -1,12 +1,14 @@
 import { Box, Typography } from '@mui/material';
 
-const TAIL = 40;
-
-interface SyncLogPanelProps {
+interface LogTailPanelProps {
+  /** Every line received so far, oldest first. */
   logs: string[];
+  /** How many of the newest lines to render. */
+  tail?: number;
 }
 
-const SyncLogPanel = ({ logs }: SyncLogPanelProps) => (
+/** A fixed-height monospace box showing the newest lines of a server log stream. */
+const LogTailPanel = ({ logs, tail = 40 }: LogTailPanelProps) => (
   <Box
     sx={{ bgcolor: 'background.default', borderRadius: 2, p: 2, maxHeight: 260, overflow: 'auto' }}
   >
@@ -15,7 +17,7 @@ const SyncLogPanel = ({ logs }: SyncLogPanelProps) => (
         Waiting for logs…
       </Typography>
     ) : (
-      logs.slice(-TAIL).map((line, idx) => (
+      logs.slice(-tail).map((line, idx) => (
         <Typography
           key={idx}
           variant="body2"
@@ -28,4 +30,4 @@ const SyncLogPanel = ({ logs }: SyncLogPanelProps) => (
   </Box>
 );
 
-export default SyncLogPanel;
+export default LogTailPanel;

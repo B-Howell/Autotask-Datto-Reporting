@@ -22,6 +22,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 ### Documents and artifacts in this area
 
 - [Reporting Page - Home.md](<Reporting Page - Home.md>)
+- [Reporting Page - ScheduledReports.md](<Reporting Page - ScheduledReports.md>)
 - [Reporting Page - Settings.md](<Reporting Page - Settings.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->

@@ -29,7 +29,9 @@
 ## Used By
 
 - [useScheduleDialog](<../components/report/Reporting Report Component - useScheduleDialog.md>) calls `createSchedule` after the preset is stored.
-- The scheduled reports page (not yet built) will use the list, run, status, log and check functions.
+- [useSchedules](<../pages/scheduledReports/Reporting Scheduled Reports - useSchedules.md>) calls `fetchSchedules`, `fetchRunnerStatus`, `fetchRuns`, `updateSchedule`, `deleteSchedule` and `runNow`.
+- [RunnerLog](<../pages/scheduledReports/Reporting Scheduled Reports - RunnerLog.md>) opens an `EventSource` on `scheduleLogsUrl()`.
+- [RendererStatusChip](<../pages/scheduledReports/Reporting Scheduled Reports - RendererStatusChip.md>) polls `fetchRendererHealth`; [DeliveryTestButton](<../pages/scheduledReports/Reporting Scheduled Reports - DeliveryTestButton.md>) calls `sendTestEmail`.
 
 ## Key Behavior
 

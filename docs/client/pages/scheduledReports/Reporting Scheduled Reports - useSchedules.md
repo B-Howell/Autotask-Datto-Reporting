@@ -1,0 +1,68 @@
+# useSchedules
+
+> The state behind the Scheduled Reports page: the schedule list, the runner status and the selected schedule's runs, refreshed together on a timer that speeds up while a run is in flight.
+
+## Purpose
+
+`useSchedules` is the only stateful logic on the page. It owns three server-backed values
+(schedules, runner status, runs of the selected schedule) and the four actions the table
+offers (run now, enable or disable, delete, select). The page and the table stay
+presentational.
+
+The refresh cadence is the design decision: one `refresh` fetches all three values with a
+single `Promise.all`, and the interval it runs on is 5 seconds while `status.running` is true
+and 30 seconds otherwise. A run takes a few seconds, so the row's last-run column, the run
+history and the runner status all settle within one short poll of the run ending, without
+polling hard when nothing is happening.
+
+## Interface
+
+```ts
+const {
+  schedules, status, loading, error,   // list, {running, schedule_id}, first-load flag, load failure text
+  selectedId, runs,                    // the expanded schedule and its runs, newest first
+  removeTarget,                        // the schedule awaiting delete confirmation, or null
+  select, toggle, askRemove, cancelRemove, remove, runNow,
+} = useSchedules();
+```
+
+| Action | Effect |
+|---|---|
+| `select(id)` | Toggles `selectedId`; clears `runs` so the old history never shows under the new heading. The next refresh loads `fetchRuns(id)`. |
+| `toggle(id, enabled)` | `updateSchedule(id, { enabled })`; the returned row replaces the old one. Failure toasts the message. |
+| `askRemove(id)` / `cancelRemove()` | Set or clear `removeTarget` for the confirmation dialog. |
+| `remove(id)` | `deleteSchedule(id)`, drops the row, clears the selection if it was selected, toasts "Schedule deleted; its preset is kept". |
+| `runNow(id)` | `runNow(id)`; on 202 toasts "Run started" and marks the status running at once so the fast poll begins; on rejection toasts the server's `detail`, which for a 409 names the schedule already in flight. Either way a refresh follows. |
+
+## Uses
+
+- [schedules API](<../../api/Reporting API - schedules.md>): `fetchSchedules`, `fetchRunnerStatus`, `fetchRuns`, `updateSchedule`, `deleteSchedule`, `runNow`.
+- [API types](<../../api/Reporting API - types.md>) for `ReportSchedule`, `RunnerStatus` and `ScheduleRun`.
+- [toastStore](<../../store/Reporting Store - toastStore.md>) for every outcome message.
+
+## Used By
+
+- [ScheduledReports page](<../Reporting Page - ScheduledReports.md>)
+
+## Key Behavior
+
+- `refresh` is memoised on `selectedId`; changing the selection recreates it, which re-runs
+  the effect that calls it once and restarts the interval. The same effect depends on
+  `status.running`, so the interval is rebuilt at the other cadence when a run starts or ends.
+- A failed refresh sets `error` to the message and leaves the previous rows in place; the
+  page shows the banner above whatever it last had. The next successful refresh clears it.
+- `loading` is true only until the first refresh settles, so later polls never blank the table.
+- The preset behind a deleted schedule is deliberately left alone: presets are reusable and
+  the server refuses to delete one that another schedule still renders, so cleanup is a
+  separate, explicit action rather than a side effect here.
+- Setting `status` to running straight after a 202 is optimistic; the refresh that follows
+  replaces it with the server's answer, which is already `running: true` by then because the
+  runner starts the thread before the route returns.
+
+## Cleanup Notes
+
+- Covered by `useSchedules.test.ts`.
+
+## Source
+
+[client/src/pages/scheduledReports/useSchedules.ts](../../../../client/src/pages/scheduledReports/useSchedules.ts)

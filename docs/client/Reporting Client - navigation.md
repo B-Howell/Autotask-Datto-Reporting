@@ -18,7 +18,7 @@ interface NavItem {
   description: string;  // one sentence for the home-screen card
 }
 export const HOME_ITEM: NavItem;   // '/', the Home icon
-export const NAV_ITEMS: NavItem[]; // the nine report destinations, in display order
+export const NAV_ITEMS: NavItem[]; // the ten destinations, in display order
 ```
 
 | Label | Path |
@@ -32,10 +32,11 @@ export const NAV_ITEMS: NavItem[]; // the nine report destinations, in display o
 | Patch Management | `/reports/patch-management` |
 | HDD Storage Tickets | `/reports/hdd-tickets` |
 | Saved Reports | `/reports/saved-reports` |
+| Scheduled Reports | `/scheduled` |
 
 ## Uses
 
-- `@mui/icons-material` (Assessment, ConfirmationNumber, Devices, Folder, Home, Insights, SecurityUpdateGood, Storage, DesktopWindows).
+- `@mui/icons-material` (Assessment, ConfirmationNumber, Devices, Folder, Home, Insights, ScheduleSend, SecurityUpdateGood, Storage, DesktopWindows).
 - `react` for the `ReactElement` type.
 
 ## Used By
@@ -48,7 +49,7 @@ export const NAV_ITEMS: NavItem[]; // the nine report destinations, in display o
 - Order in `NAV_ITEMS` is display order in both the sidebar and the card grid.
 - `HOME_ITEM` is kept separate so the home page can list the reports without listing itself.
 - Both utilization entries share the `Insights` icon; they are told apart by label only.
-- Paths are written in full (`/reports/...`), not relative to the `/reports` layout route, so they can be used directly as link targets.
+- Paths are written in full (`/reports/...`), not relative to the `/reports` layout route, so they can be used directly as link targets. Scheduled Reports lives at `/scheduled`, outside the `/reports` layout, because it manages deliveries rather than showing a report.
 - The description text is user-facing copy on the home screen; keep it to one sentence.
 
 ## Cleanup Notes

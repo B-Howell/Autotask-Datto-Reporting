@@ -26,7 +26,7 @@ From `useSyncStatus` it consumes `status`, `logs` and `startSync`.
 
 - Material UI `Paper`, `Button`, `LinearProgress`, `CircularProgress` and the `Sync` icon.
 - [useSyncStatus](<Reporting Settings - useSyncStatus.md>) for status polling and the log stream.
-- [SyncLogPanel](<Reporting Settings - SyncLogPanel.md>) to render the log tail.
+- [LogTailPanel](<../../components/Reporting Component - LogTailPanel.md>) to render the log tail.
 - [dates util](<../../utils/Reporting Util - dates.md>) for `formatDateTime`.
 - [API types](<../../api/Reporting API - types.md>) for `SyncStatus`.
 
@@ -44,7 +44,7 @@ From `useSyncStatus` it consumes `status`, `logs` and `startSync`.
   `round(done / total * 100)`. With no total it falls back to indeterminate and hides the
   counter. The caption shows `status.current` or "Working" when the server has not named a
   step.
-- `SyncProgress` renders only while running; `SyncLogPanel` renders while running or once any
+- `SyncProgress` renders only while running; `LogTailPanel` renders while running or once any
   log line has arrived, so the log of a finished sync stays visible until the page unmounts.
 - The explanatory copy states the 24-hour refresh interval as a fixed fact; the real interval
   is the server's `SYNC_INTERVAL_HOURS` setting, which defaults to 24.
