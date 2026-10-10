@@ -1,10 +1,11 @@
-import { Button, Paper, Typography } from '@mui/material';
+import { Box, Button, Paper, Typography } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import type { CredentialsStatus } from '@/api';
 import { ErrorBanner, LoadingRow } from '@/components/report';
+import ForgetCredentialsButton from './ForgetCredentialsButton';
 import VendorCredentialsCard from './VendorCredentialsCard';
 import useCredentials from './useCredentials';
-import { VENDORS, vendorFields } from './vendors';
+import { VENDORS, hasStoredField, vendorFields } from './vendors';
 
 const HEADING_ID = 'vendor-credentials-heading';
 
@@ -15,9 +16,9 @@ const KEY_SOURCE_TEXT: Record<CredentialsStatus['keySource'], string> = {
 
 const DEMO_CAPTION = 'Demo mode simulates the vendor clients; credentials are not used.';
 
-/** The Settings card where an operator enters, tests and saves the Autotask and Datto keys. */
+/** The Settings card where an operator enters, tests, saves and forgets the Autotask and Datto keys. */
 const CredentialsSection = () => {
-  const { status, loading, error, reload, test, save, busy } = useCredentials();
+  const { status, loading, error, unreadable, reload, test, save, forget, busy } = useCredentials();
 
   return (
     <Paper component="section" aria-labelledby={HEADING_ID} sx={{ p: 3, maxWidth: 600, mb: 3 }}>
@@ -30,15 +31,18 @@ const CredentialsSection = () => {
       </Typography>
       <ErrorBanner error={error} />
       {error && (
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<RefreshIcon />}
-          onClick={() => void reload()}
-          sx={{ mb: 2 }}
-        >
-          Retry
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<RefreshIcon />}
+            onClick={() => void reload()}
+            disabled={busy}
+          >
+            Retry
+          </Button>
+          {unreadable && <ForgetCredentialsButton busy={busy} onForget={forget} />}
+        </Box>
       )}
       {loading && <LoadingRow message="Loading credentials…" />}
       {status && (
@@ -62,6 +66,9 @@ const CredentialsSection = () => {
               onSave={save}
             />
           ))}
+          {!error && hasStoredField(status.fields) && (
+            <ForgetCredentialsButton disabled={status.demoMode} busy={busy} onForget={forget} />
+          )}
         </>
       )}
     </Paper>

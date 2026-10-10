@@ -49,3 +49,8 @@ def record_test(names, ok):
 
 def delete(name):
     sqlite.execute("DELETE FROM credentials WHERE name = ?", (name,))
+
+
+def delete_all():
+    """Remove every row; one statement, so no transaction is needed."""
+    sqlite.execute("DELETE FROM credentials")

@@ -29,6 +29,7 @@ component layer so any page can use it.
 ## Used By
 
 - [ScheduledReports page](<../pages/Reporting Page - ScheduledReports.md>) before deleting a schedule.
+- [ForgetCredentialsButton](<../pages/settings/Reporting Settings - ForgetCredentialsButton.md>) before every stored vendor credential is removed.
 
 ## Key Behavior
 

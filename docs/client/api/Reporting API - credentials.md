@@ -1,6 +1,6 @@
 # Credentials API
 
-> Reads the vendor credential status, probes both vendors with submitted values, and saves values that pass.
+> Reads the vendor credential status, probes both vendors with submitted values, saves values that pass, and forgets every stored value on request.
 
 ## Purpose
 
@@ -18,15 +18,17 @@ write.
 | `fetchCredentials` | `GET /api/credentials` | none | `Promise<CredentialsStatus>` |
 | `testCredentials` | `POST /api/credentials/test` | `values: CredentialValues` | `Promise<ConnectionTestResult>`, one `{ ok, message }` per vendor |
 | `saveCredentials` | `PUT /api/credentials` | `values: CredentialValues` | `Promise<CredentialsStatus>`, the status after the save |
+| `forgetCredentials` | `DELETE /api/credentials` | none | `Promise<ForgottenCredentials>`, `{ forgotten: true }` with the status once every stored row is gone |
+| `isUnreadable` | none | `err: unknown` | `true` when `err` is the 503 `ApiError` that `fetchCredentials` raises for stored values the key cannot read |
 
 ## Uses
 
-- [client](<Reporting API - client.md>): `getJson`, `postJson`, `putJson`.
-- [types](<Reporting API - types.md>): `CredentialsStatus`, `CredentialValues`, `ConnectionTestResult`.
+- [client](<Reporting API - client.md>): `getJson`, `postJson`, `putJson`, `deleteJson`, `ApiError`.
+- [types](<Reporting API - types.md>): `CredentialsStatus`, `CredentialValues`, `ConnectionTestResult`, `ForgottenCredentials`.
 
 ## Used By
 
-- [useCredentials](<../pages/settings/Reporting Settings - useCredentials.md>) calls all three.
+- [useCredentials](<../pages/settings/Reporting Settings - useCredentials.md>) calls all four requests and classifies a failed fetch with `isUnreadable`.
 
 ## Key Behavior
 
@@ -43,10 +45,15 @@ write.
   the validation that failed (the base URL must start with `https://`, the platform is one
   host label, a field set by the environment cannot be stored). The vendor's refusal text has
   every submitted value blanked before it reaches the message.
-- Both write routes reject with a 409 `ApiError` in demo mode, where the vendor clients are
-  simulated and no key is used.
+- The write routes and `forgetCredentials` reject with a 409 `ApiError` in demo mode, where
+  the vendor clients are simulated and no key is used.
+- `forgetCredentials` never rejects with the 503: the server deletes the rows without reading
+  them, so it is the call the section offers when the status itself cannot be loaded. Values
+  set by the environment are not stored and stay in effect.
 - `fetchCredentials` rejects with a 503 `ApiError` when stored values exist that the current
-  master key cannot decrypt; the section shows that detail in its error banner.
+  master key cannot decrypt; the section shows that detail in its error banner. `isUnreadable`
+  names that case so the hook can tell it from a network failure or a 500, for which
+  forgetting would be the wrong remedy. The credentials route maps nothing else to 503.
 - Routes are listed under [Reporting Router - credentials](<../../server/routers/Reporting Router - credentials.md>).
 
 ## Cleanup Notes

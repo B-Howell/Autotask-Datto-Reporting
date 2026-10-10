@@ -55,3 +55,17 @@ def save_credentials(body: CredentialValues):
     """Save the submitted values once every vendor they change accepts them."""
     _refuse_in_demo_mode()
     return call_or_http_error(lambda: connection_tests.save_tested(body.values))
+
+
+def _forget():
+    # Nothing stored is read before the delete, so this answers even when the
+    # rows cannot be decrypted under the current key.
+    credentials.forget_stored()
+    return {"forgotten": True, **_overview()}
+
+
+@router.delete("")
+def forget_credentials():
+    """Remove every stored value so the page can accept new ones; the environment is untouched."""
+    _refuse_in_demo_mode()
+    return call_or_http_error(_forget)

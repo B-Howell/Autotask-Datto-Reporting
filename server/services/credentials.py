@@ -216,6 +216,16 @@ def save(values):
     store_changes(changes(values))
 
 
+def forget_stored():
+    """Delete every stored row and notify the listeners; environment values are untouched.
+
+    Nothing is decrypted on the way, so this is the way out when the master
+    key is lost or replaced and the rows can no longer be read.
+    """
+    repo.delete_all()
+    invalidate()
+
+
 def merged_from(cleaned):
     """`current()` with changes `changes()` cleaned laid over it."""
     return {**current(), **cleaned}

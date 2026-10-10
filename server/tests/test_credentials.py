@@ -226,3 +226,46 @@ def test_merged_lays_non_blank_values_over_the_stored_ones_after_validating(stor
     monkeypatch.setenv("AUTOTASK_USERNAME", "env-user")
     with pytest.raises(ValueError, match="AUTOTASK_USERNAME is set by the environment"):
         credentials.merged({"autotask_username": "other"})
+
+
+def test_repository_delete_all_empties_the_table(store):
+    credentials.save({**AUTOTASK, **DATTO})
+    repo.delete_all()
+    assert repo.get_all() == {}
+
+
+def test_forget_stored_removes_every_row_and_the_next_status_reads_missing(store, monkeypatch):
+    calls = []
+    credentials.on_change(lambda: calls.append("called"))
+    credentials.save({**AUTOTASK, **DATTO})
+    monkeypatch.setenv("AUTOTASK_USERNAME", "env-user")
+    calls.clear()
+    credentials.forget_stored()
+    assert calls == ["called"]
+    assert repo.get_all() == {}
+    assert _status("autotask_secret")["source"] == "missing"
+    assert _status("datto_api_key") == {
+        "name": "datto_api_key",
+        "vendor": "datto",
+        "secret": True,
+        "configured": False,
+        "source": "missing",
+        "last4": "",
+        "updated_at": None,
+        "last_tested_at": None,
+        "last_test_ok": None,
+    }
+    assert _status("autotask_username")["source"] == "environment"
+    assert credentials.current()["autotask_username"] == "env-user"
+
+
+def test_forget_stored_works_when_the_rows_no_longer_decrypt(store, tmp_path):
+    credentials.save({"autotask_username": "u"})
+    (tmp_path / "secret.key").unlink()
+    secrets.reset_cache()
+    credentials.invalidate()
+    with pytest.raises(secrets.SecretsError):
+        credentials.current()
+    credentials.forget_stored()
+    assert repo.get_all() == {}
+    assert all(value == "" for value in credentials.current().values())

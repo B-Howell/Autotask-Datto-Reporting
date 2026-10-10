@@ -1,6 +1,6 @@
 # vendors
 
-> The vendor and field catalogue the credential cards render from: labels, card order and field order.
+> The vendor and field catalogue the credential cards render from: labels, card order, field order and whether anything is stored.
 
 ## Purpose
 
@@ -18,6 +18,7 @@ section, the cards, the inputs and the outcome chips all agree without repeating
 | `VENDOR_FIELDS` | `Record<CredentialVendor, CredentialFieldName[]>` | Each vendor's fields in the order its card lists them. |
 | `FIELD_LABELS` | `Record<CredentialFieldName, string>` | `Username`, `Secret`, `Integration code`, `Zone API URL`, `API key`, `API secret`, `Platform`. |
 | `vendorFields` | `(fields: CredentialFieldStatus[], vendor: CredentialVendor) => CredentialFieldStatus[]` | The vendor's status entries in `VENDOR_FIELDS` order; a name the server did not list is left out. |
+| `hasStoredField` | `(fields: CredentialFieldStatus[]) => boolean` | True when any entry's `source` is `stored`; environment and missing fields do not count. |
 
 ## Uses
 
@@ -25,7 +26,7 @@ section, the cards, the inputs and the outcome chips all agree without repeating
 
 ## Used By
 
-- [CredentialsSection](<Reporting Settings - CredentialsSection.md>) iterates `VENDORS` and picks each card's fields with `vendorFields`.
+- [CredentialsSection](<Reporting Settings - CredentialsSection.md>) iterates `VENDORS`, picks each card's fields with `vendorFields` and shows its forget button when `hasStoredField` is true.
 - [VendorCredentialsCard](<Reporting Settings - VendorCredentialsCard.md>) titles itself from `VENDOR_LABELS`.
 - [ConnectionOutcomeChips](<Reporting Settings - ConnectionOutcomeChips.md>) labels one chip per entry of `VENDORS`.
 - [CredentialField](<Reporting Settings - CredentialField.md>) labels its input from `FIELD_LABELS`.
@@ -36,6 +37,8 @@ section, the cards, the inputs and the outcome chips all agree without repeating
   layout whatever order the server serializes; a status entry under a name this module does
   not know is dropped, which is where a newly added server field surfaces as a missing input
   until it is listed here.
+- `hasStoredField` looks only at `source`, not `configured`, because a field the environment
+  supplies is configured but has no row to forget.
 - Both records are typed on the closed unions from `types.ts`, so adding a vendor or field
   name there fails the build until a label exists.
 

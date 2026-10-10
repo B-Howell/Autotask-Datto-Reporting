@@ -397,6 +397,11 @@ export interface CredentialsStatus {
   fields: CredentialFieldStatus[];
 }
 
+/** What `DELETE /api/credentials` answers: the status once every stored value is gone. */
+export interface ForgottenCredentials extends CredentialsStatus {
+  forgotten: true;
+}
+
 /** Field name to value; a blank value means "keep what is stored". */
 export type CredentialValues = Partial<Record<CredentialFieldName, string>>;
 

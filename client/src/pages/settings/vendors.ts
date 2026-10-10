@@ -29,6 +29,10 @@ export const FIELD_LABELS: Record<CredentialFieldName, string> = {
   datto_platform: 'Platform',
 };
 
+/** True when any field's value in effect came from the encrypted store. */
+export const hasStoredField = (fields: CredentialFieldStatus[]): boolean =>
+  fields.some((field) => field.source === 'stored');
+
 /** The vendor's status entries in card order; a name the server did not list is left out. */
 export const vendorFields = (
   fields: CredentialFieldStatus[],

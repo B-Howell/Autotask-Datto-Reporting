@@ -30,13 +30,9 @@ Running **Test connection** with every field blank re-proves the stored values a
 Without the key the stored rows cannot be read. Every route that resolves the credentials, the status call behind the Settings page included, answers 503 `Stored credentials cannot be read; check APP_SECRET_KEY or the key file`, and the background sync skips with a `[WARN]` line in its stream. Recover in one of two ways:
 
 - Restore the key. Put `secret.key` back in the data directory from the volume backup, or set `APP_SECRET_KEY` to the value that was used, and restart the server, which reads the key once.
-- Start over. The rows are unreadable under any other key and the page cannot accept new values while they are there, so delete them before re-entering the credentials. With the compose stack:
+- Start over. The rows are unreadable under any other key and the page cannot accept new values while they are there. Open Settings: the Vendor credentials section shows the 503 in its banner with **Retry** and **Forget stored credentials** beside it. Press **Forget stored credentials** and confirm. The server deletes every stored row without trying to read it (`DELETE /api/credentials`), the status loads again with every formerly stored field as not configured, and the cards accept new values. Values set by the environment are unaffected. Then enter the credentials again. Nothing else in the database depends on the key; snapshots, presets, schedules and run history are unaffected.
 
-```bash
-docker compose exec server python -c "import sqlite3; c = sqlite3.connect('/app/data/reports.db'); c.execute('DELETE FROM credentials'); c.commit()"
-```
-
-Then open Settings and enter the credentials again. Nothing else in the database depends on the key; snapshots, presets, schedules and run history are unaffected.
+The same button sits below the vendor cards whenever anything is stored, for an operator who wants to clear the keys deliberately, say before handing a copy of the data directory to someone else. It is all or nothing; a single value is replaced through a save, not removed. Demo mode refuses it with the same 409 as a save.
 
 Generating a new key with the command in `.env.example` and setting `APP_SECRET_KEY` makes the existing rows unreadable in the same way, so a planned move from the key file to the variable is a re-entry of the credentials as well.
 

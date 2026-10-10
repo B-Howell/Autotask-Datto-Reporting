@@ -1,17 +1,25 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { credentialsApi } from '@/api';
+import { ApiError, credentialsApi } from '@/api';
+import type * as api from '@/api';
 import type { CredentialsStatus } from '@/api';
 import useToastStore from '@/store/toastStore';
 import useCredentials from './useCredentials';
 
-vi.mock('@/api', () => ({
-  credentialsApi: {
-    fetchCredentials: vi.fn(),
-    testCredentials: vi.fn(),
-    saveCredentials: vi.fn(),
-  },
-}));
+// The request functions are mocked; `ApiError` and `isUnreadable` stay real.
+vi.mock('@/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof api>();
+  return {
+    ...actual,
+    credentialsApi: {
+      ...actual.credentialsApi,
+      fetchCredentials: vi.fn(),
+      testCredentials: vi.fn(),
+      saveCredentials: vi.fn(),
+      forgetCredentials: vi.fn(),
+    },
+  };
+});
 
 const STAMP = '2026-10-09T19:00:00+00:00';
 const missing: CredentialsStatus = {
@@ -75,10 +83,33 @@ describe('useCredentials', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.status).toBeNull();
     expect(result.current.error).toBe('The stored credentials cannot be read');
+    expect(result.current.unreadable).toBe(false);
 
     mocked.fetchCredentials.mockResolvedValueOnce(missing);
     await act(() => result.current.reload());
     expect(result.current.status).toEqual(missing);
+    expect(result.current.error).toBeNull();
+  });
+
+  it('flags the 503 for unreadable stored values until a load succeeds', async () => {
+    mocked.fetchCredentials.mockRejectedValueOnce(
+      new ApiError(503, 'Stored credentials cannot be read; check APP_SECRET_KEY or the key file')
+    );
+    const { result } = renderHook(() => useCredentials());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.unreadable).toBe(true);
+    expect(result.current.error).toBe(
+      'Stored credentials cannot be read; check APP_SECRET_KEY or the key file'
+    );
+
+    mocked.fetchCredentials.mockRejectedValueOnce(new ApiError(500, 'Request failed (500)'));
+    await act(() => result.current.reload());
+    expect(result.current.unreadable).toBe(false);
+    expect(result.current.error).toBe('Request failed (500)');
+
+    mocked.fetchCredentials.mockResolvedValueOnce(missing);
+    await act(() => result.current.reload());
+    expect(result.current.unreadable).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
@@ -132,5 +163,53 @@ describe('useCredentials', () => {
     expect(result.current.busy).toBe(false);
     expect(useToastStore.getState().severity).toBe('error');
     expect(useToastStore.getState().message).toBe('Datto refused the credentials: 401');
+  });
+
+  it('forgets the stored values, busy until the status is reloaded, and toasts', async () => {
+    const { result } = await loaded();
+    let answer: (value: typeof forgotten) => void = () => undefined;
+    const forgotten = { ...missing, forgotten: true as const };
+    mocked.forgetCredentials.mockImplementationOnce(
+      () => new Promise<typeof forgotten>((resolve) => (answer = resolve))
+    );
+    mocked.fetchCredentials.mockResolvedValueOnce(missing);
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.forget();
+    });
+    expect(result.current.busy).toBe(true);
+    await act(async () => {
+      answer(forgotten);
+      await pending;
+    });
+    expect(result.current.busy).toBe(false);
+    expect(mocked.forgetCredentials).toHaveBeenCalledTimes(1);
+    expect(mocked.fetchCredentials).toHaveBeenCalledTimes(2);
+    expect(useToastStore.getState().message).toBe('Stored credentials forgotten');
+  });
+
+  it('clears an unreadable load once the stored values are forgotten', async () => {
+    mocked.fetchCredentials.mockRejectedValueOnce(
+      new ApiError(503, 'Stored credentials cannot be read')
+    );
+    const { result } = renderHook(() => useCredentials());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.unreadable).toBe(true);
+    mocked.forgetCredentials.mockResolvedValue({ ...missing, forgotten: true });
+    mocked.fetchCredentials.mockResolvedValueOnce(missing);
+    await act(() => result.current.forget());
+    expect(result.current.error).toBeNull();
+    expect(result.current.unreadable).toBe(false);
+    expect(result.current.status).toEqual(missing);
+  });
+
+  it('toasts a refused forget as an error without reloading', async () => {
+    const { result } = await loaded();
+    mocked.forgetCredentials.mockRejectedValue(new Error('Demo mode simulates the vendor clients'));
+    await act(() => result.current.forget());
+    expect(result.current.busy).toBe(false);
+    expect(mocked.fetchCredentials).toHaveBeenCalledTimes(1);
+    expect(useToastStore.getState().severity).toBe('error');
+    expect(useToastStore.getState().message).toBe('Demo mode simulates the vendor clients');
   });
 });

@@ -192,3 +192,43 @@ def test_get_is_a_503_when_the_stored_values_cannot_be_read(live, tmp_path):
     assert response.json()["detail"] == (
         "Stored credentials cannot be read; check APP_SECRET_KEY or the key file"
     )
+
+
+def test_delete_forgets_every_stored_value_and_answers_the_fresh_status(live):
+    credentials.save(VALUES)
+    with TestClient(app) as client:
+        response = client.delete("/api/credentials")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["forgotten"] is True
+    assert body["demoMode"] is False and body["keySource"] == "file"
+    assert [entry["name"] for entry in body["fields"]] == list(credentials.FIELDS)
+    assert all(entry["source"] == "missing" for entry in body["fields"])
+    assert SECRET not in response.text
+    assert all(value == "" for value in credentials.current().values())
+
+
+def test_delete_recovers_from_a_lost_key(live, tmp_path):
+    credentials.save({"autotask_username": "u"})
+    (tmp_path / "secret.key").unlink()
+    secrets.reset_cache()
+    credentials.invalidate()
+    with TestClient(app) as client:
+        before = client.get("/api/credentials")
+        forgotten = client.delete("/api/credentials")
+        after = client.get("/api/credentials")
+    assert before.status_code == 503
+    assert forgotten.status_code == 200 and forgotten.json()["forgotten"] is True
+    assert after.status_code == 200
+    assert all(entry["source"] == "missing" for entry in after.json()["fields"])
+
+
+def test_delete_is_refused_in_demo_mode(store, monkeypatch):
+    monkeypatch.setattr(
+        credentials_router, "settings", dataclasses.replace(settings, demo_mode=True)
+    )
+    credentials.save({"autotask_username": "u"})
+    with TestClient(app) as client:
+        response = client.delete("/api/credentials")
+    assert response.status_code == 409 and response.json()["detail"] == DEMO_REFUSAL
+    assert credentials.current()["autotask_username"] == "u"

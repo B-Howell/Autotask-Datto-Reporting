@@ -24,6 +24,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Settings - CredentialsSection.md](<Reporting Settings - CredentialsSection.md>)
 - [Reporting Settings - credentialValues.md](<Reporting Settings - credentialValues.md>)
 - [Reporting Settings - DataSyncSection.md](<Reporting Settings - DataSyncSection.md>)
+- [Reporting Settings - ForgetCredentialsButton.md](<Reporting Settings - ForgetCredentialsButton.md>)
 - [Reporting Settings - useCredentials.md](<Reporting Settings - useCredentials.md>)
 - [Reporting Settings - useSyncStatus.md](<Reporting Settings - useSyncStatus.md>)
 - [Reporting Settings - VendorCredentialsCard.md](<Reporting Settings - VendorCredentialsCard.md>)

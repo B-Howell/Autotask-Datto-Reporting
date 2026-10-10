@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { credentialsApi } from '@/api';
+import { ApiError, credentialsApi } from '@/api';
+import type * as api from '@/api';
 import type {
   ConnectionTestResult,
   CredentialFieldName,
@@ -10,13 +11,20 @@ import type {
 import useToastStore from '@/store/toastStore';
 import CredentialsSection from './CredentialsSection';
 
-vi.mock('@/api', () => ({
-  credentialsApi: {
-    fetchCredentials: vi.fn(),
-    testCredentials: vi.fn(),
-    saveCredentials: vi.fn(),
-  },
-}));
+// The request functions are mocked; `ApiError` and `isUnreadable` stay real.
+vi.mock('@/api', async (importOriginal) => {
+  const actual = await importOriginal<typeof api>();
+  return {
+    ...actual,
+    credentialsApi: {
+      ...actual.credentialsApi,
+      fetchCredentials: vi.fn(),
+      testCredentials: vi.fn(),
+      saveCredentials: vi.fn(),
+      forgetCredentials: vi.fn(),
+    },
+  };
+});
 
 const SAVED = '2026-10-09T19:00:00+00:00';
 const TESTED = '2026-10-10T08:30:00+00:00';
@@ -256,5 +264,86 @@ describe('CredentialsSection', () => {
     expect(await screen.findByRole('region', { name: 'Autotask' })).toBeInTheDocument();
     expect(screen.queryByText(/cannot be decrypted/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
+  it('offers to forget the stored values when the status cannot be read, then reloads', async () => {
+    mocked.fetchCredentials.mockRejectedValueOnce(
+      new ApiError(503, 'Stored credentials cannot be read; check APP_SECRET_KEY or the key file')
+    );
+    render(<CredentialsSection />);
+    await screen.findByRole('button', { name: 'Retry' });
+    fireEvent.click(screen.getByRole('button', { name: 'Forget stored credentials' }));
+
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Forget stored credentials?' })
+    );
+    expect(
+      dialog.getByText(
+        'This removes every stored Autotask and Datto value. Values set by the environment are unaffected. Continue?'
+      )
+    ).toBeInTheDocument();
+    expect(mocked.forgetCredentials).not.toHaveBeenCalled();
+
+    const nothingStored: CredentialsStatus = {
+      ...status,
+      fields: status.fields.map((f) => field(f.name)),
+    };
+    mocked.forgetCredentials.mockResolvedValue({ ...nothingStored, forgotten: true });
+    mocked.fetchCredentials.mockResolvedValueOnce(nothingStored);
+    fireEvent.click(dialog.getByRole('button', { name: 'Forget' }));
+
+    expect(await screen.findByRole('region', { name: 'Autotask' })).toBeInTheDocument();
+    expect(mocked.forgetCredentials).toHaveBeenCalledTimes(1);
+    expect(mocked.fetchCredentials).toHaveBeenCalledTimes(2);
+    expect(useToastStore.getState().message).toBe('Stored credentials forgotten');
+    expect(screen.queryByText(/cannot be read/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Forget stored credentials' })).toBeNull();
+  });
+
+  it('offers only Retry for a load error that is not the unreadable 503', async () => {
+    mocked.fetchCredentials.mockRejectedValueOnce(new ApiError(500, 'Request failed (500)'));
+    render(<CredentialsSection />);
+    await screen.findByRole('button', { name: 'Retry' });
+    expect(screen.getByText('Error: Request failed (500)')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Forget stored credentials' })).toBeNull();
+  });
+
+  it('shows one forget button, beside Retry, when a reload after a test is the 503', async () => {
+    await renderLoaded();
+    mocked.testCredentials.mockResolvedValue(bothTested);
+    mocked.fetchCredentials.mockRejectedValueOnce(
+      new ApiError(503, 'Stored credentials cannot be read; check APP_SECRET_KEY or the key file')
+    );
+    fireEvent.click(card('Autotask').getByRole('button', { name: 'Test connection' }));
+
+    const retry = await screen.findByRole('button', { name: 'Retry' });
+    const forget = screen.getAllByRole('button', { name: 'Forget stored credentials' });
+    expect(forget).toHaveLength(1);
+    expect(retry.compareDocumentPosition(forget[0])).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(forget[0].compareDocumentPosition(cardElement('Autotask'))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    );
+  });
+
+  it('offers to forget the stored values below the cards only while something is stored', async () => {
+    await renderLoaded();
+    const forget = screen.getByRole('button', { name: 'Forget stored credentials' });
+    expect(forget).toBeEnabled();
+    expect(forget.compareDocumentPosition(cardElement('Datto'))).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING
+    );
+    fireEvent.click(forget);
+    const dialog = within(
+      await screen.findByRole('dialog', { name: 'Forget stored credentials?' })
+    );
+    fireEvent.click(dialog.getByRole('button', { name: 'Cancel' }));
+    expect(mocked.forgetCredentials).not.toHaveBeenCalled();
+  });
+
+  it('hides the forget button when every field is missing or set by the environment', async () => {
+    await renderLoaded({
+      fields: status.fields.map((f) => (f.name === 'autotask_username' ? f : field(f.name))),
+    });
+    expect(screen.queryByRole('button', { name: 'Forget stored credentials' })).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { CredentialFieldName, CredentialFieldStatus } from '@/api';
-import { vendorFields } from './vendors';
+import { hasStoredField, vendorFields } from './vendors';
 
 const field = (name: CredentialFieldName): CredentialFieldStatus => ({
   name,
@@ -30,5 +30,14 @@ describe('vendorFields', () => {
       'autotask_username',
       'autotask_base_url',
     ]);
+  });
+});
+
+describe('hasStoredField', () => {
+  it('is true only when some field came from the store, not the environment', () => {
+    const environment = { ...field('autotask_username'), source: 'environment' as const };
+    expect(hasStoredField([field('datto_platform'), environment])).toBe(false);
+    const stored = { ...field('datto_api_key'), source: 'stored' as const };
+    expect(hasStoredField([environment, stored])).toBe(true);
   });
 });
