@@ -1,6 +1,8 @@
 import pytest
+import requests
+from conftest import SAMPLE_AUTOTASK
 
-from integrations import autotask
+from integrations import autotask, http_errors
 from integrations.autotask import ID_CHUNK_SIZE, AutotaskClient, Connection
 from services import credentials
 
@@ -160,3 +162,56 @@ def test_a_request_without_credentials_names_the_settings_page(store):
         client.get("Tickets", 7)
 
     assert session.requests == []
+
+
+class RefusingResponse:
+    def __init__(self, status_code, text):
+        self.status_code = status_code
+        self.text = text
+
+    def raise_for_status(self):
+        raise requests.HTTPError(response=self)
+
+
+class RefusingSession(FakeSession):
+    def post(self, url, json, headers, timeout):
+        self.posts.append(json)
+        return RefusingResponse(401, "  Invalid  credentials  ")
+
+
+def test_probe_asks_for_at_most_one_company_and_reports_connected():
+    session = FakeSession([{"id": 0}, {"id": 1}])
+
+    assert autotask.probe(_client(session)) == http_errors.CONNECTED
+
+    assert session.requests == [("https://example.invalid/v1.0/Companies/query", FIXED.headers)]
+    assert session.posts == [
+        {
+            "filter": [{"op": "eq", "field": "id", "value": 0}],
+            "maxRecords": 1,
+            "includeFields": ["id"],
+        }
+    ]
+
+
+def test_probe_describes_a_refusal_by_status_and_redacted_trimmed_body():
+    client = _client(
+        RefusingSession([]),
+        connection=lambda: autotask.connection_from(SAMPLE_AUTOTASK),
+    )
+
+    result = autotask.probe(client, redact=lambda text: text.replace("Invalid", "[hidden]"))
+
+    assert result == http_errors.ProbeResult(False, "HTTP 401: [hidden] credentials")
+
+
+def test_connection_from_builds_the_headers_from_the_values_given():
+    connection = autotask.connection_from(SAMPLE_AUTOTASK)
+    assert connection == Connection(
+        SAMPLE_AUTOTASK["autotask_base_url"],
+        {
+            "UserName": SAMPLE_AUTOTASK["autotask_username"],
+            "Secret": SAMPLE_AUTOTASK["autotask_secret"],
+            "ApiIntegrationCode": SAMPLE_AUTOTASK["autotask_integration_code"],
+        },
+    )

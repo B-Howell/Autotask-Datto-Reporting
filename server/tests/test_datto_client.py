@@ -1,7 +1,8 @@
 import pytest
 import requests
+from conftest import SAMPLE_DATTO
 
-from integrations import datto
+from integrations import datto, http_errors
 from services import credentials
 
 TOKEN_URL = "https://example-api.centrastage.net/auth/oauth/token"
@@ -89,3 +90,36 @@ def test_a_request_without_credentials_names_the_settings_page(store, fake_reque
         datto.datto().get("account/devices")
 
     assert fake_requests.posts == [] and fake_requests.gets == []
+
+
+class RefusingResponse(FakeResponse):
+    def __init__(self, status_code, text):
+        super().__init__({}, status_code)
+        self.text = text
+
+    def raise_for_status(self):
+        raise requests.HTTPError(response=self)
+
+
+class RefusingRequests(FakeRequests):
+    def post(self, url, headers, data, auth, timeout):
+        self.posts.append((url, data))
+        return RefusingResponse(401, "  invalid_client  ")
+
+
+def _throwaway_provider(values):
+    return datto.DattoTokenProvider(token_request=lambda: datto.token_request_from(values))
+
+
+def test_probe_fetches_one_token_with_the_values_given(fake_requests):
+    assert datto.probe(_throwaway_provider(SAMPLE_DATTO)) == http_errors.CONNECTED
+    assert fake_requests.posts == [_token_post(TOKEN_URL, SAMPLE_DATTO)]
+    assert fake_requests.gets == []
+
+
+def test_probe_describes_a_refused_token_by_status_and_trimmed_body(monkeypatch):
+    monkeypatch.setattr(datto, "requests", RefusingRequests())
+
+    result = datto.probe(_throwaway_provider(SAMPLE_DATTO))
+
+    assert result == http_errors.ProbeResult(False, "HTTP 401: invalid_client")

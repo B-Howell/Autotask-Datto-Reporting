@@ -7,19 +7,17 @@ in this module logs it or puts it in an error message.
 """
 
 import base64
-import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 import requests
 
 from config import settings
+from integrations.http_errors import trimmed
 
 # A `requests` timeout is per socket operation: it bounds the wait for the
 # flow's answer after the body has gone out, not the upload of the body.
 TIMEOUT = 60
-# How much of a refusal is kept on the run record.
-ERROR_TEXT_LIMIT = 300
 
 
 class DeliveryError(RuntimeError):
@@ -64,7 +62,7 @@ def _reason(response):
             return message_text
     except (ValueError, KeyError, TypeError):
         pass
-    return re.sub(r"\s+", " ", response.text).strip()[:ERROR_TEXT_LIMIT]
+    return trimmed(response.text)
 
 
 def send(to, cc, subject, body, attachments):

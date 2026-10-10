@@ -18,6 +18,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 
 - [Reporting Router - agencies.md](<Reporting Router - agencies.md>)
 - [Reporting Router - common.md](<Reporting Router - common.md>)
+- [Reporting Router - credentials.md](<Reporting Router - credentials.md>)
 - [Reporting Router - devices.md](<Reporting Router - devices.md>)
 - [Reporting Router - hdd_tickets.md](<Reporting Router - hdd_tickets.md>)
 - [Reporting Router - health.md](<Reporting Router - health.md>)

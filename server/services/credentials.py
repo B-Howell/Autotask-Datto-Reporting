@@ -6,6 +6,10 @@ deployment that injects its secrets keeps control of them; everything else is
 entered on the Settings page and stored encrypted. The resolved values are
 cached here, and `invalidate()` tells the registered listeners (the vendor
 clients) to drop anything they derived from the old values.
+
+A connection test builds throwaway vendor clients from the submitted values
+laid over the stored ones, so the page can prove a key before it is saved
+and prove that the stored keys still work.
 """
 
 import os
@@ -58,6 +62,10 @@ _HINT_LENGTH = 4
 # it is at most a third of the value.
 _MIN_HINTED_LENGTH = 3 * _HINT_LENGTH
 
+# A connection test answers a Settings page, so it gives up well before a
+# report would.
+PROBE_TIMEOUT_SECONDS = 15
+
 _lock = threading.Lock()
 _resolved_values = None
 _listeners = []
@@ -65,6 +73,10 @@ _listeners = []
 
 class CredentialsMissing(RuntimeError):
     """A vendor call was attempted while one of its credentials is blank."""
+
+
+class ConnectionTestFailed(ValueError):
+    """A vendor refused the values submitted for it, so nothing was saved."""
 
 
 def _field(name):
@@ -190,20 +202,36 @@ def _accept(name, raw):
     return _validated(name, value)
 
 
-def save(values):
-    """Store the non-blank entries after validating all of them; blanks keep what is stored.
+def _accepted(values):
+    """`{name: cleaned value or None}` for every entry, validated before any is used."""
+    return {name: _accept(name, raw) for name, raw in values.items()}
 
-    The writes go in one transaction, and the listeners are only told when
-    something was written.
-    """
-    accepted = {name: _accept(name, raw) for name, raw in values.items()}
-    entries = [
-        (name, secrets.encrypt(value)) for name, value in accepted.items() if value is not None
-    ]
+
+def _changes(accepted):
+    return {name: value for name, value in accepted.items() if value is not None}
+
+
+def _store(accepted):
+    """Write the changes in one transaction; the listeners are only told of a write."""
+    entries = [(name, secrets.encrypt(value)) for name, value in _changes(accepted).items()]
     if not entries:
         return
     repo.upsert_many(entries)
     invalidate()
+
+
+def save(values):
+    """Store the non-blank entries after validating all of them; blanks keep what is stored."""
+    _store(_accepted(values))
+
+
+def _laid_over(accepted):
+    return {**current(), **_changes(accepted)}
+
+
+def merged(values):
+    """`current()` with the non-blank entries of `values` over it, validated as `save` would."""
+    return _laid_over(_accepted(values))
 
 
 def record_test(vendor, ok):
@@ -237,9 +265,119 @@ def require(vendor):
     return require_all([vendor])
 
 
+def api_base_for(platform):
+    return f"{_HTTPS}{platform}-api.centrastage.net"
+
+
+def token_url_for(platform):
+    return f"{api_base_for(platform)}/auth/oauth/token"
+
+
 def datto_api_base():
-    return f"{_HTTPS}{current()['datto_platform']}-api.centrastage.net"
+    return api_base_for(current()["datto_platform"])
 
 
-def datto_token_url():
-    return f"{datto_api_base()}/auth/oauth/token"
+# ── connection tests ───────────────────────────────────────────────────────
+
+
+def _probe_autotask(values, redact):
+    # Imported here: the integrations import this module at load time, and a
+    # throwaway client is only wanted while a test runs.
+    from integrations import autotask
+
+    client = autotask.AutotaskClient(
+        connection=lambda: autotask.connection_from(values), timeout=PROBE_TIMEOUT_SECONDS
+    )
+    return autotask.probe(client, redact)
+
+
+def _probe_datto(values, redact):
+    from integrations import datto
+
+    provider = datto.DattoTokenProvider(
+        token_request=lambda: datto.token_request_from(values), timeout=PROBE_TIMEOUT_SECONDS
+    )
+    return datto.probe(provider, redact)
+
+
+_PROBES = {AUTOTASK: _probe_autotask, DATTO: _probe_datto}
+
+
+def _without_secrets(text, values):
+    """`text` with every secret value blanked, longest first: a refusal may quote what it was sent."""
+    for name in sorted(FIELDS, key=lambda name: len(values[name]), reverse=True):
+        if FIELDS[name].secret and values[name]:
+            text = text.replace(values[name], "[hidden]")
+    return text
+
+
+def _probe(values, vendor):
+    """The vendor's `ProbeResult`, or None without a request while one of its fields is blank."""
+    if not _configured(values, vendor):
+        return None
+    return _PROBES[vendor](values, lambda text: _without_secrets(text, values))
+
+
+def _probe_all(values):
+    return {vendor: _probe(values, vendor) for vendor in _PROBES}
+
+
+def _passed(outcome):
+    return outcome is not None and outcome.ok
+
+
+def _incomplete(vendor):
+    return f"{_VENDOR_LABELS[vendor]} credentials are incomplete"
+
+
+def _report(vendor, outcome):
+    """`{ok, message}` for the page; a vendor that was not probed reads as incomplete."""
+    if outcome is None:
+        return {"ok": False, "message": _incomplete(vendor)}
+    return {"ok": outcome.ok, "message": outcome.message}
+
+
+def _record(outcomes):
+    """Stamp each probed vendor's outcome on its stored rows."""
+    for vendor, outcome in outcomes.items():
+        if outcome is not None:
+            record_test(vendor, outcome.ok)
+
+
+def test_connection(values):
+    """Probe both vendors with `values` laid over the stored ones, and record the outcomes.
+
+    A vendor whose values did not change is tested too: the page wants to
+    know that the stored keys still work.
+    """
+    outcomes = _probe_all(merged(values))
+    _record(outcomes)
+    return {vendor: _report(vendor, outcome) for vendor, outcome in outcomes.items()}
+
+
+def _changed_vendors(accepted):
+    return {FIELDS[name].vendor for name in _changes(accepted)}
+
+
+def _refusal(vendor, outcome):
+    if outcome is None:
+        return ConnectionTestFailed(_incomplete(vendor))
+    return ConnectionTestFailed(
+        f"{_VENDOR_LABELS[vendor]} refused the credentials: {outcome.message}"
+    )
+
+
+def save_tested(values):
+    """Test, then store: a changed vendor that fails its test blocks the whole save.
+
+    The outcomes are recorded after the write, so a row written by this save
+    carries its own result. Returns the status entries after the save.
+    """
+    accepted = _accepted(values)
+    outcomes = _probe_all(_laid_over(accepted))
+    for vendor in sorted(_changed_vendors(accepted)):
+        if not _passed(outcomes[vendor]):
+            raise _refusal(vendor, outcomes[vendor])
+    _store(accepted)
+    _record(outcomes)
+    return status()

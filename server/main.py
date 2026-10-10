@@ -4,12 +4,14 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from repositories import snapshots, sqlite
 from routers import (
     agencies,
+    credentials,
     devices,
     hdd_tickets,
     health,
@@ -26,6 +28,7 @@ from routers import (
     tickets,
     utilization,
 )
+from routers.common import validation_error_response
 from services import schedule_runner
 from services.sync import runner
 
@@ -46,6 +49,7 @@ ROUTERS = (
     presets,
     schedules,
     tenant,
+    credentials,
 )
 
 
@@ -119,6 +123,7 @@ def create_app():
 
     for module in ROUTERS:
         app.include_router(module.router)
+    app.add_exception_handler(RequestValidationError, validation_error_response)
     return app
 
 

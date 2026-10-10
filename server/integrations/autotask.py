@@ -16,11 +16,17 @@ from threading import Lock
 
 import requests
 
+from integrations import http_errors
 from services import credentials
 
 PAGE_SIZE = 500
 ID_CHUNK_SIZE = 200
 DEFAULT_TIMEOUT = 60
+# The connection test: one `Companies/query` for the zero account (company
+# id 0 is the MSP's own record), the smallest query every tenant can answer.
+PROBE_ENTITY = "Companies"
+PROBE_FILTER = ({"op": "eq", "field": "id", "value": 0},)
+PROBE_FIELDS = ("id",)
 
 
 @dataclass(frozen=True)
@@ -31,9 +37,8 @@ class Connection:
     headers: dict
 
 
-def current_connection():
-    """The connection from the credentials in effect; raises when any is blank."""
-    values = credentials.require(credentials.AUTOTASK)
+def connection_from(values):
+    """The connection the given credential values describe."""
     return Connection(
         values["autotask_base_url"],
         {
@@ -42,6 +47,11 @@ def current_connection():
             "ApiIntegrationCode": values["autotask_integration_code"],
         },
     )
+
+
+def current_connection():
+    """The connection from the credentials in effect; raises when any is blank."""
+    return connection_from(credentials.require(credentials.AUTOTASK))
 
 
 class AutotaskClient:
@@ -158,6 +168,17 @@ class AutotaskClient:
 
     def picklist(self, entity, field_name):
         return self.picklists(entity).get(field_name, {})
+
+
+def probe(client, redact=http_errors.unchanged):
+    """Test the client's connection with one query that returns at most one record.
+
+    `redact` runs over a refusal's body before it is cut to length.
+    """
+    return http_errors.probe(
+        lambda: client.query_page(PROBE_ENTITY, PROBE_FILTER, PROBE_FIELDS, max_records=1),
+        redact,
+    )
 
 
 _client = AutotaskClient()

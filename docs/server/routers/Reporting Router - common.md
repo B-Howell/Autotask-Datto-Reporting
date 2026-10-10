@@ -1,6 +1,6 @@
 # Route plumbing
 
-> `run_report` runs a report service call as the tracked job with a stream-bound logger, mapping cancellation to HTTP 499, bad arguments to 400 and missing or unreadable vendor credentials to 503; `call_or_http_error` runs any other service call and maps its typed failures to 400, 404, 409 or 502.
+> `run_report` runs a report service call as the tracked job with a stream-bound logger, mapping cancellation to HTTP 499, bad arguments to 400 and missing or unreadable vendor credentials to 503; `call_or_http_error` runs any other service call and maps its typed failures to 400, 404, 409, 502 or 503.
 
 ## Purpose
 
@@ -16,6 +16,7 @@ The scheduled-delivery routes run no job, but they share the other half of the p
 | `SECRETS_UNREADABLE` | `Stored credentials cannot be read; check APP_SECRET_KEY or the key file`, the 503 detail for a `SecretsError`. |
 | `run_report(stream, label, run)` | Starts a job labelled `label`, builds `streams.report_logger(stream, job_id=...)`, calls `run(logger)` and returns its result. |
 | `call_or_http_error(fn)` | Calls `fn()` and returns its result, answering each typed service failure with the status below and the exception text as `detail`. |
+| `validation_error_response(request, exc)` | The app's handler for FastAPI's `RequestValidationError`: a 422 whose `detail` keeps `type`, `loc` and `msg` per error and drops `input`. |
 
 `run_report` error mapping, in order of the `except` clauses:
 
@@ -37,6 +38,7 @@ The mapping lives in `_report_failure(exc)`, which answers `(status, detail)` or
 | `LookupError` | 404 |
 | `ValueError` | 400 |
 | `renderer.RenderError`, `delivery.DeliveryError` | 502 |
+| `secrets.SecretsError` | 503 `SECRETS_UNREADABLE` |
 | any other `Exception` | re-raised; FastAPI answers 500 |
 
 ## Uses
@@ -49,8 +51,9 @@ The mapping lives in `_report_failure(exc)`, which answers `(status, detail)` or
 
 ## Used By
 
+- `validation_error_response`: registered on the app by [main](<../Reporting Server - main.md>), so every route's 422 goes through it
 - `run_report`: [devices](<Reporting Router - devices.md>), [hdd_tickets](<Reporting Router - hdd_tickets.md>), [office_windows](<Reporting Router - office_windows.md>), [patch_management](<Reporting Router - patch_management.md>), [sla](<Reporting Router - sla.md>), [tickets](<Reporting Router - tickets.md>), [utilization](<Reporting Router - utilization.md>)
-- `call_or_http_error`: [presets](<Reporting Router - presets.md>), [schedules](<Reporting Router - schedules.md>)
+- `call_or_http_error`: [presets](<Reporting Router - presets.md>), [schedules](<Reporting Router - schedules.md>), [credentials](<Reporting Router - credentials.md>)
 
 ## Key Behavior
 
@@ -60,7 +63,8 @@ The mapping lives in `_report_failure(exc)`, which answers `(status, detail)` or
 - A `ValueError` is the services' contract for bad input (`utilization.parse_date`, `_validated_range`, `quarter_range`). Pydantic validation errors never reach here; FastAPI answers 422 before the route body runs.
 - A `CredentialsMissing` comes from the vendor client the report called, before any request left the process; the detail is the exception text so the page can tell the user which vendor to configure. A `SecretsError` means the stored values exist but the loaded key cannot read them; its own message names the key file path, which is replaced by `SECRETS_UNREADABLE` so the browser gets the remedy and not the path. Both are 503 rather than 500 because the server is healthy and the condition clears without a restart once the Settings page or the environment is fixed. Proven by `test_routes.py`.
 - Unexpected exceptions are recorded on the job (so the status bar shows the message) and re-raised unchanged; nothing is written to the snapshot cache because `get_cached_rows` only stores after a successful fetch.
-- `call_or_http_error` matches `InUseError` before `ValueError` because it is one: the presets service raises it when a schedule still renders the preset, and that is a conflict with existing state (409), not a malformed request (400). `LookupError` is the services' contract for an id that does not exist, so a stale page gets a 404 rather than a success it cannot tell from its own. The two integration errors are the renderer and the delivery flow being down or answering badly, which is a bad gateway from this server's point of view.
+- `call_or_http_error` matches `InUseError` before `ValueError` because it is one: the presets service raises it when a schedule still renders the preset, and that is a conflict with existing state (409), not a malformed request (400). `LookupError` is the services' contract for an id that does not exist, so a stale page gets a 404 rather than a success it cannot tell from its own. The two integration errors are the renderer and the delivery flow being down or answering badly, which is a bad gateway from this server's point of view. A `SecretsError` gets the same 503 and `SECRETS_UNREADABLE` detail as in `run_report`, for the same reason: the credentials routes read the store and the key on every request, and the path to the key file is not for the browser.
+- FastAPI's default 422 body repeats the offending value as `input`. The credentials routes accept a body that may hold a secret, and a secret posted under the wrong type (a list, say) would otherwise be sent straight back; the handler keeps the parts the page needs to point at the field and drops the echo for every route, since the cost is nil and the rule is simpler than an exception per router.
 - The routes are synchronous `def` functions, so FastAPI runs them on its threadpool and the report blocks that worker for its full duration; the SSE `/logs` routes are `async def` and share the event loop.
 
 ## Cleanup Notes

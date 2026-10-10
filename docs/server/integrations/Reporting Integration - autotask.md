@@ -1,6 +1,6 @@
 # Autotask integration
 
-> The Autotask PSA REST client: id-cursor paging, chunked id lookups, picklist caching, the per-request read of the base URL and auth headers from the credentials service, and the process-wide instance services call through `autotask()`.
+> The Autotask PSA REST client: id-cursor paging, chunked id lookups, picklist caching, the per-request read of the base URL and auth headers from the credentials service, the one-record query that tests a connection, and the process-wide instance services call through `autotask()`.
 
 ## Purpose
 
@@ -11,7 +11,8 @@ Autotask's query endpoint returns at most 500 records, has no page token, and fo
 | Name | Description |
 |---|---|
 | `Connection(base_url, headers)` | Frozen dataclass: where a request goes and the `UserName`, `Secret` and `ApiIntegrationCode` headers it carries. |
-| `current_connection()` | The `Connection` from the credentials in effect. Calls `credentials.require(AUTOTASK)` first, so a blank field raises `CredentialsMissing` before any request. |
+| `connection_from(values)` | The `Connection` the given credential values describe: `autotask_base_url` and the three headers from `autotask_username`, `autotask_secret` and `autotask_integration_code`. |
+| `current_connection()` | `connection_from` of the credentials in effect. Calls `credentials.require(AUTOTASK)` first, so a blank field raises `CredentialsMissing` before any request. |
 | `AutotaskClient(connection=current_connection, timeout=60)` | Builds a `requests.Session` holding only the JSON content-type header; `connection()` is called before every request for the URL and auth headers. |
 | `query_page(entity, filters, include_fields=None, max_records=500)` | One POST to `/<Entity>/query`; returns the `items` list. |
 | `query_all(entity, filters, include_fields=None, on_page=None)` | Every record matching `filters`, walked with the id cursor. `on_page(count_so_far)` is called after each page. |
@@ -21,6 +22,8 @@ Autotask's query endpoint returns at most 500 records, has no page token, and fo
 | `picklists(entity)` | `{field name: {int value: label}}` for every picklist field on the entity, fetched once per entity and kept until the credentials change. |
 | `forget_picklists()` | Drops the cached labels under the picklist lock; registered with `credentials.on_change` for the process-wide client. |
 | `picklist(entity, field_name)` | One field's `{value: label}` map, or `{}`. |
+| `probe(client, redact=http_errors.unchanged)` | The connection test: `query_page(PROBE_ENTITY, PROBE_FILTER, PROBE_FIELDS, max_records=1)` run through `http_errors.probe`, so it answers a `ProbeResult` rather than raising; `redact` runs over a refusal's body before it is cut to length. |
+| `PROBE_ENTITY`, `PROBE_FILTER`, `PROBE_FIELDS` | `Companies`, `({"op": "eq", "field": "id", "value": 0},)` and `("id",)`: the smallest query every tenant can answer, since company 0 is the MSP's own record. |
 | `autotask()` | The process-wide client, built at import with the default `current_connection`. |
 | `PAGE_SIZE`, `ID_CHUNK_SIZE`, `DEFAULT_TIMEOUT` | 500, 200 and 60 seconds. |
 
@@ -28,11 +31,13 @@ Autotask's query endpoint returns at most 500 records, has no page token, and fo
 
 - `requests` (`Session` for connection reuse).
 - [credentials service](<../services/Reporting Service - credentials.md>) for `require` (which returns the current values), `on_change` and `AUTOTASK`: the base URL, username, secret and integration code are read from it on every request.
+- [http_errors](<Reporting Integration - http_errors.md>) for `probe`, which words a refused test without the URL.
 
 ## Used By
 
 - [devices service](<../services/Reporting Service - devices.md>), [office_windows service](<../services/Reporting Service - office_windows.md>), [hdd_tickets service](<../services/Reporting Service - hdd_tickets.md>), [tickets service](<../services/Reporting Service - tickets.md>), [sla service](<../services/Reporting Service - sla.md>), [utilization service](<../services/Reporting Service - utilization.md>)
-- [server/tests/test_autotask_client.py](../../../server/tests/test_autotask_client.py) exercises paging and chunking against a stubbed session with a fixed `Connection`, and proves the default connection carries the stored credentials, uses a rotated secret on the next request, drops the picklist cache when a credential is saved, and refuses with `CredentialsMissing` when a field is blank.
+- [credentials service](<../services/Reporting Service - credentials.md>) builds a throwaway `AutotaskClient(connection=lambda: connection_from(values))` and calls `probe` on it for a Settings page test.
+- [server/tests/test_autotask_client.py](../../../server/tests/test_autotask_client.py) exercises paging and chunking against a stubbed session with a fixed `Connection`, proves the default connection carries the stored credentials, uses a rotated secret on the next request, drops the picklist cache when a credential is saved, and refuses with `CredentialsMissing` when a field is blank, and proves the probe's exact request and its wording of a refusal.
 
 ## Key Behavior
 
@@ -44,6 +49,7 @@ Autotask's query endpoint returns at most 500 records, has no page token, and fo
 - `include_fields` matters for user-defined fields: Autotask returns `userDefinedFields` only when `includeFields` is omitted, which is why the device services make two passes over the same ids.
 - Timeouts: every request passes `timeout=self._timeout` (60 seconds by default). There is no retry; an HTTP error raises from `raise_for_status` and the calling report fails with that message, which the snapshot layer records in `sync_state`.
 - `patch` is the only write in the whole integration layer; it is used for device user-defined field write-back.
+- The connection test is one POST to `<base URL>/Companies/query` with the body `{"filter": [{"op": "eq", "field": "id", "value": 0}], "maxRecords": 1, "includeFields": ["id"]}` and the usual three headers. Company 0 is the zero account every tenant has, `maxRecords` 1 and the single field keep the answer to a few bytes, and no cursor is added because `query_page` is used rather than `query_all`. A 401 or 403 from bad headers, a 404 from a base URL that is not an Autotask zone, or a connection failure comes back as a `ProbeResult` whose message holds the status and the trimmed body (or the failure's kind), never the URL that was tried.
 
 ## Cleanup Notes
 

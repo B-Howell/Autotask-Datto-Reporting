@@ -1,6 +1,7 @@
 """Shared plumbing for the routes: job lifecycle and error mapping."""
 
 from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 
 from core import jobs, secrets, streams
 from services import credentials, presets, scheduled_runs
@@ -54,6 +55,17 @@ def run_report(stream, label, run):
         raise HTTPException(status_code=status_code, detail=detail) from exc
 
 
+def _without_input(error):
+    return {key: error[key] for key in ("type", "loc", "msg") if key in error}
+
+
+def validation_error_response(_request, exc):
+    """FastAPI's 422, minus the `input` echo: a rejected body may carry a credential."""
+    return JSONResponse(
+        status_code=422, content={"detail": [_without_input(e) for e in exc.errors()]}
+    )
+
+
 def call_or_http_error(fn):
     """Run a service call, answering each of its typed failures with a status.
 
@@ -70,3 +82,5 @@ def call_or_http_error(fn):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except (scheduled_runs.RenderError, scheduled_runs.DeliveryError) as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except secrets.SecretsError as exc:
+        raise HTTPException(status_code=503, detail=SECRETS_UNREADABLE) from exc

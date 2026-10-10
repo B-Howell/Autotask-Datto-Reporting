@@ -19,6 +19,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Integration - autotask.md](<Reporting Integration - autotask.md>)
 - [Reporting Integration - datto.md](<Reporting Integration - datto.md>)
 - [Reporting Integration - delivery.md](<Reporting Integration - delivery.md>)
+- [Reporting Integration - http_errors.md](<Reporting Integration - http_errors.md>)
 - [Reporting Integration - renderer.md](<Reporting Integration - renderer.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->

@@ -18,6 +18,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from config import settings
+from integrations import http_errors
 from services import credentials
 
 # Refresh this many seconds before the advertised expiry, so a request that
@@ -36,12 +37,18 @@ class TokenRequest:
     api_secret: str
 
 
+def token_request_from(values):
+    """The token request the given credential values describe."""
+    return TokenRequest(
+        credentials.token_url_for(values["datto_platform"]),
+        values["datto_api_key"],
+        values["datto_api_secret"],
+    )
+
+
 def current_token_request():
     """The token request from the credentials in effect; raises when any is blank."""
-    values = credentials.require(credentials.DATTO)
-    return TokenRequest(
-        credentials.datto_token_url(), values["datto_api_key"], values["datto_api_secret"]
-    )
+    return token_request_from(credentials.require(credentials.DATTO))
 
 
 class DattoTokenProvider:
@@ -88,6 +95,14 @@ class DattoTokenProvider:
             self._token = data["access_token"]
             self._expires_at = now + data.get("expires_in", 3600)
             return self._token
+
+
+def probe(provider, redact=http_errors.unchanged):
+    """Test the provider's credentials by fetching one token; no API call follows.
+
+    `redact` runs over a refusal's body before it is cut to length.
+    """
+    return http_errors.probe(provider.token, redact)
 
 
 class DattoClient:

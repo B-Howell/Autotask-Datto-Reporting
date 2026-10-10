@@ -87,8 +87,8 @@ def test_the_datto_platform_must_be_a_hostname_label(store):
     credentials.save({"datto_platform": "  zinfandel-2  "})
     assert credentials.current()["datto_platform"] == "zinfandel-2"
     assert credentials.datto_api_base() == "https://zinfandel-2-api.centrastage.net"
-    assert (
-        credentials.datto_token_url() == "https://zinfandel-2-api.centrastage.net/auth/oauth/token"
+    assert credentials.token_url_for("other") == (
+        "https://other-api.centrastage.net/auth/oauth/token"
     )
 
 
@@ -213,3 +213,16 @@ def test_repository_delete_removes_the_row(store):
     assert repo.get_all() == {}
     credentials.invalidate()
     assert credentials.current()["autotask_username"] == ""
+
+
+def test_merged_lays_non_blank_values_over_the_stored_ones_after_validating(store, monkeypatch):
+    credentials.save(AUTOTASK)
+    merged = credentials.merged({"autotask_username": "other", "autotask_secret": "  "})
+    assert merged["autotask_username"] == "other"
+    assert merged["autotask_secret"] == AUTOTASK["autotask_secret"]
+    assert credentials.current()["autotask_username"] == AUTOTASK["autotask_username"]
+    with pytest.raises(ValueError, match="Unknown credential: nope"):
+        credentials.merged({"nope": "x"})
+    monkeypatch.setenv("AUTOTASK_USERNAME", "env-user")
+    with pytest.raises(ValueError, match="AUTOTASK_USERNAME is set by the environment"):
+        credentials.merged({"autotask_username": "other"})

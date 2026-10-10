@@ -14,11 +14,12 @@ The server never talks to Exchange and never holds a mailbox password. Delivery 
 | `message(to, cc, subject, body, attachments)` | The JSON body for the flow: `to` and `cc` as lists of addresses, `subject`, `body` and `attachments` as `{name, contentType, contentBytes}` with base64 content. |
 | `send(to, cc, subject, body, attachments)` | Posts `message(...)` to `settings.delivery_webhook_url`; returns nothing on any 2xx. |
 | `DeliveryError` | Raised when the URL is not configured, the flow cannot be reached, or it answers 300 or above. |
-| `TIMEOUT`, `ERROR_TEXT_LIMIT` | 60 seconds and 300 characters. The timeout is per socket operation, so it bounds the wait for the flow's answer after the body is sent, not the upload. |
+| `TIMEOUT` | 60 seconds, per socket operation, so it bounds the wait for the flow's answer after the body is sent, not the upload. |
 
 ## Uses
 
-- `requests`, `base64`, `re`, `urllib.parse.urlsplit`.
+- `requests`, `base64`, `urllib.parse.urlsplit`.
+- [http_errors](<Reporting Integration - http_errors.md>) for `trimmed` and its 300 character `ERROR_TEXT_LIMIT`, which this module once held.
 - [config](<../Reporting Server - config.md>) for `delivery_webhook_url`.
 - The [Power Automate delivery flow](<../../operations/Reporting Power Automate Delivery Flow.md>), the other end of the POST; its trigger schema is the shape `message` builds.
 
