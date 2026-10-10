@@ -34,7 +34,6 @@ const useDeviceExport = ({ exportColumns, rows, agencyName, selectedCompany }: D
           agencyId: typeof selectedCompany === 'number' ? selectedCompany : '',
           reportType: 'devices',
           format: 'xlsx',
-          title: filename.replace(/\.xlsx$/, ''),
         },
       });
     },

@@ -7,6 +7,7 @@ import {
   ReportProgress,
   ReportScheduleDialog,
   ReportToolbar,
+  agencyWidePresetDraft,
   useScheduleDialog,
 } from '@/components/report';
 import useUtilizationData from '@/hooks/useUtilizationData';
@@ -33,9 +34,7 @@ const AgencyUtilization = () => {
   const handleGenerate = (refresh = false) =>
     fetchUtilization(selected.start, selected.end, { refresh });
   const schedule = useScheduleDialog(() =>
-    utilData
-      ? { reportType: 'quarterly_utilization', agencyKey: null, agencyName: '', options: {} }
-      : null
+    utilData ? agencyWidePresetDraft('quarterly_utilization') : null
   );
 
   const exportExcel = async (save: boolean) => {
@@ -50,7 +49,6 @@ const AgencyUtilization = () => {
         agencyName: 'All Agencies',
         reportType: 'utilization',
         format: 'xlsx',
-        title: filename.replace(/\.xlsx$/, ''),
       },
     });
   };

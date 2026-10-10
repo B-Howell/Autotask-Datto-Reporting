@@ -16,6 +16,7 @@
 | `fileDateStamp` | `(now = new Date()) => string` | `M-D-YY`, for example `10-9-26`. |
 | `longDate` | `(now = new Date()) => string` | `October 9, 2026`, en-US long form. |
 | `parseUsDate` | `(value: unknown) => Date \| null` | `M/D/YYYY` or `MM/DD/YYYY` to a local `Date`; `null` for anything else. |
+| `formatHour` | `(hour: number) => string` | `HH:00`, zero-padded: `formatHour(7)` is `07:00`. The one rendering of a schedule's hour. |
 | `formatDateTime` | `(iso: string \| null \| undefined) => string` | `toLocaleString()` of an ISO timestamp; `''` for empty, the raw string if unparseable. |
 
 ## Uses
@@ -29,6 +30,7 @@
 - Export builders: [deviceReports excelExport](<../pages/reports/deviceReports/Reporting Device Report - excelExport.md>) and [slaPerformance excelExport](<../pages/reports/slaPerformance/Reporting SLA - excelExport.md>) (`parseUsDate`), [patchManagement pdfExport](<../pages/reports/patchManagement/Reporting Patch Management - pdfExport.md>) and [officeWindows reportRows](<../pages/reports/officeWindows/Reporting Office Windows - reportRows.md>) (`fileDateStamp`), [officeWindows wordExport](<../pages/reports/officeWindows/Reporting Office Windows - wordExport.md>) (`longDate`).
 - [DeviceReports](<../pages/reports/Reporting Page - DeviceReports.md>) and [HddTickets](<../pages/reports/Reporting Page - HddTickets.md>) pages (`fileDateStamp`).
 - [SavedReportsTable](<../pages/reports/savedReports/Reporting Saved Reports - SavedReportsTable.md>) and [DataSyncSection](<../pages/settings/Reporting Settings - DataSyncSection.md>) (`formatDateTime`).
+- [SchedulesTable](<../pages/scheduledReports/Reporting Scheduled Reports - SchedulesTable.md>) (`formatDateTime`, `formatHour`) and `DayHourFields`, documented under [ScheduleDialog](<../components/report/Reporting Report Component - ScheduleDialog.md>) (`formatHour`), so the hour a schedule fires at reads the same in the dialog and the list.
 - [pdf util](<Reporting Util - pdf.md>) (`longDate`).
 - [client/src/utils/dates.test.ts](../../../client/src/utils/dates.test.ts).
 

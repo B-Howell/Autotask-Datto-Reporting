@@ -7,11 +7,12 @@ import {
   ReportProgress,
   ReportScheduleDialog,
   ReportToolbar,
+  agencyPresetDraft,
   useScheduleDialog,
 } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
 import useHddTicketsData from '@/hooks/useHddTicketsData';
-import { membersOf, resolveAgencyValue, valueFor } from '@/utils/agencyGroups';
+import { membersOf, resolveAgencyValue } from '@/utils/agencyGroups';
 import { fileDateStamp } from '@/utils/dates';
 import { deliverBlob } from '@/utils/saveReport';
 import { buildHddTicketsWorkbook } from './hddTickets/excelExport';
@@ -38,14 +39,7 @@ const HddTickets = () => {
   const allAgenciesRun = generatedValue === ALL_AGENCIES;
   const generatedAgency = resolveAgencyValue(generatedValue, effectiveAgencies);
   const schedule = useScheduleDialog(() =>
-    hasResults && generatedAgency
-      ? {
-          reportType: 'hdd_tickets',
-          agencyKey: String(valueFor(generatedAgency)),
-          agencyName: generatedAgency.name,
-          options: {},
-        }
-      : null
+    hasResults && generatedAgency ? agencyPresetDraft('hdd_tickets', generatedAgency) : null
   );
 
   const handleGenerate = () => {
@@ -74,7 +68,6 @@ const HddTickets = () => {
         agencyName: generatedLabel,
         reportType: 'hdd_tickets',
         format: 'xlsx',
-        title: filename.replace(/\.xlsx$/, ''),
       },
     });
   };

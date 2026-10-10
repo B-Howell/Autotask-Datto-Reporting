@@ -4,11 +4,10 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import type { ReportSchedule } from '@/api';
 import { DataTable, EmptyState, REPORT_LABELS } from '@/components/report';
 import type { DataColumn } from '@/components/report';
-import { formatDateTime } from '@/utils/dates';
+import { formatDateTime, formatHour } from '@/utils/dates';
 import RunStatusChip from './RunStatusChip';
 
-const whenLabel = (row: ReportSchedule) =>
-  `Day ${row.day_of_month} at ${String(row.hour).padStart(2, '0')}:00`;
+const whenLabel = (row: ReportSchedule) => `Day ${row.day_of_month} at ${formatHour(row.hour)}`;
 
 const Secondary = ({ text }: { text: string }) =>
   text ? (

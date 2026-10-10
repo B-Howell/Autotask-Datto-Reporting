@@ -44,6 +44,11 @@ export function parseUsDate(value: unknown): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
+/** `HH:00`, the hour of the day a schedule fires at. */
+export function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, '0')}:00`;
+}
+
 export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return '';
   const d = new Date(iso);

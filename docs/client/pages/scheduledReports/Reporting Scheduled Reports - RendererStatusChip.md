@@ -21,6 +21,7 @@ and every 60 seconds and shows one of three states.
 ## Uses
 
 - `fetchRendererHealth` from the [schedules API](<../../api/Reporting API - schedules.md>).
+- `errorMessage` from the [reportJob util](<../../utils/Reporting Util - reportJob.md>) for the tooltip text.
 - Material UI `Chip`, `Tooltip`, the `CheckCircleOutline` and `ErrorOutline` icons.
 
 ## Used By
@@ -30,8 +31,9 @@ and every 60 seconds and shows one of three states.
 ## Key Behavior
 
 - The tooltip message is the 502 `detail` the server returns when it cannot reach the
-  renderer, so it names the host and the failure. A response with `ok: false` (which the
-  current renderer never sends) gets a fixed sentence.
+  renderer, so it names the host and the failure; a rejection with no text falls back to
+  `No response`. A response with `ok: false` (which the current renderer never sends) gets a
+  fixed sentence.
 - The interval is cleared on unmount; nothing is cached across visits.
 
 ## Cleanup Notes

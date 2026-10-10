@@ -32,8 +32,8 @@ and `entriesFor` are read) and returns `(save: boolean) => Promise<void>`.
 - A null `entriesFor` means the job's entries load failed, so the entries are fetched with
   `fetchUtilizationEntries(start, end)` and substituted into the input. A period with
   genuinely zero entries has a range key and is not refetched.
-- Metadata: `agencyName: 'All Agencies'`, `reportType: 'annual_utilization'`, `format: 'xlsx'`
-  and the filename without extension as the title.
+- Metadata: `agencyName: 'All Agencies'`, `reportType: 'annual_utilization'`, `format: 'xlsx'`;
+  the title is left to `saveReportBlob`, which uses the filename without its extension.
 
 ## Cleanup Notes
 

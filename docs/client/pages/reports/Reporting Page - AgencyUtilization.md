@@ -37,6 +37,7 @@ arrive after the first render.
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
   [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
+  `agencyWidePresetDraft` (documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>)),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
   [ErrorBanner](<../../components/report/Reporting Report Component - ErrorBanner.md>)
 - [saveReport](<../../utils/Reporting Util - saveReport.md>)
@@ -58,12 +59,12 @@ arrive after the first render.
   `grandTotal` to two decimals. Optional chaining guards against a response missing those
   fields.
 - Export buttons are enabled by `hasResults = !!utilData`; saved-report metadata uses
-  `agencyName: 'All Agencies'`, `reportType: 'utilization'`, `format: 'xlsx'`.
+  `agencyName: 'All Agencies'`, `reportType: 'utilization'`, `format: 'xlsx'`; the title is
+  left to `saveReportBlob`, which uses the filename without its extension.
 - The table renders only when data exists and the page is not loading; `ReportProgress`
   shows the hook's logs during a run.
 - Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog` once `utilData` is loaded with
-  the draft `{ reportType: 'quarterly_utilization', agencyKey: null, agencyName: '',
-  options: {} }`; the quarter is not stored because a scheduled run reports the quarter
+  the draft `agencyWidePresetDraft('quarterly_utilization')`; the quarter is not stored because a scheduled run reports the quarter
   that precedes its run date.
 
 ## Cleanup Notes

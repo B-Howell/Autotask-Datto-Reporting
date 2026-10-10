@@ -1,4 +1,5 @@
-import type { PresetReportType } from '@/api';
+import type { EffectiveAgency, PresetReportType } from '@/api';
+import { valueFor } from '@/utils/agencyGroups';
 
 /** What a report page knows about the report on screen, enough to store it as a preset. */
 export interface PresetDraft {
@@ -23,6 +24,23 @@ export const REPORT_LABELS: Record<PresetReportType, string> = {
 };
 
 const hasAgency = (draft: PresetDraft) => draft.agencyKey !== null;
+
+/** The draft of a report run for one agency or group, keyed the way the dropdown keys it. */
+export function agencyPresetDraft(
+  reportType: PresetReportType,
+  agency: EffectiveAgency,
+  options: Record<string, unknown> = {}
+): PresetDraft {
+  return { reportType, agencyKey: String(valueFor(agency)), agencyName: agency.name, options };
+}
+
+/** The draft of a report that covers every agency, so it names none. */
+export function agencyWidePresetDraft(
+  reportType: PresetReportType,
+  options: Record<string, unknown> = {}
+): PresetDraft {
+  return { reportType, agencyKey: null, agencyName: '', options };
+}
 
 export function defaultName(draft: PresetDraft): string {
   const label = REPORT_LABELS[draft.reportType];
@@ -50,7 +68,12 @@ export function splitAddresses(text: string): string[] {
   return addresses;
 }
 
-/** The entries that cannot be an email address; the server refuses any without an `@`. */
+/** The server's own test of an address: anything with an `@`; the rest is left to the mail host. */
+export function isEmailAddress(text: string): boolean {
+  return text.includes('@');
+}
+
+/** The entries that cannot be an email address, which the server would refuse. */
 export function invalidAddresses(text: string): string[] {
-  return splitAddresses(text).filter((address) => !address.includes('@'));
+  return splitAddresses(text).filter((address) => !isEmailAddress(address));
 }

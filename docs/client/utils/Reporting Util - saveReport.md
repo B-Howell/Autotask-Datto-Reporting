@@ -11,7 +11,8 @@
 | Export | Signature | Description |
 |---|---|---|
 | `SaveReportArgs` | interface | `SavedReportMeta` plus `blob` and `filename`. |
-| `saveReportBlob` | `(args) => Promise<SaveReportResponse>` | Uploads, toasts `<title> saved to app` or `Save failed: <reason>`, rethrows on failure. |
+| `fileStem` | `(filename) => string` | The name without its last extension (`Patch Summary 10-9-26.pdf` to `Patch Summary 10-9-26`); a name with no extension is returned as is. |
+| `saveReportBlob` | `(args) => Promise<SaveReportResponse>` | Uploads, toasts `<title> saved to app` or `Save failed: <reason>`, rethrows on failure. The title defaults to `fileStem(filename)`. |
 | `downloadBlob` | `(blob, filename) => void` | Object URL, hidden anchor click, URL revoked. |
 | `DeliverArgs` | interface | `blob`, `filename`, `save?` (default `false`), `meta?`. |
 | `deliverBlob` | `(args) => Promise<SaveReportResponse \| null>` | Download unless `save`, then upload; `null` if the upload failed. |
@@ -27,20 +28,21 @@
 - Pages [AgencyUtilization](<../pages/reports/Reporting Page - AgencyUtilization.md>), [AnnualUtilization](<../pages/reports/Reporting Page - AnnualUtilization.md>), [DeviceReports](<../pages/reports/Reporting Page - DeviceReports.md>), [HddTickets](<../pages/reports/Reporting Page - HddTickets.md>), [SlaPerformance](<../pages/reports/Reporting Page - SlaPerformance.md>) call `deliverBlob`.
 - [useOfficeWindowsExports](<../pages/reports/officeWindows/Reporting Office Windows - useOfficeWindowsExports.md>) calls `deliverBlob`.
 - [patchManagement pdfExport](<../pages/reports/patchManagement/Reporting Patch Management - pdfExport.md>) calls `saveReportBlob` directly.
+- [client/src/utils/saveReport.test.ts](../../../client/src/utils/saveReport.test.ts).
 
 ## Key Behavior
 
 - `deliverBlob` downloads first, then uploads, so a failed upload never costs the user the file they asked for.
 - The upload failure inside `deliverBlob` is caught and turned into `null`; the user has already seen the error toast from `saveReportBlob`, and the export flow continues.
 - `saveReportBlob` rethrows after toasting, so a direct caller (the patch PDF) can still react to failure.
-- The toast label is `meta.title` when present, otherwise the filename, and that same label is sent as the upload's `title` so the Saved Reports list and the toast agree.
+- The toast label is `meta.title` when present, otherwise `fileStem(filename)`, and that same label is sent as the upload's `title` so the Saved Reports list and the toast agree. Every export builder names its file `<something> <M-D-YY>.<ext>` and wants exactly that stem as the title, so none of them passes one; a caller with a different title in mind still can.
 - De-duplication is the server's: the same filename on the same day replaces the earlier row, which is why export filenames include the date stamp from the dates util.
 - `downloadBlob` revokes the object URL immediately after `click()`; browsers have already started the download by then.
 - `downloadBlob` is exported but every current caller goes through `deliverBlob`.
 
 ## Cleanup Notes
 
-- None noted.
+- `saveReport.test.ts` covers `fileStem` and the default title; `downloadBlob` and `deliverBlob` are exercised only through the pages.
 
 ## Source
 

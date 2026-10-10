@@ -29,7 +29,7 @@ Columns:
 | Column | Content |
 |---|---|
 | Name | The preset name, with the report label and agency name beneath in caption text (`Device inventory / Harbor Point Health`). `Preset missing` when the preset row no longer exists. |
-| When | `Day <n> at <HH>:00`, the hour zero-padded. |
+| When | `Day <n> at <HH>:00`, the hour through `formatHour`, the same rendering as the dialog's Hour select. |
 | Recipients | The To list, then `cc <list>` beneath when there is one. |
 | Next run | `next_run_at` through `formatDateTime`. |
 | Last run | `last_run_at` and a `RunStatusChip` for `last_status`, with `last_error` as the chip's tooltip. |
@@ -39,7 +39,7 @@ Columns:
 
 - [DataTable](<../../components/report/Reporting Report Component - DataTable.md>) with its `onRowClick` and `selectedKey` props, [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>) and `REPORT_LABELS` from `scheduleDraft.ts`, documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>).
 - [RunStatusChip](<Reporting Scheduled Reports - RunStatusChip.md>).
-- [dates util](<../../utils/Reporting Util - dates.md>) for `formatDateTime`.
+- [dates util](<../../utils/Reporting Util - dates.md>) for `formatDateTime` and `formatHour`.
 - Material UI `Paper`, `Button`, `Switch`, `IconButton`, the `PlayArrow` and `DeleteOutline` icons.
 
 ## Used By

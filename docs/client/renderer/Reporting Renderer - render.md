@@ -16,7 +16,8 @@ The module keeps one handler per report type in a map, so adding a report means 
 | `RenderResult` | `{ bytes: Buffer, contentType }` | The finished file and its media type. |
 | `REPORT_TYPES` | `string[]` | The handler keys, in map order. |
 | `DOCX_MIME`, `PDF_MIME` | strings | The Word and PDF media types; the xlsx one comes from the excel util. |
-| `render` | `(req: RenderRequest) => Promise<RenderResult>` | Runs the handler for `req.reportType`; rejects with `Unknown report type: <x>` for any other key. |
+| `render` | `(req: RenderRequest) => Promise<RenderResult>` | Runs the handler for `req.reportType`; rejects with an `UnknownReportTypeError` for any other key. |
+| `UnknownReportTypeError` | `class extends Error` | Thrown for a report type no handler builds; its message is `Unknown report type: <x>`. The HTTP front tests for this class to answer a 400. |
 
 ### Report types and their payloads
 
@@ -55,6 +56,7 @@ The module keeps one handler per report type in a map, so adding a report means 
 - Patch total: the figure in the centre of the donut is the sum of the summary counts, computed here the same way the Patch Management page computes it, so the PDF matches a browser export.
 - Assets: the Office and Windows report and the patch report load their images through `loadRendererAssets(req.logoBase64)`, reading the product icons from `client/public` and decoding the optional base64 logo; a missing or non-PNG image is simply left out, as in the browser.
 - The dispatcher uses `Object.hasOwn`, so a request for `constructor` or `toString` is an unknown type rather than a prototype lookup.
+- An unknown type is the one failure the caller caused, so it has its own error class rather than a bare `Error`; the server distinguishes it by `instanceof`, not by reading the message, and the message stays free to change.
 
 ## Cleanup Notes
 

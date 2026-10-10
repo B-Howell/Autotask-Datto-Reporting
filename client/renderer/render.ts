@@ -169,9 +169,17 @@ const handlers: Record<string, Handler> = {
 
 export const REPORT_TYPES = Object.keys(handlers);
 
+/** The request named a report type no handler builds; the caller's mistake, not the renderer's. */
+export class UnknownReportTypeError extends Error {
+  constructor(reportType: string) {
+    super(`Unknown report type: ${reportType}`);
+    this.name = 'UnknownReportTypeError';
+  }
+}
+
 /** The file for a request, or a rejection naming the unknown report type. */
 export async function render(req: RenderRequest): Promise<RenderResult> {
   const run = Object.hasOwn(handlers, req.reportType) ? handlers[req.reportType] : undefined;
-  if (!run) throw new Error(`Unknown report type: ${req.reportType}`);
+  if (!run) throw new UnknownReportTypeError(req.reportType);
   return run(req);
 }

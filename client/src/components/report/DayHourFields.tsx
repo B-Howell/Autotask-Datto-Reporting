@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { FormControl, FormHelperText, InputLabel, MenuItem, Select, Stack } from '@mui/material';
+import { formatHour } from '@/utils/dates';
 
 interface DayHourFieldsProps {
   dayOfMonth: number;
@@ -9,8 +10,6 @@ interface DayHourFieldsProps {
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-
-const hourLabel = (hour: number) => `${String(hour).padStart(2, '0')}:00`;
 
 /** The monthly slot a schedule fires in: a day of the month and an hour of that day. */
 const DayHourFields = ({ dayOfMonth, hour, onChange }: DayHourFieldsProps) => {
@@ -44,7 +43,7 @@ const DayHourFields = ({ dayOfMonth, hour, onChange }: DayHourFieldsProps) => {
         >
           {HOURS.map((value) => (
             <MenuItem key={value} value={value}>
-              {hourLabel(value)}
+              {formatHour(value)}
             </MenuItem>
           ))}
         </Select>

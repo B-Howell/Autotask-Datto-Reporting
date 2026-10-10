@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fileDateStamp, parseUsDate, reportYears } from './dates';
+import { fileDateStamp, formatHour, parseUsDate, reportYears } from './dates';
 
 describe('reportYears', () => {
   it('runs from the first year through next year', () => {
@@ -22,5 +22,12 @@ describe('parseUsDate', () => {
     expect(parseUsDate('10/09/2026')?.getDate()).toBe(9);
     expect(parseUsDate('2026-10-09')).toBeNull();
     expect(parseUsDate(42)).toBeNull();
+  });
+});
+
+describe('formatHour', () => {
+  it('pads the hour to two digits on the hour', () => {
+    expect(formatHour(7)).toBe('07:00');
+    expect(formatHour(23)).toBe('23:00');
   });
 });

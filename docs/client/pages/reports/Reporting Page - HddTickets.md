@@ -30,10 +30,11 @@ dropdown value and the generated value and label live in the store so they survi
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
   [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
+  `agencyPresetDraft` (documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>)),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>) (with `ALL_AGENCIES`),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
   [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>)
-- [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`membersOf`, `resolveAgencyValue`, `valueFor`),
+- [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`membersOf`, `resolveAgencyValue`),
   [dates](<../../utils/Reporting Util - dates.md>), [saveReport](<../../utils/Reporting Util - saveReport.md>)
 
 ## Used By
@@ -50,13 +51,13 @@ dropdown value and the generated value and label live in the store so they survi
 - While loading, `ReportProgress` shows the hook's log lines under "Loading HDD ticket data".
 - The export passes the current `devices` array straight to the workbook builder; saved-report
   metadata uses `reportType: 'hdd_tickets'`, `format: 'xlsx'` and the agency label as
-  `agencyName`. No `agencyId` is recorded.
+  `agencyName`; the title is left to `saveReportBlob`, which uses the filename without its
+  extension. No `agencyId` is recorded.
 - The table heading uses `deviceCount` from the server rather than `devices.length`.
 - Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog`. The
   store's `generatedValue` (the dropdown value the results were run for) is resolved with
-  `resolveAgencyValue`, and a resolved agency gives the draft `{ reportType: 'hdd_tickets',
-  agencyKey: String(valueFor(agency)), agencyName: agency.name, options: {} }` once
-  `hasResults`. The all-agencies sentinel resolves to nothing, and because a preset must name
+  `resolveAgencyValue`, and a resolved agency gives the draft
+  `agencyPresetDraft('hdd_tickets', agency)` once `hasResults`. The all-agencies sentinel resolves to nothing, and because a preset must name
   one agency the page passes no `onSchedule` for that run, so `ReportActions` renders no
   Schedule button. Before any run the button is present and disabled, as on the other pages.
 

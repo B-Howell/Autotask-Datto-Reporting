@@ -161,7 +161,6 @@ export async function savePatchPdf(
       agencyId: isAgencyGroup(agency) ? '' : agency.id,
       reportType: 'patch',
       format: 'pdf',
-      title: filename.replace(/\.pdf$/, ''),
     });
   } catch {
     /* saveReportBlob has already shown the failure toast */

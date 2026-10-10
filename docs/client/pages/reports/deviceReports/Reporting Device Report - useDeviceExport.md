@@ -36,8 +36,9 @@ export one memoised identity per set of inputs.
 
 - The file is `<Agency> Computer Inventory <M-D-YY>.xlsx`; the label falls back to `'Device'`
   when the agency name is unknown.
-- Saved-report metadata records `reportType: 'devices'`, `format: 'xlsx'`, the title without
-  extension, and `agencyId` only for a numeric selection; a group selection sends `''`, which
+- Saved-report metadata records `reportType: 'devices'`, `format: 'xlsx'` and `agencyId` only
+  for a numeric selection; the title is left to `saveReportBlob`, which uses the filename
+  without its extension; a group selection sends `''`, which
   the server treats as unknown.
 - The workbook uses the filtered `rows`, so a missing-field filter on screen narrows the file
   too.

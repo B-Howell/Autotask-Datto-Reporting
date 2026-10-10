@@ -34,7 +34,6 @@ const useAnnualExport = ({ utilData, workbookInput, entriesFor }: AnnualReport) 
           agencyName: 'All Agencies',
           reportType: 'annual_utilization',
           format: 'xlsx',
-          title: filename.replace(/\.xlsx$/, ''),
         },
       });
     },

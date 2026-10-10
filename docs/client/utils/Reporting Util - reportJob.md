@@ -29,6 +29,7 @@ The design decision is the split between structured progress and human log lines
 - [useTrackedReport](<../hooks/Reporting Hook - useTrackedReport.md>) wraps `runReportJob` for every report hook and uses `isAbortError` and `errorMessage`.
 - [useReportingData](<../hooks/Reporting Hook - useReportingData.md>) and [SavedReportViewer](<../components/Reporting Component - SavedReportViewer.md>) use `errorMessage` for toasts.
 - [saveReport util](<Reporting Util - saveReport.md>) uses `errorMessage`.
+- [useSchedules](<../pages/scheduledReports/Reporting Scheduled Reports - useSchedules.md>), [RendererStatusChip](<../pages/scheduledReports/Reporting Scheduled Reports - RendererStatusChip.md>) and [DeliveryTestButton](<../pages/scheduledReports/Reporting Scheduled Reports - DeliveryTestButton.md>) use `errorMessage` with an `|| <fallback>` for an error that carries no text.
 
 ## Key Behavior
 

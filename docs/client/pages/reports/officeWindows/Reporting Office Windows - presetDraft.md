@@ -19,13 +19,15 @@ the preset is sent.
 | `agency` | `EffectiveAgency \| null` | The agency the report is titled for, from `reportedAgencyForSite`; null before a run. |
 | `showLicenses` | `boolean` | The page's licence-column toggle. |
 
-Returns null without an agency; otherwise `{ reportType: 'office_windows', agencyKey:
-String(valueFor(agency)), agencyName: agency.name, options: { format: 'docx', showLicenses } }`.
+Returns null without an agency; otherwise
+`agencyPresetDraft('office_windows', agency, { format: 'docx', showLicenses })`, that is
+`{ reportType: 'office_windows', agencyKey: String(valueFor(agency)), agencyName: agency.name,
+options: { format: 'docx', showLicenses } }`.
 
 ## Uses
 
-- `PresetDraft` from [the report component barrel](<../../../components/report/Reporting Report Component - index.md>)
-- [agencyGroups](<../../../utils/Reporting Util - agencyGroups.md>) (`valueFor`) and the `EffectiveAgency` type
+- `agencyPresetDraft` and `PresetDraft` from [the report component barrel](<../../../components/report/Reporting Report Component - index.md>); the factory is documented under [useScheduleForm](<../../../components/report/Reporting Report Component - useScheduleForm.md>)
+- The `EffectiveAgency` type from the [API types](<../../../api/Reporting API - types.md>)
 
 ## Used By
 

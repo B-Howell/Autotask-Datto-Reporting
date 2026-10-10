@@ -9,13 +9,21 @@ export interface SaveReportArgs extends SavedReportMeta {
   filename: string;
 }
 
-/** Uploads a generated report so it appears under Saved Reports, with a toast either way. */
+/** The file name without its extension: what a saved report is called unless a title is given. */
+export function fileStem(filename: string): string {
+  return filename.replace(/\.[^.\s]+$/, '');
+}
+
+/**
+ * Uploads a generated report so it appears under Saved Reports, with a toast
+ * either way. The title defaults to the file name's stem.
+ */
 export async function saveReportBlob({
   blob,
   filename,
   ...meta
 }: SaveReportArgs): Promise<SaveReportResponse> {
-  const label = meta.title || filename;
+  const label = meta.title || fileStem(filename);
   try {
     const data = await savedReportsApi.uploadSavedReport(blob, filename, { ...meta, title: label });
     useToastStore.getState().showToast(`${label} saved to app`, 'success');

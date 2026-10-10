@@ -4,7 +4,7 @@
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { pathToFileURL } from 'node:url';
-import { REPORT_TYPES, render } from './render';
+import { REPORT_TYPES, UnknownReportTypeError, render } from './render';
 import type { RenderRequest } from './render';
 
 const DEFAULT_PORT = 3100;
@@ -115,9 +115,7 @@ const handleRender = async (
   try {
     result = await render(request);
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Unknown report type')) {
-      throw new RequestError(error.message, 400);
-    }
+    if (error instanceof UnknownReportTypeError) throw new RequestError(error.message, 400);
     throw error;
   }
   res.writeHead(200, {

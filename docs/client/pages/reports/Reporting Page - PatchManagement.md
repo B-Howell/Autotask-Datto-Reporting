@@ -33,11 +33,12 @@ Export: "Export to PDF" and "Save to app", named
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
   [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
+  `agencyPresetDraft` (documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>)),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
   [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>),
   [DonutChart](<../../components/report/Reporting Report Component - DonutChart.md>) (the `DonutSlice` type)
-- [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`resolveAgencyValue`, `valueFor`)
+- [agencyGroups](<../../utils/Reporting Util - agencyGroups.md>) (`resolveAgencyValue`)
 - [reportImages](<../../utils/Reporting Util - reportImages.md>) (`loadBrowserAssets`)
 
 ## Used By
@@ -60,8 +61,7 @@ Export: "Export to PDF" and "Save to app", named
   summary, devices, total, chart image and assets. Saving goes through `savePatchPdf`.
 - `ReportProgress` shows a 20-line log tail with the caption "Loading patch data".
 - Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog`. Once `hasResults` the draft is
-  `{ reportType: 'patch', agencyKey: String(valueFor(generatedAgency)), agencyName, options: {} }`,
-  built from the store's generated agency rather than the dropdown so a changed selection
+  `agencyPresetDraft('patch', generatedAgency)`, built from the store's generated agency rather than the dropdown so a changed selection
   cannot be scheduled under the report on screen.
 
 ## Cleanup Notes

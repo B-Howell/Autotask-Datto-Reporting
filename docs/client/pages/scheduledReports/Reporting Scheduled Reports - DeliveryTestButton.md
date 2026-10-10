@@ -17,6 +17,7 @@ outlined "Send test email" button and owns the dialog's open, address and sendin
 
 - `sendTestEmail` from the [schedules API](<../../api/Reporting API - schedules.md>).
 - [toastStore](<../../store/Reporting Store - toastStore.md>) for the outcome.
+- `isEmailAddress` from `scheduleDraft.ts`, documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>), and `errorMessage` from the [reportJob util](<../../utils/Reporting Util - reportJob.md>).
 - Material UI `Dialog`, `TextField`, `Button`, the `Send` icon.
 
 ## Used By
@@ -25,12 +26,13 @@ outlined "Send test email" button and owns the dialog's open, address and sendin
 
 ## Key Behavior
 
-- Send is enabled once the trimmed address contains an `@`, the same minimum the server
-  applies; Enter in the field sends too.
+- Send is enabled once the trimmed address passes `isEmailAddress`, the same `@` test the
+  dialog's recipient fields and the server apply; Enter in the field sends too.
 - Success toasts `Test message sent to <address>` and closes the dialog. A rejection, which is
   the server's 502 `detail` when the delivery flow is unreachable or unconfigured (for example
-  `DELIVERY_WEBHOOK_URL is not set; see server/.env.example`), toasts that text and leaves the
-  dialog open with the address intact.
+  `DELIVERY_WEBHOOK_URL is not set; see server/.env.example`), toasts that text (or `The test
+  message was not sent` when the error carries none) and leaves the dialog open with the
+  address intact.
 - The dialog cannot be closed while a send is in flight.
 
 ## Cleanup Notes

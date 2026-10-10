@@ -38,6 +38,7 @@ number` (0 Report, 1 Pivot by Resource, 2 Pivot by Priority, 3 Pivot by Issue Ty
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
   [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
+  `agencyWidePresetDraft` (documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>)),
   [MonthYearSelect](<../../components/report/Reporting Report Component - MonthYearSelect.md>),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
   [ErrorBanner](<../../components/report/Reporting Report Component - ErrorBanner.md>)
@@ -58,12 +59,13 @@ number` (0 Report, 1 Pivot by Resource, 2 Pivot by Priority, 3 Pivot by Issue Ty
 - The export passes that same input to `buildSlaWorkbook`, so the workbook reflects the
   on-screen filters and cannot differ from the tables. The filename uses the response's `month` and `year`, not the picker,
   so it names the data actually exported. Metadata: `agencyName: 'All Agencies'`,
-  `reportType: 'sla'`, `format: 'xlsx'`.
+  `reportType: 'sla'`, `format: 'xlsx'`; the title is left to `saveReportBlob`, which uses the
+  filename without its extension.
 - The toolbar summary shows `<filtered count> tickets across <company count> companies`,
   where the company count is the number of keys in `slaData.companies`.
 - Filters, tabs and tables render only when data exists and the page is not loading.
 - Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog` once `slaData` is loaded with the
-  draft `{ reportType: 'sla', agencyKey: null, agencyName: '', options: {} }`: the report
+  draft `agencyWidePresetDraft('sla')`: the report
   covers every agency, so the dialog's name and subject default to the report label alone and
   the scheduled run reads the period from its own run date rather than this page's month.
 

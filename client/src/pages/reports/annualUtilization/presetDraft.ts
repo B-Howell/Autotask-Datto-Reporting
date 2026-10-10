@@ -1,3 +1,4 @@
+import { agencyWidePresetDraft } from '@/components/report';
 import type { PresetDraft } from '@/components/report';
 import type { RatedDepartment, Rates } from './departments';
 
@@ -42,5 +43,5 @@ export const annualPresetDraft = ({
   if (companies) options.companies = [...companies];
   const overrides = rateOverrides(rates, departments);
   if (Object.keys(overrides).length > 0) options.rates = overrides;
-  return { reportType: 'annual_utilization', agencyKey: null, agencyName: '', options };
+  return agencyWidePresetDraft('annual_utilization', options);
 };

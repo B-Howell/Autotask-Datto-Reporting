@@ -15,11 +15,10 @@ interface ExportSources {
   manualInputs: ManualInputs;
 }
 
-const meta = (agencyName: string, filename: string, format: 'docx' | 'pdf') => ({
+const meta = (agencyName: string, format: 'docx' | 'pdf') => ({
   agencyName,
   reportType: REPORT_TYPE,
   format,
-  title: filename.replace(new RegExp(`\\.${format}$`), ''),
 });
 
 /** Word and PDF exports of the tables on screen; every export also keeps a copy in the app. */
@@ -39,7 +38,7 @@ const useOfficeWindowsExports = ({
     if (!agencyName) return;
     const filename = reportFilename(agencyName, 'docx');
     const blob = await buildOfficeWindowsDocx(await input(agencyName));
-    await deliverBlob({ blob, filename, save, meta: meta(agencyName, filename, 'docx') });
+    await deliverBlob({ blob, filename, save, meta: meta(agencyName, 'docx') });
   };
 
   const exportToPdf = async () => {
@@ -48,7 +47,7 @@ const useOfficeWindowsExports = ({
     await deliverBlob({
       blob: doc.output('blob'),
       filename,
-      meta: meta(agencyName, filename, 'pdf'),
+      meta: meta(agencyName, 'pdf'),
     });
   };
 

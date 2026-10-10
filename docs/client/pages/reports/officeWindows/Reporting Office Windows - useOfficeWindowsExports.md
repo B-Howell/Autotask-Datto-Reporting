@@ -34,7 +34,7 @@ Returns:
 - Both actions return immediately when `agencyName` is null, which is the case until a report has been generated; the page also hides the buttons through `hasResults`.
 - `input` is async because it calls `loadBrowserAssets` for every export, so the icons and logo are fetched here and the builders do no fetching of their own.
 - `officeWindowsExportInput` runs at export time, not on render, so the document reflects the figures as they stand when the button is clicked, including the rule that drops subscription lines with no figure.
-- Saved-report metadata is `{ agencyName, reportType: 'office_windows', format, title }` where `title` is the filename with its extension removed. No `agencyId` is passed, so Saved Reports index these by name only.
+- Saved-report metadata is `{ agencyName, reportType: 'office_windows', format }`; the title is left to `saveReportBlob`, which uses the filename with its extension removed. No `agencyId` is passed, so Saved Reports index these by name only.
 - Filenames come from `reportFilename`: `<agency> Office and Windows Installs <M-D-YY>.docx` or `.pdf`. The PDF builder returns its own filename, which is the same function applied with `'pdf'`.
 - The PDF blob is produced with `doc.output('blob')`; the DOCX builder already returns a Blob.
 - There is no save-only PDF path: "Save to app" always produces the Word document.

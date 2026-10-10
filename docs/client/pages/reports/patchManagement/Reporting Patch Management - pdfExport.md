@@ -32,7 +32,7 @@ The patch report is delivered to clients as a PDF only. This module draws the wh
 - Device table columns: Device Name, Description, Last User, Last Reboot, Installed, Approved Pending, Not Approved, Patch Status. The three count columns are centred; `last_user` falls back to an empty string; the reboot is formatted with `formatReboot`; the status column prints `status_label`, with no colour.
 - Table styling: `theme: 'grid'`, Helvetica 9pt, 4pt cell padding, accent-blue header with white bold centred text, body text near-black, banded with `PDF_BAND`, margins at `PDF_MARGIN`. Autotable paginates long device lists itself.
 - Filename: `<agency> Patch Management Summary <M-D-YY>.pdf`.
-- Saved-report metadata: `reportType: 'patch'`, `format: 'pdf'`, `title` is the filename without `.pdf`, `agencyId` is the agency id for a single company and the empty string for a group.
+- Saved-report metadata: `reportType: 'patch'`, `format: 'pdf'`, `agencyId` is the agency id for a single company and the empty string for a group; the title is left to `saveReportBlob`, which uses the filename without `.pdf`.
 
 ## Cleanup Notes
 

@@ -20,13 +20,14 @@ This module applies that rule so the page does not have to.
 | `rates` | `Rates` | The store's rates map; it holds every department once the settings dialog has been used. |
 | `departments` | `RatedDepartment[]` | The tenant's departments with their standard rates. |
 
-Returns `{ reportType: 'annual_utilization', agencyKey: null, agencyName: '', options }` where
+Returns `agencyWidePresetDraft('annual_utilization', options)`, that is
+`{ reportType: 'annual_utilization', agencyKey: null, agencyName: '', options }`, where
 `options.companies` is the selection as a list when one exists and `options.rates` is
 `rateOverrides(rates, departments)` when that has entries.
 
 ## Uses
 
-- `PresetDraft` from [the report component barrel](<../../../components/report/Reporting Report Component - index.md>)
+- `agencyWidePresetDraft` and `PresetDraft` from [the report component barrel](<../../../components/report/Reporting Report Component - index.md>); the factory is documented under [useScheduleForm](<../../../components/report/Reporting Report Component - useScheduleForm.md>)
 - [departments](<Reporting Annual Utilization - departments.md>) for the `Rates` and `RatedDepartment` types
 
 ## Used By

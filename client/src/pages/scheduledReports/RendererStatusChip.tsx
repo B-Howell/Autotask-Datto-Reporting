@@ -3,6 +3,7 @@ import { Chip, Tooltip } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import { schedulesApi } from '@/api';
+import { errorMessage } from '@/utils/reportJob';
 
 const CHECK_MS = 60000;
 
@@ -22,7 +23,7 @@ const RendererStatusChip = () => {
             : { ok: false, message: 'The renderer reported itself unhealthy' }
         );
       } catch (err) {
-        setHealth({ ok: false, message: err instanceof Error ? err.message : 'No response' });
+        setHealth({ ok: false, message: errorMessage(err) || 'No response' });
       }
     };
     void check();

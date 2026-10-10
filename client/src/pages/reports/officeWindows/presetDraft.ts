@@ -1,6 +1,6 @@
 import type { EffectiveAgency } from '@/api';
+import { agencyPresetDraft } from '@/components/report';
 import type { PresetDraft } from '@/components/report';
-import { valueFor } from '@/utils/agencyGroups';
 
 interface OfficeWindowsDraftInput {
   agency: EffectiveAgency | null;
@@ -15,9 +15,4 @@ export const officeWindowsPresetDraft = ({
   agency,
   showLicenses,
 }: OfficeWindowsDraftInput): PresetDraft | null =>
-  agency && {
-    reportType: 'office_windows',
-    agencyKey: String(valueFor(agency)),
-    agencyName: agency.name,
-    options: { format: 'docx', showLicenses },
-  };
+  agency && agencyPresetDraft('office_windows', agency, { format: 'docx', showLicenses });

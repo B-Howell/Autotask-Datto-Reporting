@@ -24,7 +24,7 @@ Report pages compose the same handful of building blocks. This barrel lets them 
 | `ScheduleDialog` | ScheduleDialog | component |
 | `ReportScheduleDialog`, `ReportSchedule` | ReportScheduleDialog | component, type |
 | `useScheduleDialog` | useScheduleDialog | hook |
-| `REPORT_LABELS`, `PresetDraft` | scheduleDraft | constant, type |
+| `REPORT_LABELS`, `agencyPresetDraft`, `agencyWidePresetDraft`, `PresetDraft` | scheduleDraft | constant, functions, type |
 | `SchedulePayload` | useScheduleForm | type |
 
 ## Uses
@@ -41,6 +41,7 @@ Report pages compose the same handful of building blocks. This barrel lets them 
 - Nothing in the client imports a report component by its file path; every consumer goes through this barrel, so a component not listed here is effectively private.
 - Types are re-exported with `export type`, so the barrel stays free of runtime value re-exports for types under `isolatedModules`.
 - `useScheduleDialog` is the one hook in the barrel; it lives beside `ScheduleDialog` because the two are only useful together, and pages compose both from this one import. `RecipientsField`, `DayHourFields` and `useScheduleForm` are not exported: they are the dialog's own parts.
+- The two draft factories are exported so a page's `useScheduleDialog` factory can be one call; the other `scheduleDraft` helpers stay internal to the dialog.
 
 ## Cleanup Notes
 

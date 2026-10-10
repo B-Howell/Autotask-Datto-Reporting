@@ -10,7 +10,9 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { schedulesApi } from '@/api';
+import { isEmailAddress } from '@/components/report/scheduleDraft';
 import useToastStore from '@/store/toastStore';
+import { errorMessage } from '@/utils/reportJob';
 
 /** Sends a one-line message to one address through the delivery flow, to prove it is wired up. */
 const DeliveryTestButton = () => {
@@ -18,16 +20,17 @@ const DeliveryTestButton = () => {
   const [address, setAddress] = useState('');
   const [sending, setSending] = useState(false);
   const showToast = useToastStore((s) => s.showToast);
-  const valid = address.trim().includes('@');
+  const recipient = address.trim();
+  const valid = isEmailAddress(recipient);
 
   const send = async () => {
     setSending(true);
     try {
-      await schedulesApi.sendTestEmail([address.trim()]);
-      showToast(`Test message sent to ${address.trim()}`);
+      await schedulesApi.sendTestEmail([recipient]);
+      showToast(`Test message sent to ${recipient}`);
       setOpen(false);
     } catch (err) {
-      showToast(err instanceof Error ? err.message : 'The test message was not sent', 'error');
+      showToast(errorMessage(err) || 'The test message was not sent', 'error');
     }
     setSending(false);
   };

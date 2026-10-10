@@ -8,12 +8,13 @@ import {
   ReportProgress,
   ReportScheduleDialog,
   ReportToolbar,
+  agencyPresetDraft,
   useScheduleDialog,
 } from '@/components/report';
 import type { DonutSlice } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
 import usePatchManagementData from '@/hooks/usePatchManagementData';
-import { resolveAgencyValue, valueFor } from '@/utils/agencyGroups';
+import { resolveAgencyValue } from '@/utils/agencyGroups';
 import { loadBrowserAssets } from '@/utils/reportImages';
 import PatchSummaryCard from './patchManagement/PatchSummaryCard';
 import ReportMeta from './patchManagement/ReportMeta';
@@ -50,14 +51,7 @@ const PatchManagement = () => {
   );
   const hasResults = !loading && generatedAgency !== null && deviceCount > 0;
   const schedule = useScheduleDialog(() =>
-    hasResults && generatedAgency
-      ? {
-          reportType: 'patch',
-          agencyKey: String(valueFor(generatedAgency)),
-          agencyName: generatedAgency.name,
-          options: {},
-        }
-      : null
+    hasResults && generatedAgency ? agencyPresetDraft('patch', generatedAgency) : null
   );
 
   const handleGenerate = () => {

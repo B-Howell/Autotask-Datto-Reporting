@@ -34,7 +34,7 @@ Errors are JSON `{ error }`: `413` with `connection: close` for a body over the 
 ## Uses
 
 - `node:http` for the server and the request and response types; `node:url` to recognise when the file is the entry script.
-- [render](<Reporting Renderer - render.md>) for `render` and `REPORT_TYPES`.
+- [render](<Reporting Renderer - render.md>) for `render`, `REPORT_TYPES` and `UnknownReportTypeError`.
 
 ## Used By
 
@@ -46,7 +46,7 @@ Errors are JSON `{ error }`: `413` with `connection: close` for a body over the 
 
 - Oversized bodies: the body is read chunk by chunk and, as soon as the running total passes the cap, the data listener comes off and the stream is paused, so the server stops consuming without killing the socket. The `413` reply then goes out with `connection: close`, and the request is destroyed only after the response has finished. Destroying first would hand the caller a connection reset instead of a status; with this order curl receives the 413 part way through a 51 MB upload.
 - `parseRequest` normalises the loose JSON into a `RenderRequest`: `reportType` and `filename` must be strings, `data` must be a non-null object, `options` becomes `{}` when absent or not an object, and `logoBase64` becomes null unless it is a string. Nothing is rendered until those checks pass.
-- `RequestError` carries a status; the one handler-side failure that is the caller's fault, an unknown report type, is recognised by its message and promoted to a 400 so the server sees a clear contract error instead of a generic failure.
+- `RequestError` carries a status; the one handler-side failure that is the caller's fault, an unknown report type, arrives as an `UnknownReportTypeError` and is promoted to a 400 carrying its message, so the server sees a clear contract error instead of a generic failure.
 - The file name goes into `content-disposition` twice: a plain `filename` where every non-ASCII character and every double quote becomes `_`, for clients that read only that, and `filename*` carrying the exact name percent-encoded as UTF-8 (with `'`, `(`, `)` and `*` encoded too, since RFC 5987 leaves them out of the bare character set). A caller that already knows the name it sent can simply keep it.
 - If a failure happens after the headers were written the response is ended without a JSON body, since the status cannot be changed at that point.
 - The file listens only when it is the entry script (`process.argv[1]` matched against `import.meta.url`), so importing it from a test binds nothing.

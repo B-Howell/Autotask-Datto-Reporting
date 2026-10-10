@@ -9,6 +9,7 @@ import {
   ReportProgress,
   ReportScheduleDialog,
   ReportToolbar,
+  agencyWidePresetDraft,
   useScheduleDialog,
 } from '@/components/report';
 import useSlaData from '@/hooks/useSlaData';
@@ -55,15 +56,12 @@ const SlaPerformance = () => {
         agencyName: 'All Agencies',
         reportType: 'sla',
         format: 'xlsx',
-        title: filename.replace(/\.xlsx$/, ''),
       },
     });
   };
 
   const companyCount = slaData?.companies ? Object.keys(slaData.companies).length : 0;
-  const schedule = useScheduleDialog(() =>
-    slaData ? { reportType: 'sla', agencyKey: null, agencyName: '', options: {} } : null
-  );
+  const schedule = useScheduleDialog(() => (slaData ? agencyWidePresetDraft('sla') : null));
 
   return (
     <ReportPage title="SLA Performance By Ticket">
