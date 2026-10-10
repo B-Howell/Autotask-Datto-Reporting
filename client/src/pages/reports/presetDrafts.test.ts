@@ -72,6 +72,12 @@ describe('rateOverrides', () => {
       rateOverrides({ Administration: '95', Technical: '150', Management: 200 }, departments)
     ).toEqual({ Technical: '150', Management: 200 });
   });
+
+  it('skips blank entries instead of storing them as a rate of 0', () => {
+    expect(
+      rateOverrides({ Administration: '', Technical: ' ', Management: '' }, departments)
+    ).toEqual({});
+  });
 });
 
 describe('annualPresetDraft', () => {

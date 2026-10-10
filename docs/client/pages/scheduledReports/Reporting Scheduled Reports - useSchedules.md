@@ -21,7 +21,7 @@ polling hard when nothing is happening.
 const {
   schedules, status, loading, error,   // list, {running, schedule_id}, first-load flag, load failure text
   selectedId, runs,                    // the expanded schedule and its runs, newest first
-  removeTarget,                        // the schedule awaiting delete confirmation, or null
+  removeTarget, removing,              // the schedule awaiting delete confirmation, and whether the delete is in flight
   select, toggle, askRemove, cancelRemove, remove, runNow,
 } = useSchedules();
 ```
@@ -32,7 +32,7 @@ const {
 | `toggle(id, enabled)` | `updateSchedule(id, { enabled })`; the returned row replaces the old one. Failure toasts the message. |
 | `askRemove(id)` / `cancelRemove()` | Set or clear `removeTarget` for the confirmation dialog. |
 | `remove(id)` | `deleteSchedule(id)`, drops the row, clears the selection if it was selected, toasts "Schedule deleted; its preset is kept". |
-| `runNow(id)` | `runNow(id)`; on 202 toasts "Run started" and marks the status running at once so the fast poll begins; on rejection toasts the server's `detail`, which for a 409 names the schedule already in flight. Either way a refresh follows. |
+| `runNow(id)` | `runNow(id)`; on 202 toasts "Run started" and marks the status running at once, which rebuilds the poll at the fast cadence and refreshes immediately; on rejection toasts the server's `detail`, which for a 409 names the schedule already in flight. |
 
 ## Uses
 
@@ -52,12 +52,17 @@ const {
 - A failed refresh sets `error` to the message and leaves the previous rows in place; the
   page shows the banner above whatever it last had. The next successful refresh clears it.
 - `loading` is true only until the first refresh settles, so later polls never blank the table.
+- Every refresh takes a ticket from a counter; a response that arrives after a newer refresh
+  started, or after `select` bumped the counter, is discarded. This keeps a slow fetch of the
+  previous selection's runs from landing under the new heading, and keeps polls in order.
+- `removing` is true while `deleteSchedule` is in flight; the page passes it to the
+  confirmation dialog as `busy` so a second click or a backdrop close cannot interrupt it.
 - The preset behind a deleted schedule is deliberately left alone: presets are reusable and
   the server refuses to delete one that another schedule still renders, so cleanup is a
   separate, explicit action rather than a side effect here.
-- Setting `status` to running straight after a 202 is optimistic; the refresh that follows
-  replaces it with the server's answer, which is already `running: true` by then because the
-  runner starts the thread before the route returns.
+- Setting `status` to running straight after a 202 is optimistic; the refresh the status flip
+  triggers replaces it with the server's answer, which is already `running: true` by then
+  because the runner starts the thread before the route returns.
 
 ## Cleanup Notes
 

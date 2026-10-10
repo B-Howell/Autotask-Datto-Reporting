@@ -37,7 +37,7 @@ Columns:
 
 ## Uses
 
-- [DataTable](<../../components/report/Reporting Report Component - DataTable.md>) with its `onRowClick` and `selectedKey` props, [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>) and `REPORT_LABELS` from [scheduleDraft](<../../components/report/Reporting Report Component - scheduleDraft.md>).
+- [DataTable](<../../components/report/Reporting Report Component - DataTable.md>) with its `onRowClick` and `selectedKey` props, [EmptyState](<../../components/report/Reporting Report Component - EmptyState.md>) and `REPORT_LABELS` from `scheduleDraft.ts`, documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>).
 - [RunStatusChip](<Reporting Scheduled Reports - RunStatusChip.md>).
 - [dates util](<../../utils/Reporting Util - dates.md>) for `formatDateTime`.
 - Material UI `Paper`, `Button`, `Switch`, `IconButton`, the `PlayArrow` and `DeleteOutline` icons.
@@ -51,7 +51,10 @@ Columns:
 - The action cell's wrapper stops click propagation, so pressing Run now, the switch or
   Delete never also selects the row.
 - The switch carries an `aria-label` of `Enable schedule` or `Disable schedule`, naming the
-  action it will take; it renders with the `switch` role.
+  action it will take; it renders with the `switch` role. The delete icon is labelled
+  `Delete schedule`.
+- Rows are keyboard reachable through `DataTable`'s `onRowClick` support: Tab lands on a row
+  and Enter or Space selects it.
 - `whenLabel` is the client's rendering of the schedule's slot; the server stores the day and
   hour separately and interprets day 31 as the last day of the month, which this label does
   not restate.

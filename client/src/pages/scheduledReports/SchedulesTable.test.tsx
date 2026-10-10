@@ -66,8 +66,22 @@ describe('SchedulesTable', () => {
     expect(h.onSelect).toHaveBeenCalledWith(9);
     fireEvent.click(screen.getByRole('switch', { name: 'Disable schedule' }));
     expect(h.onToggle).toHaveBeenCalledWith(9, false);
-    fireEvent.click(screen.getByTitle('Delete'));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete schedule' }));
     expect(h.onDelete).toHaveBeenCalledWith(9);
+  });
+
+  it('selects a focused row with Enter or Space but not from a button inside it', () => {
+    const h = handlers();
+    render(<SchedulesTable schedules={[schedule]} selectedId={9} runningId={null} {...h} />);
+    const row = screen.getByText('Day 1 at 07:00').closest('tr') as HTMLElement;
+    expect(row).toHaveAttribute('tabindex', '0');
+    expect(row).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.keyDown(row, { key: 'Enter' });
+    fireEvent.keyDown(row, { key: ' ' });
+    expect(h.onSelect).toHaveBeenCalledTimes(2);
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Run now' }), { key: 'Enter' });
+    expect(h.onSelect).toHaveBeenCalledTimes(2);
   });
 
   it('shows the empty state when there are no schedules', () => {

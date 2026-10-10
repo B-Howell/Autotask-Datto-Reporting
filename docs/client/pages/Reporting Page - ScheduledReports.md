@@ -26,7 +26,7 @@ what is no longer wanted.
 | Schedules | `SchedulesTable`, or a spinner while loading | `schedules`, `status`, `selectedId` |
 | Runner log | `RunnerLog` | `status.running` |
 | Run history | `RunsTable`, only while a row is selected | `runs` |
-| Delete confirmation | `ConfirmDialog` | `removeTarget` |
+| Delete confirmation | `ConfirmDialog`, busy while the delete runs | `removeTarget`, `removing` |
 
 ## Uses
 

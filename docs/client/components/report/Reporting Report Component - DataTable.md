@@ -19,7 +19,7 @@ Generic over `Row`.
 | `stickyHeader` | `boolean` | no | MUI sticky header. Default false. |
 | `maxHeight` | `number \| string` | no | Container max height, pairs with `stickyHeader`. |
 | `sx` | `SxProps<Theme>` | no | Extra container styles. |
-| `onRowClick` | `(row) => void` | no | Makes every row clickable with a pointer cursor. |
+| `onRowClick` | `(row) => void` | no | Makes every row clickable with a pointer cursor, focusable (`tabIndex` 0) and activatable with Enter or Space. |
 | `selectedKey` | `string \| number \| null` | no | The row whose `rowKey` equals this renders with MUI's `selected` style. |
 
 Exports the `DataColumn` type.
@@ -41,7 +41,8 @@ Exports the `DataColumn` type.
 - Header cells are bold, `nowrap`, and take `width` from the column; body cells only take `align`.
 - `footer` is placed inside `TableBody`, so it must be a `TableRow` (or fragment of rows) to render validly.
 - `size="small"` throughout; there is no pagination, so callers paginate or cap rows themselves.
-- `onRowClick` fires for a click anywhere in the row; a cell with its own controls must stop propagation itself, as `SchedulesTable` does for its action cell.
+- `onRowClick` fires for a click anywhere in the row; a cell with its own controls must stop propagation itself, as `SchedulesTable` does for its action cell. The key handler acts only when the row itself is the focused element, so Enter or Space on a button inside the row reaches that button alone.
+- With `onRowClick` set each row also carries `aria-selected`, true for the `selectedKey` row.
 
 ## Cleanup Notes
 

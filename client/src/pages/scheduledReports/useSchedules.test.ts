@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { schedulesApi } from '@/api';
-import type { ReportSchedule, ScheduleRun } from '@/api';
+import type { ReportSchedule, RunnerStatus, ScheduleRun } from '@/api';
 import useToastStore from '@/store/toastStore';
 import useSchedules from './useSchedules';
 
@@ -117,12 +117,53 @@ describe('useSchedules', () => {
     expect(useToastStore.getState().message).toBe('A run of schedule 3 is already in flight');
   });
 
-  it('marks the runner busy as soon as a run is accepted', async () => {
+  it('marks the runner busy as soon as a run is accepted, before any poll says so', async () => {
     const { result } = await loaded();
     mocked.runNow.mockResolvedValue({ started: true });
-    mocked.fetchRunnerStatus.mockResolvedValue({ running: true, schedule_id: 9 });
+    let answerStatus: (status: RunnerStatus) => void = () => undefined;
+    mocked.fetchRunnerStatus.mockImplementationOnce(
+      () => new Promise<RunnerStatus>((resolve) => (answerStatus = resolve))
+    );
     await act(() => result.current.runNow(9));
     expect(useToastStore.getState().message).toBe('Run started');
-    await waitFor(() => expect(result.current.status).toEqual({ running: true, schedule_id: 9 }));
+    expect(mocked.fetchRunnerStatus).toHaveBeenCalledTimes(2);
+    expect(result.current.status).toEqual({ running: true, schedule_id: 9 });
+
+    // The poll the flip triggered answers afterwards and its word is final.
+    await act(async () => answerStatus({ running: false, schedule_id: null }));
+    expect(result.current.status).toEqual({ running: false, schedule_id: null });
+  });
+
+  it('drops a refresh that resolves after the selection changed', async () => {
+    const { result } = await loaded();
+    let resolveRuns: (runs: ScheduleRun[]) => void = () => undefined;
+    mocked.fetchRuns.mockImplementationOnce(
+      () => new Promise<ScheduleRun[]>((resolve) => (resolveRuns = resolve))
+    );
+    act(() => result.current.select(9));
+    await waitFor(() => expect(mocked.fetchRuns).toHaveBeenCalledWith(9));
+    act(() => result.current.select(9));
+    await act(async () => resolveRuns([run]));
+    expect(result.current.selectedId).toBeNull();
+    expect(result.current.runs).toEqual([]);
+  });
+
+  it('reports removing while the delete request is in flight', async () => {
+    const { result } = await loaded();
+    let resolveDelete: (value: { deleted: boolean }) => void = () => undefined;
+    mocked.deleteSchedule.mockImplementationOnce(
+      () => new Promise<{ deleted: boolean }>((resolve) => (resolveDelete = resolve))
+    );
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = result.current.remove(9);
+    });
+    expect(result.current.removing).toBe(true);
+    await act(async () => {
+      resolveDelete({ deleted: true });
+      await pending;
+    });
+    expect(result.current.removing).toBe(false);
+    expect(result.current.schedules).toEqual([]);
   });
 });

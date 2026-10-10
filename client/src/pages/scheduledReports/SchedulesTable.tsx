@@ -106,7 +106,13 @@ const SchedulesTable = ({
               input: { 'aria-label': `${row.enabled ? 'Disable' : 'Enable'} schedule` },
             }}
           />
-          <IconButton size="small" color="error" title="Delete" onClick={() => onDelete(row.id)}>
+          <IconButton
+            size="small"
+            color="error"
+            title="Delete"
+            aria-label="Delete schedule"
+            onClick={() => onDelete(row.id)}
+          >
             <DeleteOutlineIcon fontSize="small" />
           </IconButton>
         </Box>

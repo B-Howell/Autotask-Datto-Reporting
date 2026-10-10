@@ -18,6 +18,7 @@ const ScheduledReports = () => {
     selectedId,
     runs,
     removeTarget,
+    removing,
     select,
     toggle,
     askRemove,
@@ -63,6 +64,7 @@ const ScheduledReports = () => {
         title="Delete this schedule?"
         confirmLabel="Delete"
         destructive
+        busy={removing}
         onConfirm={() => removeTarget && void remove(removeTarget.id)}
         onClose={cancelRemove}
       >

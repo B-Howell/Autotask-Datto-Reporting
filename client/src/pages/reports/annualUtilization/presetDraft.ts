@@ -10,15 +10,21 @@ interface AnnualDraftInput {
   departments: RatedDepartment[];
 }
 
+const isBlank = (rate: number | string) => typeof rate === 'string' && rate.trim() === '';
+
 /**
  * The entries of `rates` that differ from the department's standard rate,
  * compared as numbers so `'95'` and `95` are the same rate. A name with no
- * standard rate is always an override.
+ * standard rate is always an override. A blank entry, which the settings
+ * dialog leaves behind when a field is cleared, is not an override of 0: it
+ * is skipped so the standard rate applies.
  */
 export const rateOverrides = (rates: Rates, departments: RatedDepartment[]): Rates => {
   const standard = new Map(departments.map((d) => [d.department, d.rate]));
   return Object.fromEntries(
-    Object.entries(rates).filter(([name, rate]) => Number(rate) !== standard.get(name))
+    Object.entries(rates).filter(
+      ([name, rate]) => !isBlank(rate) && Number(rate) !== standard.get(name)
+    )
   );
 };
 

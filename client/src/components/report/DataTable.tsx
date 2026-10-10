@@ -19,7 +19,10 @@ interface DataTableProps<Row> {
   stickyHeader?: boolean;
   maxHeight?: number | string;
   sx?: SxProps<Theme>;
-  /** Makes every row clickable; the row whose key equals `selectedKey` renders selected. */
+  /**
+   * Makes every row clickable and focusable (Enter or Space on a focused row counts as a
+   * click); the row whose key equals `selectedKey` renders selected.
+   */
   onRowClick?: (row: Row) => void;
   selectedKey?: string | number | null;
 }
@@ -55,12 +58,26 @@ function DataTable<Row>({
         <TableBody>
           {rows.map((row, index) => {
             const key = rowKey(row, index);
+            const selected = selectedKey !== null && key === selectedKey;
             return (
               <TableRow
                 key={key}
                 hover
-                selected={selectedKey !== null && key === selectedKey}
+                selected={selected}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
+                onKeyDown={
+                  onRowClick
+                    ? (event) => {
+                        if (event.target !== event.currentTarget) return;
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          onRowClick(row);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={onRowClick ? 0 : undefined}
+                aria-selected={onRowClick ? selected : undefined}
                 sx={onRowClick ? { cursor: 'pointer' } : undefined}
               >
                 {columns.map((col) => (

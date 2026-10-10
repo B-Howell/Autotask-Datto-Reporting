@@ -42,6 +42,8 @@ Returns `{ reportType: 'annual_utilization', agencyKey: null, agencyName: '', op
   with no standard rate is always kept. This matters because the settings dialog writes the
   merged map back to the store, so after the first edit the store holds every department
   whether or not the user changed it.
+- A blank or whitespace entry is skipped, never stored as an override of 0; a field the user
+  cleared in the settings dialog therefore falls back to the standard rate in the preset.
 
 ## Cleanup Notes
 

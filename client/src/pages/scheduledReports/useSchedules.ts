@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { schedulesApi } from '@/api';
 import type { ReportSchedule, RunnerStatus, ScheduleRun } from '@/api';
 import useToastStore from '@/store/toastStore';
@@ -25,20 +25,27 @@ const useSchedules = () => {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [runs, setRuns] = useState<ScheduleRun[]>([]);
   const [removeTarget, setRemoveTarget] = useState<ReportSchedule | null>(null);
+  const [removing, setRemoving] = useState(false);
+  // Each refresh takes a ticket; a response arriving after a newer refresh
+  // started (or after the selection changed) is dropped rather than applied.
+  const ticketRef = useRef(0);
   const showToast = useToastStore((s) => s.showToast);
 
   const refresh = useCallback(async () => {
+    const ticket = ++ticketRef.current;
     try {
       const [list, runner, selectedRuns] = await Promise.all([
         schedulesApi.fetchSchedules(),
         schedulesApi.fetchRunnerStatus(),
         selectedId === null ? Promise.resolve(null) : schedulesApi.fetchRuns(selectedId),
       ]);
+      if (ticket !== ticketRef.current) return;
       setSchedules(list);
       setStatus(runner);
       if (selectedRuns) setRuns(selectedRuns);
       setError(null);
     } catch (err) {
+      if (ticket !== ticketRef.current) return;
       setError(errorMessage(err, 'Schedules could not be loaded'));
     }
     setLoading(false);
@@ -54,6 +61,7 @@ const useSchedules = () => {
   }, [refresh, status.running]);
 
   const select = (id: number) => {
+    ticketRef.current += 1;
     setSelectedId((current) => (current === id ? null : id));
     setRuns([]);
   };
@@ -71,6 +79,7 @@ const useSchedules = () => {
   const cancelRemove = () => setRemoveTarget(null);
 
   const remove = async (id: number) => {
+    setRemoving(true);
     try {
       await schedulesApi.deleteSchedule(id);
       setSchedules((rows) => rows.filter((row) => row.id !== id));
@@ -79,9 +88,12 @@ const useSchedules = () => {
     } catch (err) {
       showToast(errorMessage(err, 'The schedule could not be deleted'), 'error');
     }
+    setRemoving(false);
     setRemoveTarget(null);
   };
 
+  // Marking the runner busy here flips the poll to its fast cadence, and the
+  // effect that rebuilds the interval refreshes at once, so no extra call is needed.
   const runNow = async (id: number) => {
     try {
       await schedulesApi.runNow(id);
@@ -90,7 +102,6 @@ const useSchedules = () => {
     } catch (err) {
       showToast(errorMessage(err, 'The run could not start'), 'error');
     }
-    void refresh();
   };
 
   return {
@@ -101,6 +112,7 @@ const useSchedules = () => {
     selectedId,
     runs,
     removeTarget,
+    removing,
     select,
     toggle,
     askRemove,
