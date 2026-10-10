@@ -1,6 +1,6 @@
 import pytest
 
-from core import jobs
+from core import credential_source, jobs
 from core.log_buffer import LogBuffer
 from services.device_audit import classify_office, primary_office_label, round_storage_gb
 
@@ -69,3 +69,48 @@ def test_storage_rounds_up_to_the_marketing_size():
     assert round_storage_gb(238.4) == 240
     assert round_storage_gb(476.9) == 480
     assert round_storage_gb(0) == ""
+
+
+def test_an_unregistered_credential_source_fails_naming_the_cause(monkeypatch):
+    monkeypatch.setattr(credential_source, "_source", None)
+    for read in (
+        credential_source.current,
+        lambda: credential_source.require("autotask"),
+        lambda: credential_source.on_change(lambda: None),
+        lambda: credential_source.api_base_for("example"),
+        credential_source.datto_api_base,
+    ):
+        with pytest.raises(RuntimeError, match="^No credential source registered$"):
+            read()
+
+
+def test_a_registered_source_is_forwarded_to(monkeypatch):
+    class Source:
+        def __init__(self):
+            self.listeners = []
+
+        def current(self):
+            return {"datto_platform": "example"}
+
+        def require(self, vendor):
+            return {"vendor": vendor}
+
+        def on_change(self, callback):
+            self.listeners.append(callback)
+
+        def api_base_for(self, platform):
+            return f"https://{platform}-api.example.test"
+
+        def datto_api_base(self):
+            return self.api_base_for(self.current()["datto_platform"])
+
+    source = Source()
+    monkeypatch.setattr(credential_source, "_source", None)
+    credential_source.register(source)
+    listener = lambda: None  # noqa: E731
+    credential_source.on_change(listener)
+    assert credential_source.current() == {"datto_platform": "example"}
+    assert credential_source.require("datto") == {"vendor": "datto"}
+    assert credential_source.api_base_for("other") == "https://other-api.example.test"
+    assert credential_source.datto_api_base() == "https://example-api.example.test"
+    assert source.listeners == [listener]

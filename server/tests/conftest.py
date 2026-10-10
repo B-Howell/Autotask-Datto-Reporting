@@ -4,7 +4,9 @@ DEMO_MODE and SCHEDULE_TIMEZONE are set before config is imported so the
 settings load without vendor credentials and in the zone the tests assume.
 Tests that exercise the cache against a real SQLite file point the repository
 at a temporary database and switch demo mode off, so the fetch callback they
-pass is the one that runs.
+pass is the one that runs. The vendor clients read their credentials through
+`core.credential_source`, which `main` wires at import; a session fixture
+imports it so every test sees the clients wired as the app has them.
 """
 
 import dataclasses
@@ -43,6 +45,17 @@ SAMPLE_DATTO = {
 }
 
 
+@pytest.fixture(autouse=True, scope="session")
+def vendor_clients_wired():
+    """The credentials service registered as the clients' source, with their change listeners.
+
+    Importing `main` is the wiring: its `wire_vendor_clients()` runs once at
+    import, so tests that never touch the app still have the integrations
+    reading the service and dropping their caches when a value is stored.
+    """
+    import main  # noqa: F401
+
+
 @pytest.fixture
 def temp_db(tmp_path, monkeypatch):
     """A fresh SQLite database for one test, with demo mode off for the cache."""
@@ -63,7 +76,7 @@ def store(temp_db, tmp_path, monkeypatch):
 
     config loads server/.env at import, so a developer's own credentials may
     be sitting in os.environ; clearing them keeps precedence deterministic.
-    The listeners the vendor clients registered at import are kept, so a save
+    The listeners `main` registered for the vendor clients are kept, so a save
     reaches them; listeners a test adds are discarded with it.
     """
     monkeypatch.setattr(secrets, "KEY_FILE", str(tmp_path / "secret.key"))

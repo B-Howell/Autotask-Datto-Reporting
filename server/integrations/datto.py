@@ -4,9 +4,11 @@ Datto rate-limits the account to 600 reads a minute and answers 429 (or a 5xx)
 when a sync pushes past it, so every call is paced and retried with backoff.
 OAuth tokens are cached and refreshed a minute early; a 401/403 drops the
 cached token so the retry re-authenticates rather than failing until the clock
-catches up. The key, secret and platform are read from the credentials service
-each time a token is fetched or a URL built, and a saved credential drops the
-cached token, so a rotation takes effect without a restart.
+catches up. The key, secret and platform are read from the credential source
+registered in `core.credential_source` each time a token is fetched or a URL
+built, and the composition root registers `forget_token` with that source so
+a saved credential drops the cached token and a rotation takes effect without
+a restart.
 """
 
 import threading
@@ -18,14 +20,15 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from config import settings
+from core import credential_source
 from integrations import http_errors
-from services import credentials
 
 # Refresh this many seconds before the advertised expiry, so a request that
 # starts just before the deadline does not go out with a token that dies in flight.
 _EXPIRY_SKEW_SECONDS = 60
 _RETRY_STATUSES = {429}
 _TOKEN_TIMEOUT_SECONDS = 30
+_TOKEN_PATH = "/auth/oauth/token"
 
 
 @dataclass(frozen=True)
@@ -37,10 +40,15 @@ class TokenRequest:
     api_secret: str
 
 
+def token_url_for(platform):
+    """The OAuth token endpoint of a platform: its REST base plus the token path."""
+    return f"{credential_source.api_base_for(platform)}{_TOKEN_PATH}"
+
+
 def token_request_from(values):
     """The token request the given credential values describe."""
     return TokenRequest(
-        credentials.token_url_for(values["datto_platform"]),
+        token_url_for(values["datto_platform"]),
         values["datto_api_key"],
         values["datto_api_secret"],
     )
@@ -48,7 +56,7 @@ def token_request_from(values):
 
 def current_token_request():
     """The token request from the credentials in effect; raises when any is blank."""
-    return token_request_from(credentials.require(credentials.DATTO))
+    return token_request_from(credential_source.require(credential_source.DATTO))
 
 
 class DattoTokenProvider:
@@ -238,9 +246,15 @@ class DattoClient:
 _client = None
 _client_lock = Lock()
 _tokens = DattoTokenProvider()
-# A token earned with the old key or secret is dropped the moment new values
-# are saved, so the next request authenticates with the new ones.
-credentials.on_change(_tokens.invalidate)
+
+
+def forget_token():
+    """Drop the process-wide client's cached token so its next request authenticates afresh.
+
+    A token earned with the old key or secret must go the moment new values
+    are saved: the composition root registers this with the credential source.
+    """
+    _tokens.invalidate()
 
 
 def datto():
@@ -249,7 +263,7 @@ def datto():
     with _client_lock:
         if _client is None:
             _client = DattoClient(
-                credentials.datto_api_base,
+                credential_source.datto_api_base,
                 _tokens,
                 timeout=settings.datto_timeout,
                 min_request_interval=settings.datto_min_request_interval,

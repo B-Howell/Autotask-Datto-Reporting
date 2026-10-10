@@ -8,7 +8,6 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from config import settings
-from core import secrets
 from routers.common import call_or_http_error
 from services import connection_tests, credentials
 
@@ -33,7 +32,7 @@ def _refuse_in_demo_mode():
 def _overview():
     return {
         "demoMode": settings.demo_mode,
-        "keySource": secrets.key_source(),
+        "keySource": credentials.key_source(),
         "fields": credentials.status(),
     }
 

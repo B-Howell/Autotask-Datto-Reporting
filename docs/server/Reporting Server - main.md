@@ -4,7 +4,7 @@
 
 ## Purpose
 
-`server/main.py` is wiring only. It owns nothing a report needs to be correct; it decides which routers are mounted, which headers every response carries, and when the background sync and the schedule check run. Behaviour lives in `services/`, HTTP shape in `routers/`, and this module composes them into one process. The design decision is that the server is a single process with one in-process scheduler rather than a separate worker, because the workload is one MSP's monthly reporting.
+`server/main.py` is wiring only, and that includes the composition root for the vendor clients: the integrations read their credentials through [credential_source](<core/Reporting Core - credential_source.md>), and this is where the credentials service is registered as that source, with the two listeners a change must reach, before the app is built. It owns nothing a report needs to be correct; it decides which routers are mounted, which headers every response carries, and when the background sync and the schedule check run. Behaviour lives in `services/`, HTTP shape in `routers/`, and this module composes them into one process. The design decision is that the server is a single process with one in-process scheduler rather than a separate worker, because the workload is one MSP's monthly reporting.
 
 ## Interface
 
@@ -14,6 +14,7 @@
 | `_sync_scheduler()` | Coroutine: sleeps 5 seconds, starts a sync if no successful sync has ever been recorded, then starts one every `settings.sync_interval_hours`. A start the runner declines (one already running, or a vendor without credentials) is skipped until the next tick. |
 | `_schedule_ticker()` | Coroutine: sleeps 10 seconds, then runs `schedule_runner.runner.tick()` through `asyncio.to_thread` every `settings.schedule_poll_seconds`, printing `[WARN] schedule tick failed: ...` and carrying on if a tick raises. |
 | `lifespan(_app)` | Async context manager: `sqlite.init_db()` and `schedule_runner.sweep_interrupted()` on startup, creates the sync scheduler and the schedule ticker tasks, cancels both on shutdown and then waits up to one second for the schedule runner's thread. |
+| `wire_vendor_clients()` | Registers the [credentials service](<services/Reporting Service - credentials.md>) with `credential_source.register`, then `autotask().forget_picklists` and `datto.forget_token` with `credential_source.on_change`. Called once at import, before `create_app()`; the test conftest imports this module for the same wiring. |
 | `create_app()` | Returns the configured `FastAPI` instance, with [common](<routers/Reporting Router - common.md>)'s `validation_error_response` registered for `RequestValidationError`, so no 422 echoes the rejected input. |
 | `app` | Module-level instance that uvicorn imports as `main:app`. |
 
@@ -24,6 +25,7 @@ Running the file directly starts uvicorn on `0.0.0.0:8000` with `reload=True` an
 - `fastapi`, `fastapi.middleware.cors.CORSMiddleware`, `fastapi.exceptions.RequestValidationError`, `asyncio`, `uvicorn` (only under `__main__`)
 - [routers/common](<routers/Reporting Router - common.md>) for `validation_error_response`
 - [config](<Reporting Server - config.md>) for `cors_origins`, `sync_interval_hours` and `schedule_poll_seconds`
+- [credential_source](<core/Reporting Core - credential_source.md>) for `register` and `on_change`, the [credentials service](<services/Reporting Service - credentials.md>) as the source, and the [autotask](<integrations/Reporting Integration - autotask.md>) and [datto](<integrations/Reporting Integration - datto.md>) integrations for the two listeners
 - [sqlite repository](<repositories/Reporting Repository - sqlite.md>) for `init_db()`
 - [snapshots repository](<repositories/Reporting Repository - snapshots.md>) for `last_sync_time()`
 - [sync service](<services/Reporting Service - sync.md>) for `runner.start()`
@@ -32,7 +34,7 @@ Running the file directly starts uvicorn on `0.0.0.0:8000` with `reload=True` an
 
 ## Used By
 
-- Nothing imports this in application code; it is an entry point. uvicorn loads `main:app` from the container `CMD` in [server/Dockerfile](../../server/Dockerfile) and from the command in [docker-compose.demo.yml](../../docker-compose.demo.yml).
+- Nothing imports this in application code; it is an entry point. [server/tests/conftest.py](../../server/tests/conftest.py) imports it in a session-wide autouse fixture, because the import is what wires the vendor clients to the credentials service. uvicorn loads `main:app` from the container `CMD` in [server/Dockerfile](../../server/Dockerfile) and from the command in [docker-compose.demo.yml](../../docker-compose.demo.yml).
 - [server/tests/test_routes.py](../../server/tests/test_routes.py), [server/tests/test_schedule_routes.py](../../server/tests/test_schedule_routes.py), [server/tests/test_credentials_routes.py](../../server/tests/test_credentials_routes.py) and [server/tests/test_tenant.py](../../server/tests/test_tenant.py) import `app` and drive it with `TestClient`.
 
 ## Key Behavior
@@ -50,6 +52,7 @@ Running the file directly starts uvicorn on `0.0.0.0:8000` with `reload=True` an
 
 ## Cleanup Notes
 
+- `wire_vendor_clients()` runs at import, before `create_app()`, so by the time a request or a scheduled sync reaches a vendor client the source and both listeners are in place. The registrations live here and not in the integrations because `credential_source.on_change` forwards to the registered source, which does not exist when the integrations are imported; one function next to `register` keeps the whole wiring readable in one place.
 - `create_app()` runs at import time to produce `app`, so tests run the real lifespan (database init and scheduler) under `TestClient`. That works only because `conftest.temp_db` points the sqlite repository at a temporary file before the client starts.
 - `settings` is frozen at import, so changing `SYNC_INTERVAL_HOURS` or `SCHEDULE_POLL_SECONDS` needs a restart. Expected, but undocumented elsewhere.
 

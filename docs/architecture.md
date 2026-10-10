@@ -151,14 +151,19 @@ server/
                      tenant, presets, schedules, periods and the scheduled runner
   repositories/      SQLite schema, migrations, snapshot cache, small tables
   integrations/      the Autotask and Datto clients, the renderer, the delivery flow
-  core/              log buffers, SSE streams, progress phases, job record
+  core/              log buffers, SSE streams, progress phases, job record,
+                     the credential source registry
   demo/              deterministic generators standing in for the vendors
   tests/             pytest
 client/renderer/     the client's exporters under Node, behind a small HTTP front
 ```
 
 Dependencies point inward: routers import services, services import
-repositories and integrations, nothing imports routers. The rule that makes
+repositories and integrations, nothing imports routers. The vendor clients
+need credentials the services resolve, so they read a registry in `core`
+that `main.py`, the composition root, hands the credentials service to
+before the app is built, together with the listeners a change must reach;
+the integrations import no service. The rule that makes
 the split real rather than cosmetic is that **services contain no HTTP and no
 SQL**: they never see a `requests` call or a query string. The one exception is the
 utilization service's small helper that reads stored time entries, and it goes

@@ -9,6 +9,11 @@ TOKEN_URL = "https://example-api.centrastage.net/auth/oauth/token"
 DEVICES_URL = "https://example-api.centrastage.net/api/v2/account/devices"
 
 
+def test_the_token_url_is_the_platforms_rest_base_plus_the_oauth_path(store):
+    assert datto.token_url_for("example") == TOKEN_URL
+    assert datto.token_url_for("other") == "https://other-api.centrastage.net/auth/oauth/token"
+
+
 class FakeResponse:
     def __init__(self, payload, status_code=200):
         self.status_code = status_code

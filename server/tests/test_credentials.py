@@ -88,9 +88,7 @@ def test_the_datto_platform_must_be_a_hostname_label(store):
     store_values({"datto_platform": "  zinfandel-2  "})
     assert credentials.current()["datto_platform"] == "zinfandel-2"
     assert credentials.datto_api_base() == "https://zinfandel-2-api.centrastage.net"
-    assert credentials.token_url_for("other") == (
-        "https://other-api.centrastage.net/auth/oauth/token"
-    )
+    assert credentials.api_base_for("other") == "https://other-api.centrastage.net"
 
 
 def test_a_rejected_save_writes_nothing(store):

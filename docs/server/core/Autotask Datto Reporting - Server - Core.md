@@ -16,6 +16,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 
 ### Documents and artifacts in this area
 
+- [Reporting Core - credential_source.md](<Reporting Core - credential_source.md>)
 - [Reporting Core - jobs.md](<Reporting Core - jobs.md>)
 - [Reporting Core - log_buffer.md](<Reporting Core - log_buffer.md>)
 - [Reporting Core - progress.md](<Reporting Core - progress.md>)

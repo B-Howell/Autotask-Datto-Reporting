@@ -8,6 +8,11 @@ cached here, and `invalidate()` tells the registered listeners (the vendor
 clients) to drop anything they derived from the old values. The connection
 tests the Settings page runs live in `services/connection_tests.py`, built
 on `changes`, `merged_from`, `complete` and `store_changes` from here.
+
+This module is the credential source the vendor clients read, but they never
+import it: `main.py` registers it with `core.credential_source`, whose
+protocol (`current`, `require`, `on_change`, `api_base_for`,
+`datto_api_base`) it satisfies.
 """
 
 import os
@@ -16,10 +21,9 @@ import threading
 from dataclasses import dataclass
 
 from core import secrets
+from core.credential_source import AUTOTASK, DATTO
 from repositories import credentials as repo
 
-AUTOTASK = "autotask"
-DATTO = "datto"
 # Must match VENDOR_LABELS in client/src/pages/settings/vendors.ts: the page
 # titles its cards with these and the messages below name the vendors the
 # same way, so the two must stay the same words.
@@ -263,12 +267,14 @@ def require(vendor):
 
 
 def api_base_for(platform):
+    """The Datto REST base for a platform label; the token endpoint is the Datto client's to add."""
     return f"{_HTTPS}{platform}-api.centrastage.net"
-
-
-def token_url_for(platform):
-    return f"{api_base_for(platform)}/auth/oauth/token"
 
 
 def datto_api_base():
     return api_base_for(current()["datto_platform"])
+
+
+def key_source():
+    """Where the master key the stored values are encrypted with came from: `environment` or `file`."""
+    return secrets.key_source()

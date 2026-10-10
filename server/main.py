@@ -1,4 +1,10 @@
-"""FastAPI application: wiring only. Behaviour lives in services/."""
+"""FastAPI application: wiring only. Behaviour lives in services/.
+
+This is also the composition root for the vendor clients: the integrations
+read their credentials from `core.credential_source`, and this module is
+where the credentials service is registered as that source, with the two
+listeners a change must reach, before the app is built.
+"""
 
 import asyncio
 from contextlib import asynccontextmanager
@@ -8,6 +14,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
+from core import credential_source
+from integrations import autotask, datto
 from repositories import snapshots, sqlite
 from routers import (
     agencies,
@@ -29,6 +37,7 @@ from routers import (
     utilization,
 )
 from routers.common import validation_error_response
+from services import credentials as credentials_service
 from services import schedule_runner
 from services.sync import runner
 
@@ -81,6 +90,23 @@ async def _schedule_ticker():
         await asyncio.sleep(settings.schedule_poll_seconds)
 
 
+def wire_vendor_clients():
+    """Hand the vendor clients their credential source and the listeners a change must reach.
+
+    The integrations sit below the services, so they cannot import the
+    credentials service themselves; this is the one place that knows both.
+    Importing this module does the wiring once per process, which is what the
+    test suite relies on too.
+    """
+    credential_source.register(credentials_service)
+    # Picklist labels are per tenant, so new credentials (a different zone,
+    # say) must not be served the labels the old ones fetched.
+    credential_source.on_change(autotask.autotask().forget_picklists)
+    # A token earned with the old key or secret is dropped the moment new
+    # values are saved, so the next request authenticates with the new ones.
+    credential_source.on_change(datto.forget_token)
+
+
 @asynccontextmanager
 async def lifespan(_app):
     sqlite.init_db()
@@ -127,6 +153,7 @@ def create_app():
     return app
 
 
+wire_vendor_clients()
 app = create_app()
 
 

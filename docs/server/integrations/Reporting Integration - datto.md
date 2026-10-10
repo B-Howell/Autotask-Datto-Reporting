@@ -1,6 +1,6 @@
 # Datto integration
 
-> The Datto RMM REST client: a locked OAuth token provider that reads the key, secret and platform from the credentials service when it fetches, paced and retried GETs, paged device listings and the per-device audit endpoints.
+> The Datto RMM REST client: a locked OAuth token provider that reads the key, secret and platform from the registered credential source when it fetches, paced and retried GETs, paged device listings and the per-device audit endpoints.
 
 ## Purpose
 
@@ -11,8 +11,10 @@ Datto rate-limits an account to 600 reads a minute and a full sync audits well o
 | Name | Description |
 |---|---|
 | `TokenRequest(url, api_key, api_secret)` | Frozen dataclass: where a token is fetched from and the credentials that earn it. |
-| `token_request_from(values)` | The `TokenRequest` the given credential values describe: `credentials.token_url_for(values["datto_platform"])` with `datto_api_key` and `datto_api_secret`. |
-| `current_token_request()` | `token_request_from` of the credentials in effect. Calls `credentials.require(DATTO)` first, so a blank field raises `CredentialsMissing` before any request. |
+| `token_url_for(platform)` | `credential_source.api_base_for(platform)` plus `/auth/oauth/token` (`_TOKEN_PATH`): the OAuth endpoint for any platform label, stored or not yet stored. The path is this client's knowledge, so the source only answers the REST base. |
+| `token_request_from(values)` | The `TokenRequest` the given credential values describe: `token_url_for(values["datto_platform"])` with `datto_api_key` and `datto_api_secret`. |
+| `current_token_request()` | `token_request_from` of the credentials in effect. Calls `credential_source.require(DATTO)` first, so a blank field raises the source's `CredentialsMissing` before any request. |
+| `forget_token()` | Drops the process-wide token provider's cached token, so the next request authenticates afresh; [main](<../Reporting Server - main.md>) registers it with `credential_source.on_change`. |
 | `DattoTokenProvider(token_request=current_token_request, timeout=30)` | Caches the OAuth access token; `token()` returns a live one, calling `token_request()` only when it has to fetch, and `invalidate()` drops it. |
 | `probe(provider, redact=http_errors.unchanged)` | The connection test: `provider.token()` run through `http_errors.probe`, so a refused key or an unknown platform answers a `ProbeResult` rather than raising; `redact` runs over a refusal's body before it is cut to length. No API call follows the token. |
 | `DattoClient(api_base, tokens, timeout, min_request_interval, max_workers)` | The HTTP client. `api_base()` is called per request for the URL root. `max_workers` is exposed as a public attribute for the audit thread pool. |
@@ -23,13 +25,13 @@ Datto rate-limits an account to 600 reads a minute and a full sync audits well o
 | `account_devices(site_uid=None, ...)` | `GET account/devices`, optionally filtered by `siteUid`, paged. |
 | `device_software(device_uid, ...)` | Installed software list from `audit/device/<uid>/software`, or None. |
 | `device_audit(device_uid, ...)` | Hardware audit from `audit/device/<uid>` (memory modules, logical disks), or None. |
-| `datto()` | The lazily built singleton, constructed under a lock: the module-level token provider, `credentials.datto_api_base` as the URL root, and the three pacing values from `settings`. |
+| `datto()` | The lazily built singleton, constructed under a lock: the module-level token provider, `credential_source.datto_api_base` as the URL root, and the three pacing values from `settings`. |
 
 ## Uses
 
 - `requests` and `requests.auth.HTTPBasicAuth`.
 - [config](<../Reporting Server - config.md>) for `datto_timeout`, `datto_min_request_interval`, `datto_max_workers`.
-- [credentials service](<../services/Reporting Service - credentials.md>) for `require` (which returns the current values), `token_url_for()`, `datto_api_base()`, `on_change` and `DATTO`.
+- [credential_source](<../core/Reporting Core - credential_source.md>) for `require` (which returns the current values), `api_base_for()`, `datto_api_base()` and `DATTO`. The module imports no service; the [credentials service](<../services/Reporting Service - credentials.md>) is what [main](<../Reporting Server - main.md>) registers there.
 - [http_errors](<Reporting Integration - http_errors.md>) for `probe`, which words a refused test without the URL.
 
 ## Used By
@@ -43,7 +45,7 @@ Datto rate-limits an account to 600 reads a minute and a full sync audits well o
 
 ## Key Behavior
 
-- Credentials at call time: the token provider asks `token_request()` for the URL, key and secret only when it has no live token, and the client asks `api_base()` for the URL root on every GET, so nothing credential-derived outlives the values it came from. At import the module registers `_tokens.invalidate` with `credentials.on_change`, so a `save()` on the Settings page drops the cached token and the next request authenticates with the new key against the new platform, with no restart. A blank field raises `credentials.CredentialsMissing` (`Datto credentials are not configured; open Settings`) from the token fetch, before any HTTP call; [routers/common](<../routers/Reporting Router - common.md>) maps it to 503.
+- Credentials at call time: the token provider asks `token_request()` for the URL, key and secret only when it has no live token, and the client asks `api_base()` for the URL root on every GET, so nothing credential-derived outlives the values it came from. `main.wire_vendor_clients()` registers `forget_token` with `credential_source.on_change`, so a save on the Settings page drops the cached token and the next request authenticates with the new key against the new platform, with no restart; the registration lives in `main` because the source is registered there too, after this module is imported. A blank field raises the credentials service's `CredentialsMissing` (`Datto credentials are not configured; open Settings`) from the token fetch, before any HTTP call; [routers/common](<../routers/Reporting Router - common.md>) maps it to 503.
 - Token provider lock: `token()` holds a `Lock` for the whole check-and-refresh, so when the cached token expires, concurrent audit workers wait for one refresh instead of each posting for their own. `invalidate()` takes the same lock, so a save that lands during a fetch waits for it and drops the token that fetch earned with the old values. The token is treated as expired `_EXPIRY_SKEW_SECONDS` (60) before the advertised `expires_in`, so a request that starts near the deadline does not go out with a token that dies in flight. The POST uses the password grant with the API key and secret as credentials and the documented public client as basic auth.
 - Token fetch is outside the retry loop in `get`, so a rejected key or secret surfaces as the OAuth error itself rather than as three failed GETs.
 - Pacing: `_pace` keeps a monotonic timestamp of the last request behind `_pace_lock` and sleeps until `min_request_interval` has elapsed. The lock is shared across threads, so the interval bounds the whole process, not each worker. An interval of 0 or less disables pacing.

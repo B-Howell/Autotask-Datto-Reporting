@@ -6,9 +6,11 @@ entities (TimeEntries among them) return nothing at all unless an id filter is
 present, so the cursor is sent on the very first page too. Lookups by id go
 through `in` filters in chunks, because a single `in` list has a length limit.
 
-The base URL and the auth headers are resolved for every request, so a
-credential saved on the Settings page is used by the next call without a
-restart.
+The base URL and the auth headers are resolved for every request from the
+credential source registered in `core.credential_source`, so a credential
+saved on the Settings page is used by the next call without a restart. The
+composition root registers that source and the listener that drops the
+picklist cache when the values change.
 """
 
 from dataclasses import dataclass
@@ -16,8 +18,8 @@ from threading import Lock
 
 import requests
 
+from core import credential_source
 from integrations import http_errors
-from services import credentials
 
 PAGE_SIZE = 500
 ID_CHUNK_SIZE = 200
@@ -51,7 +53,7 @@ def connection_from(values):
 
 def current_connection():
     """The connection from the credentials in effect; raises when any is blank."""
-    return connection_from(credentials.require(credentials.AUTOTASK))
+    return connection_from(credential_source.require(credential_source.AUTOTASK))
 
 
 class AutotaskClient:
@@ -182,11 +184,13 @@ def probe(client, redact=http_errors.unchanged):
 
 
 _client = AutotaskClient()
-# Picklist labels are per tenant, so new credentials (a different zone, say)
-# must not be served the labels the old ones fetched.
-credentials.on_change(_client.forget_picklists)
 
 
 def autotask():
-    """The process-wide client; it reads the credentials per request."""
+    """The process-wide client; it reads the credentials per request.
+
+    Picklist labels are per tenant, so new credentials (a different zone,
+    say) must not be served the labels the old ones fetched: the composition
+    root registers its `forget_picklists` with the credential source.
+    """
     return _client
