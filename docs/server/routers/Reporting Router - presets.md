@@ -19,7 +19,8 @@ A preset is one report, one agency and the options its export takes, kept so a s
 
 ## Uses
 
-- `fastapi` (`APIRouter`, `HTTPException`), `pydantic.BaseModel`
+- `fastapi.APIRouter`, `pydantic.BaseModel`
+- [common](<Reporting Router - common.md>) for `call_or_http_error`
 - [presets service](<../services/Reporting Service - presets.md>) (`list_presets`, `create`, `update`, `delete`)
 
 ## Used By
@@ -30,8 +31,8 @@ A preset is one report, one agency and the options its export takes, kept so a s
 
 ## Key Behavior
 
-- `_or_error` wraps each service call: `LookupError` is a 404 and `ValueError` a 400, both carrying the service's own message as `detail`, so the page shows `hour must be between 0 and 23` rather than a generic failure. The same helper appears in the [schedules router](<Reporting Router - schedules.md>); it is three lines and the two routers would otherwise share nothing.
-- Delete first asks the service's `get` and answers 404 for an unknown id, then maps the service's `ValueError` to 409 rather than 400: the request is well formed, it conflicts with a schedule that exists. The page is expected to delete or re-point the schedule first.
+- Every service call goes through [common](<Reporting Router - common.md>)'s `call_or_http_error`, which carries the service's own message as `detail`, so the page shows `Unknown report type: nope` rather than a generic failure. The router holds no `try` block and no status code of its own.
+- Delete is one service call: the service raises `LookupError` for an unknown id (404) and `InUseError` while a schedule still renders the preset (409, not 400: the request is well formed, it conflicts with a schedule that exists). The page is expected to delete or re-point the schedule first.
 - `agency_key` accepts a string or an integer because the client sends whatever the agency dropdown holds (a company id or a `group:<name>` key); the service stores it as text.
 - Nothing here runs a report, so there is no job, no stream and no `run_report`.
 

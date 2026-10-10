@@ -18,6 +18,7 @@ Every value here used to be a constant in client source, which meant a private d
 | `safe_filename(name)` | The name unchanged when it can only denote a file directly under a directory, else `None`. Refuses an empty name, `.`, `..`, any name containing `/` or `\`, and any name whose `os.path.basename` differs from it. |
 | `group_members(group_name, agencies=None)` | The agencies whose `name` starts with the group's `matchPrefix`, or `[]` for an unknown group. Reads the agency list when none is passed. |
 | `resolve_agency(agency_key)` | `(members, display name)` for a dropdown value: `group:<name>` gives the group's members and the group name; an integer company id gives a one-element list and the agency's name; anything else gives `([], "")`. |
+| `logo_file(filename)` | Absolute path of `filename` directly under `LOGO_DIR` (its base name is taken first), or `None` when no such file is on disk. The router's logo route and `logo_path` both resolve through it. |
 | `logo_path(agency_name)` | Absolute path of the PNG mapped to that display name, or `None` when no mapping exists or the file is not on disk. |
 
 The file shape, with every key optional, is the committed [server/data/tenant.example.json](../../../server/data/tenant.example.json): `groups` is a list of `{name, matchPrefix}`, `logos` maps an agency display name to a filename under `data/logos`, `ratedDepartments` is a list of `{department, rate}`, and the two year keys are integers.
@@ -30,7 +31,7 @@ The file shape, with every key optional, is the committed [server/data/tenant.ex
 
 ## Used By
 
-- [tenant router](<../routers/Reporting Router - tenant.md>) (`get_tenant`, `safe_filename`, `LOGO_DIR`)
+- [tenant router](<../routers/Reporting Router - tenant.md>) (`get_tenant`, `safe_filename`, `logo_file`)
 - The client's [tenantStore](<../../client/store/Reporting Store - tenantStore.md>) carries a copy of `DEFAULTS` as `TENANT_DEFAULTS`; the two must stay identical.
 - [server/tests/test_tenant.py](../../../server/tests/test_tenant.py)
 - [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`resolve_agency` for the members behind a preset's key, `logo_path` for the logo the Word and PDF reports carry, and `get_tenant()["ratedDepartments"]` for the annual report's departments)
@@ -43,7 +44,7 @@ The file shape, with every key optional, is the committed [server/data/tenant.ex
 - The file is re-read on every call. The settings are small and change rarely, and reading each time means an edit takes effect without a restart. `group_members` and `logo_path` each call `get_tenant` themselves for the same reason.
 - Group membership is a plain `str.startswith` on the agency name, case-sensitive, so a `matchPrefix` of `"Northfield "` (with the trailing space) matches `Northfield Schools` but not `Northfield` alone. The comment in `DEFAULTS` records the client-side rule that a group needs at least two members before it is shown; this module does not enforce it.
 - `resolve_agency` accepts the id as a string or an int because dropdown values arrive as strings. A group name is taken verbatim after the prefix; an unknown group resolves to an empty member list with the name still returned.
-- `logo_path` applies `os.path.basename` to the mapped filename before joining it to `LOGO_DIR`, so a mapping that names a path outside the logo directory cannot escape it.
+- `logo_file` applies `os.path.basename` to the filename before joining it to `LOGO_DIR`, so a `tenant.json` mapping that names a path outside the logo directory cannot escape it; `logo_path` and the router's logo route share that one join and `isfile` check.
 
 ## Cleanup Notes
 

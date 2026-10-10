@@ -81,10 +81,13 @@ def resolve_agency(agency_key):
     return [], ""
 
 
+def logo_file(filename):
+    """Absolute path of a file directly under the logo directory, or None when it is not on disk."""
+    path = os.path.join(LOGO_DIR, os.path.basename(filename))
+    return path if os.path.isfile(path) else None
+
+
 def logo_path(agency_name):
     """Absolute path of the agency's logo, or None when none is mapped or on disk."""
     filename = get_tenant()["logos"].get(agency_name)
-    if not filename:
-        return None
-    path = os.path.join(LOGO_DIR, os.path.basename(filename))
-    return path if os.path.isfile(path) else None
+    return logo_file(filename) if filename else None

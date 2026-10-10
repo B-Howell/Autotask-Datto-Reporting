@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The scheduled reports page needs two things: the schedule rows themselves, and a view of what the scheduler is doing with them. This router serves both. The rows go through the [schedules service](<../services/Reporting Service - schedules.md>), which validates them and computes `next_run_at`; every schedule comes back joined with its preset so the page can print the report name without a second request. The operational routes read the [schedule_runner service](<../services/Reporting Service - schedule_runner.md>) (status, run-now, the `schedules` log stream), the run rows in the [schedules repository](<../repositories/Reporting Repository - schedules.md>), and the two integrations a run depends on, so a misconfigured renderer URL or an unset webhook shows up on the page today rather than as a failed run on the first of the month.
+The scheduled reports page needs two things: the schedule rows themselves, and a view of what the scheduler is doing with them. This router serves both. The rows and their run history go through the [schedules service](<../services/Reporting Service - schedules.md>), which validates them and computes `next_run_at`; every schedule comes back joined with its preset so the page can print the report name without a second request. The operational routes read the [schedule_runner service](<../services/Reporting Service - schedule_runner.md>) (status, run-now, the `schedules` log stream) and ask the [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) to check the two integrations a run depends on, so a misconfigured renderer URL or an unset webhook shows up on the page today rather than as a failed run on the first of the month. The router calls only services; every status code comes from [common](<Reporting Router - common.md>)'s `call_or_http_error`.
 
 ## Interface
 
@@ -28,12 +28,11 @@ The scheduled reports page needs two things: the schedule rows themselves, and a
 
 - `fastapi` (`APIRouter`, `HTTPException`, `Query`), `pydantic` (`BaseModel`, `Field`)
 - [streams](<../core/Reporting Core - streams.md>) (`sse_response`)
-- [schedules service](<../services/Reporting Service - schedules.md>) (`list_schedules`, `create`, `update`, `get`, `delete`)
+- [common](<Reporting Router - common.md>) (`call_or_http_error`)
+- [schedules service](<../services/Reporting Service - schedules.md>) (`list_schedules`, `create`, `update`, `existing`, `delete`, `recent_runs`, `runs_for`)
 - [presets service](<../services/Reporting Service - presets.md>) (`get`, to attach the preset to a created or updated row)
-- [schedules repository](<../repositories/Reporting Repository - schedules.md>) (`list_runs`, with and without a schedule id)
+- [scheduled_runs service](<../services/Reporting Service - scheduled_runs.md>) (`renderer_health`, `send_test_message`)
 - [schedule_runner service](<../services/Reporting Service - schedule_runner.md>) (`runner.run_now`, `runner.status`, `STREAM`)
-- [renderer integration](<../integrations/Reporting Integration - renderer.md>) (`health`, `RenderError`)
-- [delivery integration](<../integrations/Reporting Integration - delivery.md>) (`send`, `DeliveryError`)
 
 ## Used By
 
@@ -44,13 +43,13 @@ The scheduled reports page needs two things: the schedule rows themselves, and a
 ## Key Behavior
 
 - The literal routes (`/runs`, `/status`, `/logs`, `/renderer-health`, `/test-delivery`) are declared before the `/{schedule_id}` routes. FastAPI matches in declaration order, and `/runs` would otherwise be tried as `schedule_id="runs"` and answered with a 422 about an integer path parameter.
-- `_or_error` maps `LookupError` to 404 and `ValueError` to 400 with the service's message as `detail`, the same three-line helper the [presets router](<Reporting Router - presets.md>) carries.
+- Every service call goes through `call_or_http_error`: `LookupError` is a 404, `ValueError` a 400 and the two integration errors a 502, each with the service's message as `detail`. The only status code written here is the run-now 409, which is the runner's answer rather than an exception.
 - Create and update answer the joined shape the list route uses (`{**row, "preset": presets.get(row["preset_id"])}`), so the page can replace one entry in its table without refetching the list.
-- Run-now checks the schedule exists before asking the runner, so a stale page gets a 404 rather than a 202 for a schedule that was deleted; a 409 means another run (scheduled or manual) holds the one worker thread; the detail names that schedule from `runner.status()` so the page can say which, and the page should wait and watch `/status`. The response is 202 because the run has only been started: its outcome arrives on the run row and the `/logs` stream.
+- Run-now asks `schedules.existing` before asking the runner, so a stale page gets a 404 rather than a 202 for a schedule that was deleted; a 409 means another run (scheduled or manual) holds the one worker thread; the detail names that schedule from `runner.status()` so the page can say which, and the page should wait and watch `/status`. The response is 202 because the run has only been started: its outcome arrives on the run row and the `/logs` stream.
 - `/logs` follows the `schedules` buffer, which the runner clears at the start of each batch; a page that opens it mid-run receives the whole retained window first, as every `/logs` route does.
-- The delivery test sends to the addresses given, with an empty `cc`, the fixed subject `Reporting: delivery test`, a one-line body and `attachments: []`, so the message exercises the flow's trigger schema and the mailbox without a file. A `DeliveryError` becomes a 502 carrying the integration's text, which never includes the signed webhook URL.
-- The renderer check passes the renderer's own `/health` JSON through unchanged, so the page can list `reportTypes` and compare them with the presets it holds.
-- Delete checks the schedule exists through `_existing` before calling the service, so a stale page gets a 404 for a schedule that is already gone rather than a success it cannot tell from its own; the repository removes the schedule's runs first.
+- The delivery test is `scheduled_runs.send_test_message`: the addresses given, an empty `cc`, the fixed subject `Reporting: delivery test`, a one-line body and `attachments: []`, so the message exercises the flow's trigger schema and the mailbox without a file. A `DeliveryError` becomes a 502 carrying the integration's text, which never includes the signed webhook URL.
+- The renderer check is `scheduled_runs.renderer_health`, which passes the renderer's own `/health` JSON through unchanged, so the page can list `reportTypes` and compare them with the presets it holds.
+- Delete and the per-schedule run list are one service call each; the service raises `LookupError` for a schedule that is already gone, so a stale page gets a 404 rather than a success it cannot tell from its own. The repository removes the schedule's runs before the schedule.
 
 ## Cleanup Notes
 

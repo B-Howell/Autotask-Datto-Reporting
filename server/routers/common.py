@@ -1,8 +1,10 @@
-"""Shared plumbing for the report routes: job lifecycle and error mapping."""
+"""Shared plumbing for the routes: job lifecycle and error mapping."""
 
 from fastapi import HTTPException
 
 from core import jobs, streams
+from integrations import delivery, renderer
+from services import presets
 
 # nginx's "client closed request": the caller asked for the cancellation and
 # has already stopped waiting for an answer.
@@ -36,3 +38,21 @@ def run_report(stream, label, run):
     except Exception as exc:
         jobs.finish(job_id, error=exc)
         raise
+
+
+def call_or_http_error(fn):
+    """Run a service call, answering each of its typed failures with a status.
+
+    `InUseError` is a `ValueError` that means a conflict with existing state,
+    so it is matched before the plain `ValueError` clause.
+    """
+    try:
+        return fn()
+    except presets.InUseError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except (renderer.RenderError, delivery.DeliveryError) as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc

@@ -29,7 +29,7 @@ def _freeze(monkeypatch, instant):
 
 def test_next_run_is_the_coming_occurrence_in_the_schedule_timezone():
     now = datetime(2026, 10, 9, 15, 0, tzinfo=UTC)
-    nxt = schedules.next_run_after(now, day_of_month=1, hour=7, tz=NY)
+    nxt = schedules.next_run_after(now, day_of_month=1, hour=7, zone=NY)
     # US daylight time ends at 02:00 on 1 Nov 2026, so 07:00 that morning is
     # EST (UTC-5) even though "now" in October is still EDT (UTC-4).
     assert nxt == "2026-11-01T12:00:00+00:00"

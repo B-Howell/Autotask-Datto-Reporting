@@ -15,7 +15,8 @@ A preset is one report as a user had it configured on screen: the report type, t
 | `update(preset_id, changes)` | Loads the current row, lays `changes` over it, re-validates the whole thing and writes it back; returns the stored row. Raises `LookupError` when the id does not exist. |
 | `get(preset_id)` | The stored row or None. |
 | `list_presets()` | Every preset ordered by name. |
-| `delete(preset_id)` | Removes the preset, or raises `ValueError("Delete its schedules first")` while any schedule still references it; a missing id with no schedules is harmless. |
+| `delete(preset_id)` | Removes the preset. Raises `LookupError("No such preset")` for an unknown id and `InUseError("Delete its schedules first")` while any schedule still references it. |
+| `InUseError` | A `ValueError` subclass: the preset is well formed but a schedule still renders it. The router maps it to 409 where a plain `ValueError` is a 400. |
 
 Validation failures raise `ValueError` with a message meant for the user: `Unknown report type: <type>`, `This report needs an agency`, `A preset needs a name`, `format must be docx or pdf`, `showLicenses must be true or false`, `columns must be a list of column names`, `companies must be a list of company names`, `rates must map a name to a number or a string`.
 
@@ -28,7 +29,7 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 
 - [server/tests/test_presets.py](../../../server/tests/test_presets.py).
 - [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get`, to learn what a schedule renders: `report_type`, `agency_key`, `agency_name` and `options`).
-- [presets router](<../routers/Reporting Router - presets.md>) (`list_presets`, `create`, `update` and `delete`) and the [schedules router](<../routers/Reporting Router - schedules.md>) (`get`, to attach the preset to a created or updated schedule). The [schedules service](<Reporting Service - schedules.md>) does not call this module; it reads presets through the repository, since a schedule only needs to know its preset exists.
+- [presets router](<../routers/Reporting Router - presets.md>) (`list_presets`, `create`, `update` and `delete`), the [schedules router](<../routers/Reporting Router - schedules.md>) (`get`, to attach the preset to a created or updated schedule) and [routers/common](<../routers/Reporting Router - common.md>) (`InUseError`, mapped to 409). The [schedules service](<Reporting Service - schedules.md>) does not call this module; it reads presets through the repository, since a schedule only needs to know its preset exists.
 
 ## Key Behavior
 

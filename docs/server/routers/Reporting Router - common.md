@@ -1,10 +1,12 @@
-# Report route plumbing
+# Route plumbing
 
-> `run_report`: runs a report service call as the tracked job with a stream-bound logger, and maps cancellation to HTTP 499 and bad arguments to 400.
+> `run_report` runs a report service call as the tracked job with a stream-bound logger, mapping cancellation to HTTP 499 and bad arguments to 400; `call_or_http_error` runs any other service call and maps its typed failures to 400, 404, 409 or 502.
 
 ## Purpose
 
 Every report route needs the same four things: a job record so the status bar can show the run, a logger bound to the report's named stream, a translation of `ReportCancelled` into a response the client recognises, and a translation of a `ValueError` (a malformed date, a reversed range) into a 400 with the reason. Putting that in one helper keeps each router to a label, a lambda and `run_report`. The decision to use 499 is deliberate: it is nginx's "client closed request", meaning the caller asked for the cancellation and has already stopped waiting.
+
+The scheduled-delivery routes run no job, but they share the other half of the problem: the services raise typed errors with a message meant for the user, and every route needs the same translation into a status code. `call_or_http_error` is that translation in one place, so the presets and schedules routers hold no `try` blocks of their own and a new typed error is mapped once.
 
 ## Interface
 
@@ -12,8 +14,9 @@ Every report route needs the same four things: a job record so the status bar ca
 |---|---|
 | `HTTP_CLIENT_CLOSED_REQUEST` | `499`. |
 | `run_report(stream, label, run)` | Starts a job labelled `label`, builds `streams.report_logger(stream, job_id=...)`, calls `run(logger)` and returns its result. |
+| `call_or_http_error(fn)` | Calls `fn()` and returns its result, answering each typed service failure with the status below and the exception text as `detail`. |
 
-Error mapping, in order of the `except` clauses:
+`run_report` error mapping, in order of the `except` clauses:
 
 | Raised inside `run` | Job status | HTTP |
 |---|---|---|
@@ -21,14 +24,27 @@ Error mapping, in order of the `except` clauses:
 | `ValueError` | `error` (message stored) | 400 with `str(exc)` as `detail` |
 | any other `Exception` | `error` | re-raised; FastAPI answers 500 |
 
+`call_or_http_error` mapping, in order of the `except` clauses:
+
+| Raised inside `fn` | HTTP |
+|---|---|
+| `presets.InUseError` | 409 |
+| `LookupError` | 404 |
+| `ValueError` | 400 |
+| `renderer.RenderError`, `delivery.DeliveryError` | 502 |
+| any other `Exception` | re-raised; FastAPI answers 500 |
+
 ## Uses
 
 - `fastapi.HTTPException`
 - [jobs](<../core/Reporting Core - jobs.md>) and [streams](<../core/Reporting Core - streams.md>)
+- [presets service](<../services/Reporting Service - presets.md>) for `InUseError`
+- [renderer integration](<../integrations/Reporting Integration - renderer.md>) for `RenderError` and [delivery integration](<../integrations/Reporting Integration - delivery.md>) for `DeliveryError`
 
 ## Used By
 
-- [devices](<Reporting Router - devices.md>), [hdd_tickets](<Reporting Router - hdd_tickets.md>), [office_windows](<Reporting Router - office_windows.md>), [patch_management](<Reporting Router - patch_management.md>), [sla](<Reporting Router - sla.md>), [tickets](<Reporting Router - tickets.md>), [utilization](<Reporting Router - utilization.md>)
+- `run_report`: [devices](<Reporting Router - devices.md>), [hdd_tickets](<Reporting Router - hdd_tickets.md>), [office_windows](<Reporting Router - office_windows.md>), [patch_management](<Reporting Router - patch_management.md>), [sla](<Reporting Router - sla.md>), [tickets](<Reporting Router - tickets.md>), [utilization](<Reporting Router - utilization.md>)
+- `call_or_http_error`: [presets](<Reporting Router - presets.md>), [schedules](<Reporting Router - schedules.md>)
 
 ## Key Behavior
 
@@ -37,6 +53,7 @@ Error mapping, in order of the `except` clauses:
 - On cancellation the handler appends `[DONE] Cancelled` to the buffer directly with `get_buffer(stream).append` and records it with `jobs.note`; using the tracked logger here would re-raise `ReportCancelled` from inside the handler. The job is then finished as cancelled and the 499 is raised `from None` so the traceback does not drag the cancellation exception along.
 - A `ValueError` is the services' contract for bad input (`utilization.parse_date`, `_validated_range`, `quarter_range`). Pydantic validation errors never reach here; FastAPI answers 422 before the route body runs.
 - Unexpected exceptions are recorded on the job (so the status bar shows the message) and re-raised unchanged; nothing is written to the snapshot cache because `get_cached_rows` only stores after a successful fetch.
+- `call_or_http_error` matches `InUseError` before `ValueError` because it is one: the presets service raises it when a schedule still renders the preset, and that is a conflict with existing state (409), not a malformed request (400). `LookupError` is the services' contract for an id that does not exist, so a stale page gets a 404 rather than a success it cannot tell from its own. The two integration errors are the renderer and the delivery flow being down or answering badly, which is a bad gateway from this server's point of view.
 - The routes are synchronous `def` functions, so FastAPI runs them on its threadpool and the report blocks that worker for its full duration; the SSE `/logs` routes are `async def` and share the event loop.
 
 ## Cleanup Notes

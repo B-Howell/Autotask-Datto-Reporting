@@ -36,15 +36,15 @@ def tz():
         ) from exc
 
 
-def next_run_after(now, day_of_month, hour, tz):
-    """ISO UTC time of the next occurrence of day/hour in tz strictly after now.
+def next_run_after(now, day_of_month, hour, zone):
+    """ISO UTC time of the next occurrence of day/hour in `zone` strictly after now.
 
     A day past the end of a month runs on that month's last day, so "the 31st"
     means "month end" everywhere. The candidate is built as a wall-clock time
-    in `tz` and converted afterwards, so a daylight-saving change between now
-    and the candidate is reflected in the UTC result.
+    in `zone` and converted afterwards, so a daylight-saving change between
+    now and the candidate is reflected in the UTC result.
     """
-    local = now.astimezone(tz)
+    local = now.astimezone(zone)
     year, month = local.year, local.month
     for _ in range(2):
         last_day = calendar.monthrange(year, month)[1]
@@ -63,7 +63,11 @@ def next_run_after(now, day_of_month, hour, tz):
     raise RuntimeError("unreachable")
 
 
-def _recipients(values, required):
+def _recipients(values):
+    """The addresses in `values` stripped and lower-cased, blanks dropped.
+
+    A bare string is one address, not a sequence of characters.
+    """
     if isinstance(values, str):
         values = [values]
     cleaned = []
@@ -74,8 +78,6 @@ def _recipients(values, required):
         if not _EMAIL.match(address):
             raise ValueError(f"Not an email address: {address}")
         cleaned.append(address)
-    if required and not cleaned:
-        raise ValueError("At least one recipient is required")
     return cleaned
 
 
@@ -104,12 +106,15 @@ def _validated(schedule):
     subject = (schedule.get("subject") or "").strip()
     if not subject:
         raise ValueError("A subject is required")
+    recipients_to = _recipients(schedule.get("recipients_to"))
+    if not recipients_to:
+        raise ValueError("At least one recipient is required")
     return {
         "preset_id": schedule["preset_id"],
         "day_of_month": day,
         "hour": hour,
-        "recipients_to": _recipients(schedule.get("recipients_to"), required=True),
-        "recipients_cc": _recipients(schedule.get("recipients_cc"), required=False),
+        "recipients_to": recipients_to,
+        "recipients_cc": _recipients(schedule.get("recipients_cc")),
         "subject": subject,
         "body": schedule.get("body") or "",
         "enabled": bool(schedule.get("enabled", True)),
@@ -130,15 +135,21 @@ def create(schedule):
 
 
 def update(schedule_id, changes):
-    current = repo.get(schedule_id)
-    if current is None:
-        raise LookupError("No such schedule")
+    current = existing(schedule_id)
     repo.update(schedule_id, _with_next_run(_validated({**current, **changes})))
     return repo.get(schedule_id)
 
 
 def get(schedule_id):
     return repo.get(schedule_id)
+
+
+def existing(schedule_id):
+    """The stored row, or a LookupError when there is no such schedule."""
+    schedule = repo.get(schedule_id)
+    if schedule is None:
+        raise LookupError("No such schedule")
+    return schedule
 
 
 def list_schedules():
@@ -148,7 +159,19 @@ def list_schedules():
 
 
 def delete(schedule_id):
+    existing(schedule_id)
     repo.delete(schedule_id)
+
+
+def recent_runs(limit=50):
+    """The newest runs across every schedule."""
+    return repo.list_runs(limit=limit)
+
+
+def runs_for(schedule_id):
+    """One schedule's runs, newest first; a LookupError for an unknown schedule."""
+    existing(schedule_id)
+    return repo.list_runs(schedule_id)
 
 
 def advance(schedule):

@@ -13,6 +13,10 @@ from repositories import schedules
 _NO_OPTIONS = ()
 
 
+class InUseError(ValueError):
+    """A schedule still renders the preset, so it cannot be deleted yet."""
+
+
 def _is_string_list(value):
     return isinstance(value, list) and all(isinstance(item, str) for item in value)
 
@@ -108,8 +112,10 @@ def list_presets():
 
 
 def delete(preset_id):
+    if repo.get(preset_id) is None:
+        raise LookupError("No such preset")
     # A schedule renders its preset by id; deleting the preset underneath it
     # would turn the next run into an error nobody is watching for.
     if schedules.list_for_preset(preset_id):
-        raise ValueError("Delete its schedules first")
+        raise InUseError("Delete its schedules first")
     repo.delete(preset_id)

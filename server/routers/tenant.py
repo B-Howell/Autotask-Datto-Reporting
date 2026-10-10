@@ -1,5 +1,3 @@
-import os
-
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
@@ -18,7 +16,7 @@ def get_logo(filename: str):
     safe = tenant.safe_filename(filename)
     if safe is None:
         raise HTTPException(status_code=400, detail="Bad filename")
-    path = os.path.join(tenant.LOGO_DIR, safe)
-    if not os.path.isfile(path):
+    path = tenant.logo_file(safe)
+    if path is None:
         raise HTTPException(status_code=404, detail="No such logo")
     return FileResponse(path)

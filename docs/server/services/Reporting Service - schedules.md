@@ -10,13 +10,16 @@ A schedule says "render this preset on the 1st at 07:00 and mail it to these peo
 
 | Name | Description |
 |---|---|
-| `next_run_after(now, day_of_month, hour, tz)` | The ISO UTC string of the first occurrence of `day_of_month` at `hour:00` in `tz` strictly after the aware datetime `now`. A day past the end of a month runs on that month's last day. |
+| `next_run_after(now, day_of_month, hour, zone)` | The ISO UTC string of the first occurrence of `day_of_month` at `hour:00` in the `ZoneInfo` `zone` strictly after the aware datetime `now`. A day past the end of a month runs on that month's last day. |
 | `tz()` | The `ZoneInfo` for `settings.schedule_timezone`, or a `ValueError` naming `SCHEDULE_TIMEZONE` when the zone is unknown. Shared with the [scheduled runs service](<Reporting Service - scheduled_runs.md>), which uses it to decide a run's calendar day. |
 | `create(schedule)` | Validates, computes `next_run_at`, inserts and returns the stored row. |
 | `update(schedule_id, changes)` | Loads the current row, lays `changes` over it, re-validates the whole thing, recomputes `next_run_at` and writes it back; returns the stored row. Raises `LookupError` when the id does not exist. |
 | `get(schedule_id)` | The stored row or None. |
+| `existing(schedule_id)` | The stored row, or `LookupError("No such schedule")`. `update`, `delete` and `runs_for` go through it, and the router's run-now route asks it before starting the runner. |
 | `list_schedules()` | Every schedule ordered by id, each carrying its preset row under `preset` (None if the preset is gone). |
-| `delete(schedule_id)` | Removes the schedule and its runs. |
+| `delete(schedule_id)` | Removes the schedule and its runs. Raises `LookupError` when the id does not exist. |
+| `recent_runs(limit=50)` | The newest run rows across every schedule, for the page's history table. |
+| `runs_for(schedule_id)` | One schedule's runs, newest first, at most 50. Raises `LookupError` when the id does not exist. |
 | `advance(schedule)` | After a scheduled run: sets `next_run_at` to the occurrence after now. Takes the decoded row because the scheduler already has it. |
 | `record_result(schedule_id, status, error=None)` | Stamps `last_run_at` with the current UTC time and sets `last_status` and `last_error`. |
 
@@ -27,7 +30,7 @@ Validation failures raise `ValueError` with a message meant for the user: `No su
 - Standard library `calendar`, `re`, `datetime` and `zoneinfo`.
 - [config](<../Reporting Server - config.md>) for `schedule_timezone`.
 - [presets repository](<../repositories/Reporting Repository - presets.md>) for `get` (the preset must exist) and `list_presets` (the join in `list_schedules`). The [presets service](<Reporting Service - presets.md>) is not called: a schedule never changes a preset, it only needs to know one is there.
-- [schedules repository](<../repositories/Reporting Repository - schedules.md>), imported as `repo`, for every read and write.
+- [schedules repository](<../repositories/Reporting Repository - schedules.md>), imported as `repo`, for every read and write, including `list_runs` behind `recent_runs` and `runs_for`.
 - [sqlite repository](<../repositories/Reporting Repository - sqlite.md>) for `iso_now`, so `last_run_at` is written in the same format as every other timestamp.
 
 ## Used By
@@ -35,15 +38,15 @@ Validation failures raise `ValueError` with a message meant for the user: `No su
 - [server/tests/test_schedules.py](../../../server/tests/test_schedules.py).
 - [scheduled_runs service](<Reporting Service - scheduled_runs.md>) (`get`, `advance` when the trigger is `schedule`, and `record_result` after every run).
 - [schedule_runner service](<Reporting Service - schedule_runner.md>) (`get`, to re-read each schedule just before it runs and skip one that was deleted or disabled meanwhile); its tick reads `due()` from the repository directly, and the scheduled_runs service calls `advance` and `record_result` here.
-- [schedules router](<../routers/Reporting Router - schedules.md>) (`create`, `update`, `get`, `list_schedules` and `delete`).
+- [schedules router](<../routers/Reporting Router - schedules.md>) (`create`, `update`, `existing`, `list_schedules`, `delete`, `recent_runs` and `runs_for`); the router reads run history through this module rather than the repository.
 
 ## Key Behavior
 
-- `next_run_after` builds the candidate as a wall-clock time in `tz` by replacing the fields of `now.astimezone(tz)`, then converts with `astimezone(UTC)`. `zoneinfo` recomputes the offset for the new wall time, so a daylight-saving change between now and the candidate is reflected: from 9 Oct 2026 (EDT) in `America/New_York`, "the 1st at 07:00" resolves to `2026-11-01T12:00:00+00:00`, because US daylight time ended at 02:00 that morning and 07:00 is EST. The test for this case states the expected UTC value explicitly.
+- `next_run_after` builds the candidate as a wall-clock time in `zone` by replacing the fields of `now.astimezone(zone)`, then converts with `astimezone(UTC)`. The parameter is named `zone` rather than `tz` so it does not shadow the module's `tz()` function, which is what every caller passes. `zoneinfo` recomputes the offset for the new wall time, so a daylight-saving change between now and the candidate is reflected: from 9 Oct 2026 (EDT) in `America/New_York`, "the 1st at 07:00" resolves to `2026-11-01T12:00:00+00:00`, because US daylight time ended at 02:00 that morning and 07:00 is EST. The test for this case states the expected UTC value explicitly.
 - "Strictly after" means a run at exactly the scheduled time is not scheduled again for the same instant: at 07:00:00 sharp the next occurrence is next month. The scheduler calls `advance` after a run, so the time it passes as `now` is always at or after the run it just made.
 - Day clamping: `min(day_of_month, last_day)` per month, so a schedule on the 31st runs on 30 Nov, 28 Feb and 29 Feb in a leap year. The loop checks at most the current and the following month; one of them always contains an occurrence after now, so the trailing `RuntimeError` is unreachable.
 - The UTC string comes from `datetime.isoformat()` on an aware UTC value, which emits `+00:00`, never `Z`. The repository's text comparison depends on that; see its page for why `Z` would sort wrong.
-- `recipients_to` and `recipients_cc` are stripped, lower-cased and checked against a deliberately loose pattern (`something@something.tld`, no whitespace); blank entries are dropped silently, `None` is treated as an empty list, and a bare string is wrapped as a one-element list so `"a@example.com"` is one address rather than a sequence of single-character rejects. `to` must end up with at least one address, `cc` may be empty.
+- `recipients_to` and `recipients_cc` are stripped, lower-cased and checked against a deliberately loose pattern (`something@something.tld`, no whitespace); blank entries are dropped silently, `None` is treated as an empty list, and a bare string is wrapped as a one-element list so `"a@example.com"` is one address rather than a sequence of single-character rejects. `_recipients` only cleans; `_validated` is what refuses an empty `to` list, so `to` must end up with at least one address and `cc` may be empty.
 - `day_of_month` and `hour` are parsed as numbers and must be integral: a bool or `None` is refused first, so `True` is not silently accepted as day 1 and a missing hour defaults to 7 only when the key is absent, not when it is sent as null; `7.5` (or `"7.5"`) is refused rather than truncated to 7, while `7.0` is accepted. A string that is not a number gets the same `must be a whole number` message rather than a bare `int()` traceback.
 - `enabled` defaults to true on create. A disabled schedule gets `next_run_at = None`, which also takes it out of the repository's `due()` query; re-enabling recomputes it from now, so a schedule paused across its usual day does not fire late the moment it is resumed.
 - `update` validates the merged row, not the delta, and always recomputes `next_run_at`: changing only the subject still moves `next_run_at` to the next occurrence from now, which is the same value unless the previous one has passed. The consequence is that editing any field of a schedule whose run is overdue but not yet picked up by the loop skips that run; this is acceptable because the loop ticks every minute, so the window is at most one tick. Keys other than the validated fields (the `last_*` columns, `id`, timestamps) are not touched by `update`; only `record_result` writes the `last_*` columns.

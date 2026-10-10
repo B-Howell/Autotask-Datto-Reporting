@@ -8,6 +8,7 @@ the same day replaces it rather than sitting beside it.
 """
 
 import base64
+import calendar
 import html
 import re
 from datetime import UTC, datetime
@@ -44,20 +45,9 @@ REPORT_LABELS = {
 SAVED_REPORT_TYPES = {"quarterly_utilization": "utilization"}
 # A placeholder is a bare word in braces; `{agency:>6}` or `{}` is not one.
 _PLACEHOLDER = re.compile(r"\{(\w+)\}")
-MONTHS = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-]
+# The page's delivery check: one line through the flow, nothing attached.
+TEST_SUBJECT = "Reporting: delivery test"
+TEST_BODY = "This is a test message from the reporting server. Delivery is working."
 
 
 def _now():
@@ -162,10 +152,11 @@ def _gather(preset, logger):
 
     if report_type == "sla":
         year, month = periods.previous_month(today)
-        period = f"{MONTHS[month - 1]} {year}"
+        month_name = calendar.month_name[month]
+        period = f"{month_name} {year}"
         logger(f"[INFO] Gathering SLA performance for {period}")
         report = sla.get_sla_report(year, month, logger=logger)
-        return report, f"SLA Performance By Ticket {MONTHS[month - 1]}{year}.xlsx", period
+        return report, f"SLA Performance By Ticket {month_name}{year}.xlsx", period
 
     if report_type == "quarterly_utilization":
         start, end = periods.previous_quarter(today)
@@ -215,7 +206,7 @@ def _html_body(text):
 
 def _long_date(t):
     """`November 1, 2026`, the client's `longDate` used in report headings."""
-    return f"{MONTHS[t.month - 1]} {t.day}, {t.year}"
+    return f"{calendar.month_name[t.month]} {t.day}, {t.year}"
 
 
 def _placeholders(preset, period):
@@ -237,6 +228,16 @@ def _deliver(schedule, preset, period, filename, content, content_type, logger):
         body=_html_body(_fill(schedule["body"], values)),
         attachments=[delivery.Attachment(filename, content, content_type)],
     )
+
+
+def renderer_health():
+    """The renderer's own health report; a RenderError when it is down."""
+    return renderer.health()
+
+
+def send_test_message(to):
+    """Send one line with no attachment, so the page can prove the flow accepts mail."""
+    delivery.send(to=to, cc=[], subject=TEST_SUBJECT, body=TEST_BODY, attachments=[])
 
 
 def run_schedule(schedule_id, trigger, logger=print):

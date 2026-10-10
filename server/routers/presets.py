@@ -1,8 +1,9 @@
 """Presets over HTTP: the stored report configurations a schedule renders."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 
+from routers.common import call_or_http_error
 from services import presets
 
 router = APIRouter(prefix="/api/presets", tags=["presets"])
@@ -23,16 +24,6 @@ class PresetBody(BaseModel):
     options: dict | None = None
 
 
-def _or_error(fn):
-    """Run a service call, mapping its failures to the usual status codes."""
-    try:
-        return fn()
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-
 @router.get("")
 def list_presets():
     return presets.list_presets()
@@ -40,22 +31,17 @@ def list_presets():
 
 @router.post("", status_code=201)
 def create_preset(body: PresetBody):
-    return _or_error(lambda: presets.create(body.model_dump(exclude_unset=True)))
+    return call_or_http_error(lambda: presets.create(body.model_dump(exclude_unset=True)))
 
 
 @router.put("/{preset_id}")
 def update_preset(preset_id: int, body: PresetBody):
-    return _or_error(lambda: presets.update(preset_id, body.model_dump(exclude_unset=True)))
+    return call_or_http_error(
+        lambda: presets.update(preset_id, body.model_dump(exclude_unset=True))
+    )
 
 
 @router.delete("/{preset_id}")
 def delete_preset(preset_id: int):
-    if presets.get(preset_id) is None:
-        raise HTTPException(status_code=404, detail="No such preset")
-    # The service refuses while a schedule still renders this preset; that
-    # is a conflict with existing state, not a malformed request.
-    try:
-        presets.delete(preset_id)
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    call_or_http_error(lambda: presets.delete(preset_id))
     return {"deleted": True}

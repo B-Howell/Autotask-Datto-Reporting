@@ -13,24 +13,29 @@ A schedule is only a promise until something runs it. This module is the one pla
 | `run_schedule(schedule_id, trigger, logger=print)` | Runs the schedule now and returns the finished run row from the [schedules repository](<../repositories/Reporting Repository - schedules.md>) (`status` is `ok` or `error`, `error` holds the reason, `saved_report_id` the stored copy when the save happened). Raises `LookupError` only when the schedule id does not exist; every other failure is recorded, not raised. `trigger` is stored on the run; the value `schedule` also advances `next_run_at`. |
 | `REPORT_LABELS` | Report type to the human label that fills the `{report}` placeholder: `Device inventory`, `Office and Windows licensing`, `Patch management`, `Disk-space tickets`, `SLA performance`, `Quarterly utilization`, `Annual utilization`. |
 | `SAVED_REPORT_TYPES` | Report types whose saved copy is filed under a different `report_type` than the preset's; today only `quarterly_utilization`, filed as `utilization` because that is the type the browser's quarterly export saves under. |
-| `MONTHS` | English month names, for the SLA period label and filename. |
+| `renderer_health()` | The renderer's `/health` body, passed through; raises `RenderError` when the renderer is down or answers badly. The page's pre-flight check. |
+| `send_test_message(to)` | Sends `TEST_SUBJECT` and `TEST_BODY` to the given addresses with an empty `cc` and no attachment, so the page can prove the delivery flow accepts mail; raises `DeliveryError`. |
+| `TEST_SUBJECT`, `TEST_BODY` | `Reporting: delivery test` and its one-line body. |
+
+Month names come from `calendar.month_name`, for the SLA period label and filename and the `{date}` placeholder.
 
 The private helpers are the stages: `_gather(preset, logger)` returns `(data, filename, period)` for one preset, `_options(preset)` the renderer options, `_fill(template, values)` the placeholder substitution, `_html_body(text)` the body conversion, `_deliver(...)` the send, `_logo_base64(agency_name)` the logo, `_members(preset)` the agencies behind a preset's key, `_first_member(preset, label, logger)` the one member a single-site report covers (with the group warning), `_now()` the UTC clock (patched in tests), `_today()` the calendar day in the schedule zone, `_stamp()` the browser's `M-D-YY` date stamp and `_long_date(t)` its `November 1, 2026` heading date.
 
 ## Uses
 
-- Standard library `base64`, `html` and `datetime`.
+- Standard library `base64`, `calendar`, `html`, `re` and `datetime`.
 - [schedules service](<Reporting Service - schedules.md>) for `get`, `advance`, `record_result` and `tz`; [schedules repository](<../repositories/Reporting Repository - schedules.md>) for `insert_run`, `finish_run` and `list_runs`.
 - [presets service](<Reporting Service - presets.md>) for `get`: the preset supplies `report_type`, `agency_key`, `agency_name` and `options`.
 - [tenant service](<Reporting Service - tenant.md>) for `resolve_agency` (the members behind a company id or `group:<name>` key), `logo_path` (the agency logo the Word and PDF reports carry) and `get_tenant()["ratedDepartments"]` (the annual report's departments).
 - [periods service](<Reporting Service - periods.md>) for `previous_month`, `previous_quarter` and `fiscal_year_of_previous_month`, and the [utilization service](<Reporting Service - utilization.md>) `period_label` for the quarter and year names.
 - The report services, called exactly as their routers call them: [devices](<Reporting Service - devices.md>) `get_device_sheet`, [office_windows](<Reporting Service - office_windows.md>) `get_office_windows`, [patch_management](<Reporting Service - patch_management.md>) `get_patch_report`, [hdd_tickets](<Reporting Service - hdd_tickets.md>) `get_hdd_report`, [sla](<Reporting Service - sla.md>) `get_sla_report`, [utilization](<Reporting Service - utilization.md>) `get_utilization` and `get_entries`.
 - [manual_inputs repository](<../repositories/Reporting Repository - manual_inputs.md>) for the licence counts the Office and Windows report prints, keyed by the preset's `agency_key`, which is the same id-or-group key the browser saves them under.
-- [renderer integration](<../integrations/Reporting Integration - renderer.md>) `render`, [saved_reports service](<Reporting Service - saved_reports.md>) `save` and [delivery integration](<../integrations/Reporting Integration - delivery.md>) `send` and `Attachment`.
+- [renderer integration](<../integrations/Reporting Integration - renderer.md>) `render` and `health`, [saved_reports service](<Reporting Service - saved_reports.md>) `save` and [delivery integration](<../integrations/Reporting Integration - delivery.md>) `send` and `Attachment`.
 
 ## Used By
 
 - [server/tests/test_scheduled_runs.py](../../../server/tests/test_scheduled_runs.py).
+- [schedules router](<../routers/Reporting Router - schedules.md>): `renderer_health` behind `/renderer-health` and `send_test_message` behind `/test-delivery`, so the router never imports the integrations itself.
 - [schedule_runner service](<Reporting Service - schedule_runner.md>): its worker thread calls `run_schedule` for each due schedule with `trigger="schedule"`, and for the page's run-now with `trigger="manual"`, passing the `schedules` stream logger.
 
 ## Key Behavior
