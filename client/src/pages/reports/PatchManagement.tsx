@@ -6,8 +6,8 @@ import {
   ReportActions,
   ReportPage,
   ReportProgress,
+  ReportScheduleDialog,
   ReportToolbar,
-  ScheduleDialog,
   useScheduleDialog,
 } from '@/components/report';
 import type { DonutSlice } from '@/components/report';
@@ -119,15 +119,7 @@ const PatchManagement = () => {
           <WorkstationTable devices={devices} />
         </Box>
       )}
-      {schedule.draft && (
-        <ScheduleDialog
-          open={schedule.open}
-          draft={schedule.draft}
-          onClose={schedule.closeDialog}
-          onSave={schedule.save}
-          saving={schedule.saving}
-        />
-      )}
+      <ReportScheduleDialog schedule={schedule} />
     </ReportPage>
   );
 };

@@ -11,21 +11,23 @@ This module applies that rule so the page does not have to.
 
 ## Interface
 
-`annualPresetDraft({ companies, rates }): PresetDraft`
+`rateOverrides(rates, departments): Rates` and
+`annualPresetDraft({ companies, rates, departments }): PresetDraft`
 
 | Input | Type | Description |
 |---|---|---|
 | `companies` | `Set<string> \| null` | The store's `selectedCompanies`; null means no preference saved. |
-| `rates` | `Rates` | The store's raw rate overrides, before `withDefaultRates` fills in the tenant defaults. |
+| `rates` | `Rates` | The store's rates map; it holds every department once the settings dialog has been used. |
+| `departments` | `RatedDepartment[]` | The tenant's departments with their standard rates. |
 
 Returns `{ reportType: 'annual_utilization', agencyKey: null, agencyName: '', options }` where
-`options.companies` is the selection as a list when one exists and `options.rates` is the
-overrides when there are any.
+`options.companies` is the selection as a list when one exists and `options.rates` is
+`rateOverrides(rates, departments)` when that has entries.
 
 ## Uses
 
 - `PresetDraft` from [the report component barrel](<../../../components/report/Reporting Report Component - index.md>)
-- [departments](<Reporting Annual Utilization - departments.md>) for the `Rates` type
+- [departments](<Reporting Annual Utilization - departments.md>) for the `Rates` and `RatedDepartment` types
 
 ## Used By
 
@@ -35,8 +37,11 @@ overrides when there are any.
 
 - Never null: the report has no agency and is schedulable as soon as it has been generated.
 - The fiscal year start is not stored; a scheduled run derives the year from its run date.
-- The page passes the store's `rates`, not `useAnnualReport().rates`, because the hook's value
-  already has the defaults laid over it and would store every department.
+- `rateOverrides` keeps an entry only when `Number(rate)` differs from the department's
+  standard rate, so `'95'` against a standard 95 is not an override while `'130'` is. A name
+  with no standard rate is always kept. This matters because the settings dialog writes the
+  merged map back to the store, so after the first edit the store holds every department
+  whether or not the user changed it.
 
 ## Cleanup Notes
 

@@ -31,7 +31,8 @@ The dialog is built from two field components in the same folder:
 ## Used By
 
 - Re-exported by [the report component barrel](<Reporting Report Component - index.md>), together with `PresetDraft`, `REPORT_LABELS` and `SchedulePayload`
-- The generating report pages, each through `useScheduleDialog` next to [ReportActions](<Reporting Report Component - ReportActions.md>):
+- [ReportScheduleDialog](<Reporting Report Component - ReportScheduleDialog.md>), which mounts it from the hook's state
+- The generating report pages, each passing a draft factory and giving `openDialog` to [ReportActions](<Reporting Report Component - ReportActions.md>) and the rest to `ReportScheduleDialog`:
   [DeviceReports](<../../pages/reports/Reporting Page - DeviceReports.md>),
   [OfficeWindowsReports](<../../pages/reports/Reporting Page - OfficeWindowsReports.md>),
   [PatchManagement](<../../pages/reports/Reporting Page - PatchManagement.md>),

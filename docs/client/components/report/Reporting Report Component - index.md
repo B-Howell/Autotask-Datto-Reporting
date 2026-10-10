@@ -22,13 +22,14 @@ Report pages compose the same handful of building blocks. This barrel lets them 
 | `DonutChart`, `ChartLegend`, `DonutSlice` | DonutChart | components, type |
 | `SettingsDialog` | SettingsDialog | component |
 | `ScheduleDialog` | ScheduleDialog | component |
+| `ReportScheduleDialog`, `ReportSchedule` | ReportScheduleDialog | component, type |
 | `useScheduleDialog` | useScheduleDialog | hook |
 | `REPORT_LABELS`, `PresetDraft` | scheduleDraft | constant, type |
 | `SchedulePayload` | useScheduleForm | type |
 
 ## Uses
 
-- [ReportPage](<Reporting Report Component - ReportPage.md>), [ReportToolbar](<Reporting Report Component - ReportToolbar.md>), [AgencySelect](<Reporting Report Component - AgencySelect.md>), [MonthYearSelect](<Reporting Report Component - MonthYearSelect.md>), [ReportActions](<Reporting Report Component - ReportActions.md>), [ReportProgress](<Reporting Report Component - ReportProgress.md>), [ErrorBanner](<Reporting Report Component - ErrorBanner.md>), [EmptyState](<Reporting Report Component - EmptyState.md>), [DataTable](<Reporting Report Component - DataTable.md>), [DonutChart](<Reporting Report Component - DonutChart.md>), [SettingsDialog](<Reporting Report Component - SettingsDialog.md>), [ScheduleDialog](<Reporting Report Component - ScheduleDialog.md>), [useScheduleDialog](<Reporting Report Component - useScheduleDialog.md>), [useScheduleForm](<Reporting Report Component - useScheduleForm.md>) (for `SchedulePayload` and the `scheduleDraft` exports)
+- [ReportPage](<Reporting Report Component - ReportPage.md>), [ReportToolbar](<Reporting Report Component - ReportToolbar.md>), [AgencySelect](<Reporting Report Component - AgencySelect.md>), [MonthYearSelect](<Reporting Report Component - MonthYearSelect.md>), [ReportActions](<Reporting Report Component - ReportActions.md>), [ReportProgress](<Reporting Report Component - ReportProgress.md>), [ErrorBanner](<Reporting Report Component - ErrorBanner.md>), [EmptyState](<Reporting Report Component - EmptyState.md>), [DataTable](<Reporting Report Component - DataTable.md>), [DonutChart](<Reporting Report Component - DonutChart.md>), [SettingsDialog](<Reporting Report Component - SettingsDialog.md>), [ScheduleDialog](<Reporting Report Component - ScheduleDialog.md>), [ReportScheduleDialog](<Reporting Report Component - ReportScheduleDialog.md>), [useScheduleDialog](<Reporting Report Component - useScheduleDialog.md>), [useScheduleForm](<Reporting Report Component - useScheduleForm.md>) (for `SchedulePayload` and the `scheduleDraft` exports)
 
 ## Used By
 

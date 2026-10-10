@@ -2,20 +2,18 @@ import { useEffect, useMemo, useState } from 'react';
 import { Box, IconButton, Paper, Typography } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import type { Dayjs } from 'dayjs';
-import { utilizationApi } from '@/api';
 import type { UtilizationReport } from '@/api';
 import {
   ErrorBanner,
   ReportActions,
   ReportPage,
+  ReportScheduleDialog,
   ReportToolbar,
-  ScheduleDialog,
   useScheduleDialog,
 } from '@/components/report';
 import useAnnualUtilizationStore from '@/store/annualUtilizationStore';
-import { deliverBlob } from '@/utils/saveReport';
+import useTenantStore from '@/store/tenantStore';
 import AgencyDetailTable from './annualUtilization/AgencyDetailTable';
-import { annualWorkbookFilename, buildAnnualWorkbook } from './annualUtilization/excelExport';
 import { RAW_TAB, defaultStartMonth, rangeOrDefault } from './annualUtilization/fiscalYear';
 import { gridForTab } from './annualUtilization/gridModels';
 import { annualPresetDraft } from './annualUtilization/presetDraft';
@@ -26,6 +24,7 @@ import SpreadsheetView from './annualUtilization/SpreadsheetView';
 import { hrs } from './annualUtilization/summary';
 import type { Summary } from './annualUtilization/summary';
 import SummaryTable from './annualUtilization/SummaryTable';
+import useAnnualExport from './annualUtilization/useAnnualExport';
 import useAnnualReport from './annualUtilization/useAnnualReport';
 import YearStartPicker from './annualUtilization/YearStartPicker';
 
@@ -38,49 +37,31 @@ const AnnualUtilization = () => {
 
   const viewMode = useAnnualUtilizationStore((s) => s.viewMode);
   const setViewMode = useAnnualUtilizationStore((s) => s.setViewMode);
-  const rateOverrides = useAnnualUtilizationStore((s) => s.rates);
+  const storedRates = useAnnualUtilizationStore((s) => s.rates);
   const setRates = useAnnualUtilizationStore((s) => s.setRates);
   const selectedCompanies = useAnnualUtilizationStore((s) => s.selectedCompanies);
   const setSelectedCompanies = useAnnualUtilizationStore((s) => s.setSelectedCompanies);
+  const ratedDepartments = useTenantStore((s) => s.tenant.ratedDepartments);
 
   const report = useAnnualReport();
   const { utilData, summary, summaryRows, detail, entries, tab, setTab, companies } = report;
+  const exportExcel = useAnnualExport(report);
 
   useEffect(() => setEntryPage(0), [report.entriesFor]);
-
-  const schedule = useScheduleDialog(() =>
-    utilData ? annualPresetDraft({ companies: selectedCompanies, rates: rateOverrides }) : null
-  );
 
   const grid = useMemo(
     () => gridForTab(tab, { summary, summaryRows, entries, detail }),
     [tab, summary, summaryRows, entries, detail]
   );
-
-  const exportExcel = async (save: boolean) => {
-    const input = report.workbookInput;
-    if (!utilData || !input) return;
-    // The raw sheet is part of the report; a null range key means its load
-    // failed inside the job, so try once more here. A period with no entries
-    // has a key and is not refetched.
-    const raw =
-      report.entriesFor === null
-        ? (await utilizationApi.fetchUtilizationEntries(utilData.start, utilData.end)).entries || []
-        : input.entries;
-    const filename = annualWorkbookFilename(utilData);
-    const blob = await buildAnnualWorkbook({ ...input, entries: raw });
-    await deliverBlob({
-      blob,
-      filename,
-      save,
-      meta: {
-        agencyName: 'All Agencies',
-        reportType: 'annual_utilization',
-        format: 'xlsx',
-        title: filename.replace(/\.xlsx$/, ''),
-      },
-    });
-  };
+  const schedule = useScheduleDialog(() =>
+    utilData
+      ? annualPresetDraft({
+          companies: selectedCompanies,
+          rates: storedRates,
+          departments: ratedDepartments,
+        })
+      : null
+  );
 
   const renderView = (data: UtilizationReport, built: Summary) => {
     if (viewMode === 'spreadsheet') return <SpreadsheetView grid={grid} />;
@@ -146,15 +127,7 @@ const AnnualUtilization = () => {
           <Box sx={{ p: 2 }}>{renderView(utilData, summary)}</Box>
         </Paper>
       )}
-      {schedule.draft && (
-        <ScheduleDialog
-          open={schedule.open}
-          draft={schedule.draft}
-          onClose={schedule.closeDialog}
-          onSave={schedule.save}
-          saving={schedule.saving}
-        />
-      )}
+      <ReportScheduleDialog schedule={schedule} />
     </ReportPage>
   );
 };

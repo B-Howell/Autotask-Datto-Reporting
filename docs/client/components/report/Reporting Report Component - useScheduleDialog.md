@@ -31,7 +31,8 @@ Default export: `useScheduleDialog`.
 ## Used By
 
 - Re-exported by [the report component barrel](<Reporting Report Component - index.md>)
-- The generating report pages, each passing a draft factory and rendering [ScheduleDialog](<Reporting Report Component - ScheduleDialog.md>) next to [ReportActions](<Reporting Report Component - ReportActions.md>):
+- [ReportScheduleDialog](<Reporting Report Component - ReportScheduleDialog.md>), which takes its return value minus `openDialog`
+- The generating report pages, each passing a draft factory and giving `openDialog` to [ReportActions](<Reporting Report Component - ReportActions.md>) and the rest to `ReportScheduleDialog`:
   [DeviceReports](<../../pages/reports/Reporting Page - DeviceReports.md>),
   [OfficeWindowsReports](<../../pages/reports/Reporting Page - OfficeWindowsReports.md>),
   [PatchManagement](<../../pages/reports/Reporting Page - PatchManagement.md>),

@@ -5,8 +5,8 @@ import {
   ReportActions,
   ReportPage,
   ReportProgress,
+  ReportScheduleDialog,
   ReportToolbar,
-  ScheduleDialog,
   useScheduleDialog,
 } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
@@ -25,6 +25,7 @@ const HddTickets = () => {
     loading,
     logs,
     companyValue,
+    generatedValue,
     generatedLabel,
     setCompanyValue,
     fetchHddTickets,
@@ -32,11 +33,10 @@ const HddTickets = () => {
 
   const hasResults = !loading && Boolean(generatedLabel) && deviceCount > 0;
   const noResults = !loading && Boolean(generatedLabel) && deviceCount === 0;
-  // The label is the generated agency's name, or 'All Agencies', which no
-  // agency carries. A preset must name one agency, so an all-agencies run
-  // offers no Schedule button; before any run the button shows disabled.
-  const generatedAgency = effectiveAgencies.find((a) => a.name === generatedLabel) ?? null;
-  const allAgenciesRun = Boolean(generatedLabel) && generatedAgency === null;
+  // A preset must name one agency, so an all-agencies run offers no Schedule
+  // button; before any run the button shows disabled like the exports.
+  const allAgenciesRun = generatedValue === ALL_AGENCIES;
+  const generatedAgency = resolveAgencyValue(generatedValue, effectiveAgencies);
   const schedule = useScheduleDialog(() =>
     hasResults && generatedAgency
       ? {
@@ -51,12 +51,13 @@ const HddTickets = () => {
   const handleGenerate = () => {
     if (!companyValue) return;
     if (companyValue === ALL_AGENCIES) {
-      void fetchHddTickets([], 'All Agencies');
+      void fetchHddTickets(companyValue, [], 'All Agencies');
       return;
     }
     const agency = resolveAgencyValue(companyValue, effectiveAgencies);
     if (!agency) return;
     void fetchHddTickets(
+      companyValue,
       membersOf(agency).map((m) => m.id),
       agency.name
     );
@@ -110,15 +111,7 @@ const HddTickets = () => {
       {hasResults && (
         <HddDeviceTable label={generatedLabel} devices={devices} deviceCount={deviceCount} />
       )}
-      {schedule.draft && (
-        <ScheduleDialog
-          open={schedule.open}
-          draft={schedule.draft}
-          onClose={schedule.closeDialog}
-          onSave={schedule.save}
-          saving={schedule.saving}
-        />
-      )}
+      <ReportScheduleDialog schedule={schedule} />
     </ReportPage>
   );
 };

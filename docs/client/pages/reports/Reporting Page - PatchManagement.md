@@ -31,7 +31,7 @@ Export: "Export to PDF" and "Save to app", named
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
-  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
@@ -59,7 +59,7 @@ Export: "Export to PDF" and "Save to app", named
   `loadBrowserAssets(agency.name)` in parallel, then call `buildPatchPdf` with the agency,
   summary, devices, total, chart image and assets. Saving goes through `savePatchPdf`.
 - `ReportProgress` shows a 20-line log tail with the caption "Loading patch data".
-- Schedule opens `ScheduleDialog` through `useScheduleDialog`. Once `hasResults` the draft is
+- Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog`. Once `hasResults` the draft is
   `{ reportType: 'patch', agencyKey: String(valueFor(generatedAgency)), agencyName, options: {} }`,
   built from the store's generated agency rather than the dropdown so a changed selection
   cannot be scheduled under the report on screen.

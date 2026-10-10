@@ -14,6 +14,7 @@ interface DeviceDraftInput {
  * Describes the device inventory on screen for a schedule. The columns are
  * stored by header name because that is what the renderer selects by, so a
  * scheduled run hides the same columns, in the same order, as the page did.
+ * A column without a header has no name to select by and is left out.
  */
 export const devicePresetDraft = ({
   selectedCompany,
@@ -26,5 +27,5 @@ export const devicePresetDraft = ({
         reportType: 'devices',
         agencyKey: String(selectedCompany),
         agencyName,
-        options: { columns: exportColumns.map((c) => c.headerName ?? '') },
+        options: { columns: exportColumns.flatMap((c) => (c.headerName ? [c.headerName] : [])) },
       };

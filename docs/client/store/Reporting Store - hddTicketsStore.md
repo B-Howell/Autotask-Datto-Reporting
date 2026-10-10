@@ -16,9 +16,11 @@ Not created by the `reportDataStore` factory; it has a bespoke shape with no `er
 | `deviceCount` | `number` | The server's `device_count`. |
 | `loading`, `logs` | `boolean`, `string[]` | Job state fed by `useTrackedReport`. |
 | `companyValue` | `AgencyValue \| ''` | Dropdown value; empty string means nothing chosen. Can be the `all` sentinel. |
+| `generatedValue` | `AgencyValue \| ''` | Dropdown value the current results were run for; empty before the first run. Can be the `all` sentinel. |
 | `generatedLabel` | `string` | Human label of the selection the current results belong to. |
 | `setLogs(updater)` | updater setter | Accepts a value or `prev => next`. |
-| other setters | plain | `setDevices`, `setDeviceCount`, `setLoading`, `setCompanyValue`, `setGeneratedLabel`. |
+| `setGenerated(value, label)` | plain | Records both the value and the label of the run that is starting. |
+| other setters | plain | `setDevices`, `setDeviceCount`, `setLoading`, `setCompanyValue`. |
 
 ## Uses
 
@@ -32,7 +34,7 @@ Not created by the `reportDataStore` factory; it has a bespoke shape with no `er
 
 ## Key Behavior
 
-- `companyValue` and `generatedLabel` are separate on purpose: the dropdown can change after a run, and the page still needs to say which selection the table on screen came from.
+- `companyValue` and the generated pair are separate on purpose: the dropdown can change after a run, and the page still needs to say which selection the table on screen came from. The label names it in headings; the value lets the page resolve the agency again, for example to describe the report for a schedule.
 - `deviceCount` is stored from the server rather than derived from `devices.length`.
 - No persistence; a reload clears it.
 

@@ -8,11 +8,11 @@ The HDD tickets report asks the server which devices keep raising "drive nearly 
 
 ## Interface
 
-Returns `devices`, `deviceCount`, `loading`, `logs`, `companyValue`, `generatedLabel` from the store, plus `setCompanyValue` and:
+Returns `devices`, `deviceCount`, `loading`, `logs`, `companyValue`, `generatedValue`, `generatedLabel` from the store, plus `setCompanyValue` and:
 
 | Function | Description |
 |---|---|
-| `fetchHddTickets(companyIds, label)` | Stores `label` as `generatedLabel`, then runs the job. An empty `companyIds` means every configured agency. |
+| `fetchHddTickets(value, companyIds, label)` | Stores `value` and `label` as the generated pair, then runs the job. `value` is the dropdown value the run is for; an empty `companyIds` means every configured agency. |
 
 ## Uses
 
@@ -28,7 +28,7 @@ Returns `devices`, `deviceCount`, `loading`, `logs`, `companyValue`, `generatedL
 
 - The status bar label is the fixed `HDD Storage Tickets` and the route `/reports/hdd-tickets`; the agency selection is not in the label, so re-running for a different selection replaces the previous row.
 - One request carries all company ids; the server does the per-agency work, unlike the device and patch hooks which loop over members on the client.
-- `setGeneratedLabel` runs before the job starts, so the heading reflects the run in flight.
+- `setGenerated` runs before the job starts, so the heading reflects the run in flight.
 - On success `devices` and `device_count` are stored; on failure both are cleared. No `setError` is passed, so errors reach only the status bar and console.
 
 ## Cleanup Notes

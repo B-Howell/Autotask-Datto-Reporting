@@ -9,13 +9,15 @@ interface HddTicketsState {
   loading: boolean;
   logs: string[];
   companyValue: AgencyValue | '';
+  /** The dropdown value the current results were run for; empty before the first run. */
+  generatedValue: AgencyValue | '';
   generatedLabel: string;
   setDevices: (devices: HddTicketDevice[]) => void;
   setDeviceCount: (count: number) => void;
   setLoading: (loading: boolean) => void;
   setLogs: (logs: Updater<string[]>) => void;
   setCompanyValue: (value: AgencyValue | '') => void;
-  setGeneratedLabel: (label: string) => void;
+  setGenerated: (value: AgencyValue, label: string) => void;
 }
 
 const useHddTicketsStore = create<HddTicketsState>()((set) => ({
@@ -24,6 +26,7 @@ const useHddTicketsStore = create<HddTicketsState>()((set) => ({
   loading: false,
   logs: [],
   companyValue: '',
+  generatedValue: '',
   generatedLabel: '',
 
   setDevices: (devices) => set({ devices }),
@@ -31,7 +34,7 @@ const useHddTicketsStore = create<HddTicketsState>()((set) => ({
   setLoading: (loading) => set({ loading }),
   setLogs: (logs) => set((state) => ({ logs: applyUpdater(state.logs, logs) })),
   setCompanyValue: (companyValue) => set({ companyValue }),
-  setGeneratedLabel: (generatedLabel) => set({ generatedLabel }),
+  setGenerated: (generatedValue, generatedLabel) => set({ generatedValue, generatedLabel }),
 }));
 
 export default useHddTicketsStore;

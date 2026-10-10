@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Box } from '@mui/material';
 import type { AgencyValue } from '@/api';
 import {
   AgencySelect,
   ReportActions,
   ReportPage,
   ReportProgress,
+  ReportScheduleDialog,
   ReportToolbar,
-  ScheduleDialog,
   useScheduleDialog,
 } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
@@ -15,9 +14,8 @@ import useOfficeWindowsData from '@/hooks/useOfficeWindowsData';
 import useAgencyStore from '@/store/agencyStore';
 import { resolveAgencyValue, valueFor } from '@/utils/agencyGroups';
 import DeviceListDialog from './officeWindows/DeviceListDialog';
-import OfficeTable from './officeWindows/OfficeTable';
+import LicensingTables from './officeWindows/LicensingTables';
 import { officeWindowsPresetDraft } from './officeWindows/presetDraft';
-import ReportHeading from './officeWindows/ReportHeading';
 import { installedOnly, reportTitle } from './officeWindows/reportRows';
 import { reportedAgencyForSite } from './officeWindows/selectedAgency';
 import SkuSettingsButton from './officeWindows/SkuSettingsButton';
@@ -26,7 +24,6 @@ import { groupOfficeInstalls } from './officeWindows/skus';
 import useDeviceModal from './officeWindows/useDeviceModal';
 import useManualInputs from './officeWindows/useManualInputs';
 import useOfficeWindowsExports from './officeWindows/useOfficeWindowsExports';
-import WindowsTable from './officeWindows/WindowsTable';
 
 const OfficeWindowsReports = () => {
   const companies = useAgencyStore((s) => s.agencies);
@@ -100,33 +97,20 @@ const OfficeWindowsReports = () => {
       {loading && <ReportProgress message="Loading..." logs={logs} tail={20} />}
 
       {hasResults && selectedCompany && (
-        <Box>
-          <ReportHeading
-            title={reportTitle(selectedCompany.name)}
-            showLicenses={showLicenses}
-            onShowLicensesChange={setShowLicenses}
-          />
-          {officeBreakdown.length > 0 && (
-            <OfficeTable
-              rows={officeRows}
-              showLicenses={showLicenses}
-              licenses={manual.values}
-              available={manual.officeAvailable}
-              onLicenseChange={manual.setOfficeLicense}
-              onAvailableChange={manual.setOfficeAvailable}
-              onOpenDevices={devices.open}
-            />
-          )}
-          {osRows.length > 0 && (
-            <WindowsTable
-              rows={osRows}
-              showLicenses={showLicenses}
-              licenses={manual.values}
-              onLicenseChange={manual.setOsLicense}
-              onOpenDevices={devices.open}
-            />
-          )}
-        </Box>
+        <LicensingTables
+          title={reportTitle(selectedCompany.name)}
+          showLicenses={showLicenses}
+          onShowLicensesChange={setShowLicenses}
+          officeRows={officeRows}
+          hasOfficeInstalls={officeBreakdown.length > 0}
+          osRows={osRows}
+          licenses={manual.values}
+          available={manual.officeAvailable}
+          onOfficeLicenseChange={manual.setOfficeLicense}
+          onOfficeAvailableChange={manual.setOfficeAvailable}
+          onOsLicenseChange={manual.setOsLicense}
+          onOpenDevices={devices.open}
+        />
       )}
 
       <SkuSettingsDialog
@@ -142,15 +126,7 @@ const OfficeWindowsReports = () => {
         devices={devices.modal.devices}
         onClose={devices.close}
       />
-      {schedule.draft && (
-        <ScheduleDialog
-          open={schedule.open}
-          draft={schedule.draft}
-          onClose={schedule.closeDialog}
-          onSave={schedule.save}
-          saving={schedule.saving}
-        />
-      )}
+      <ReportScheduleDialog schedule={schedule} />
     </ReportPage>
   );
 };

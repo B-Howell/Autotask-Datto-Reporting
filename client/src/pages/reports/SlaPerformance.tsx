@@ -7,8 +7,8 @@ import {
   ReportActions,
   ReportPage,
   ReportProgress,
+  ReportScheduleDialog,
   ReportToolbar,
-  ScheduleDialog,
   useScheduleDialog,
 } from '@/components/report';
 import useSlaData from '@/hooks/useSlaData';
@@ -116,15 +116,7 @@ const SlaPerformance = () => {
           {tab === 3 && <IssueTypePivotTable pivot={pivotByIssueType} />}
         </Box>
       )}
-      {schedule.draft && (
-        <ScheduleDialog
-          open={schedule.open}
-          draft={schedule.draft}
-          onClose={schedule.closeDialog}
-          onSave={schedule.save}
-          saving={schedule.saving}
-        />
-      )}
+      <ReportScheduleDialog schedule={schedule} />
     </ReportPage>
   );
 };

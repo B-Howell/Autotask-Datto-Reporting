@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Button } from '@mui/material';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import type { AgencyValue } from '@/api';
 import ColumnChooser from '@/components/ColumnChooser';
 import DeviceSpreadsheet from '@/components/DeviceSpreadsheet';
@@ -9,8 +8,8 @@ import {
   AgencySelect,
   ReportActions,
   ReportPage,
+  ReportScheduleDialog,
   ReportToolbar,
-  ScheduleDialog,
   useScheduleDialog,
 } from '@/components/report';
 import useEffectiveAgencies from '@/hooks/useEffectiveAgencies';
@@ -18,11 +17,9 @@ import useReportingData from '@/hooks/useReportingData';
 import useAgencyStore from '@/store/agencyStore';
 import useThemeStore from '@/store/themeStore';
 import { agencyNameFor, resolveAgencyValue } from '@/utils/agencyGroups';
-import { fileDateStamp } from '@/utils/dates';
-import { deliverBlob } from '@/utils/saveReport';
-import { buildDeviceWorkbook } from './deviceReports/excelExport';
-import MissingFieldFilter from './deviceReports/MissingFieldFilter';
 import { devicePresetDraft } from './deviceReports/presetDraft';
+import SpreadsheetControls from './deviceReports/SpreadsheetControls';
+import useDeviceExport from './deviceReports/useDeviceExport';
 import useVisibleColumns from './deviceReports/useVisibleColumns';
 import ViewTabs from './deviceReports/ViewTabs';
 import type { DeviceView } from './deviceReports/ViewTabs';
@@ -59,6 +56,7 @@ const DeviceReports = () => {
   const hasData = selectedCompany !== null && allRows.length > 0 && !loading;
   const onSpreadsheet = activeTab === 'spreadsheet';
   const pendingEdits = Object.keys(editedCells).length;
+  const exportDevices = useDeviceExport({ exportColumns, rows, agencyName, selectedCompany });
   const schedule = useScheduleDialog(() =>
     hasData ? devicePresetDraft({ selectedCompany, agencyName, exportColumns }) : null
   );
@@ -68,24 +66,6 @@ const DeviceReports = () => {
     if (!agency) return;
     setActiveTab('spreadsheet');
     void fetchDevices(agency);
-  };
-
-  const handleExport = async (save: boolean) => {
-    const blob = await buildDeviceWorkbook(exportColumns, rows);
-    const label = agencyName || 'Device';
-    const filename = `${label} Computer Inventory ${fileDateStamp()}.xlsx`;
-    await deliverBlob({
-      blob,
-      filename,
-      save,
-      meta: {
-        agencyName: label,
-        agencyId: typeof selectedCompany === 'number' ? selectedCompany : '',
-        reportType: 'devices',
-        format: 'xlsx',
-        title: filename.replace(/\.xlsx$/, ''),
-      },
-    });
   };
 
   return (
@@ -104,10 +84,10 @@ const DeviceReports = () => {
               loading={loading}
               exports={
                 onSpreadsheet
-                  ? [{ label: 'Download XLSX', onClick: () => handleExport(false) }]
+                  ? [{ label: 'Download XLSX', onClick: () => exportDevices(false) }]
                   : []
               }
-              onSave={onSpreadsheet ? () => handleExport(true) : undefined}
+              onSave={onSpreadsheet ? () => exportDevices(true) : undefined}
               onSchedule={schedule.openDialog}
               hasResults={hasData}
             />
@@ -117,21 +97,12 @@ const DeviceReports = () => {
         <AgencySelect agencies={effectiveAgencies} value={agencyValue} onChange={setAgencyValue} />
         {hasData && <ViewTabs value={activeTab} onChange={setActiveTab} />}
         {hasData && onSpreadsheet && (
-          <>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<ViewColumnIcon />}
-              onClick={() => setChooserOpen(true)}
-            >
-              Columns
-            </Button>
-            <MissingFieldFilter
-              value={missingFilter}
-              fieldLabels={Object.keys(editableCols)}
-              onChange={handleFilterChange}
-            />
-          </>
+          <SpreadsheetControls
+            onChooseColumns={() => setChooserOpen(true)}
+            missingFilter={missingFilter}
+            fieldLabels={Object.keys(editableCols)}
+            onFilterChange={handleFilterChange}
+          />
         )}
       </ReportToolbar>
 
@@ -159,15 +130,7 @@ const DeviceReports = () => {
         visibleFields={chooserFields}
         onApply={applyVisibleFields}
       />
-      {schedule.draft && (
-        <ScheduleDialog
-          open={schedule.open}
-          draft={schedule.draft}
-          onClose={schedule.closeDialog}
-          onSave={schedule.save}
-          saving={schedule.saving}
-        />
-      )}
+      <ReportScheduleDialog schedule={schedule} />
     </ReportPage>
   );
 };

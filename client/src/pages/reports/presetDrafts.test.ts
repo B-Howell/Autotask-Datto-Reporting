@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { GridColDef } from '@mui/x-data-grid';
-import { annualPresetDraft } from './annualUtilization/presetDraft';
+import { annualPresetDraft, rateOverrides } from './annualUtilization/presetDraft';
 import type { DeviceRow } from './deviceReports/sheetRows';
 import { devicePresetDraft } from './deviceReports/presetDraft';
 import { officeWindowsPresetDraft } from './officeWindows/presetDraft';
@@ -25,14 +25,14 @@ describe('devicePresetDraft', () => {
     });
   });
 
-  it('keeps a group key as the agency key and blanks a column without a header', () => {
+  it('keeps a group key as the agency key and leaves out a column without a header', () => {
     const draft = devicePresetDraft({
       selectedCompany: 'group:Harbor Point',
       agencyName: 'Harbor Point',
-      exportColumns: [column('rowNumber')],
+      exportColumns: [column('rowNumber'), column('name', 'Device Name')],
     });
     expect(draft?.agencyKey).toBe('group:Harbor Point');
-    expect(draft?.options.columns).toEqual(['']);
+    expect(draft?.options.columns).toEqual(['Device Name']);
   });
 
   it('is null before a report has been generated', () => {
@@ -61,9 +61,22 @@ describe('officeWindowsPresetDraft', () => {
   });
 });
 
+const departments = [
+  { department: 'Administration', rate: 95 },
+  { department: 'Technical', rate: 120 },
+];
+
+describe('rateOverrides', () => {
+  it('keeps only the rates that differ from the standard rate, compared as numbers', () => {
+    expect(
+      rateOverrides({ Administration: '95', Technical: '150', Management: 200 }, departments)
+    ).toEqual({ Technical: '150', Management: 200 });
+  });
+});
+
 describe('annualPresetDraft', () => {
-  it('omits companies and rates when nothing has been chosen', () => {
-    expect(annualPresetDraft({ companies: null, rates: {} })).toEqual({
+  it('omits companies and rates when nothing has been chosen or every rate is standard', () => {
+    expect(annualPresetDraft({ companies: null, rates: { Technical: 120 }, departments })).toEqual({
       reportType: 'annual_utilization',
       agencyKey: null,
       agencyName: '',
@@ -71,14 +84,15 @@ describe('annualPresetDraft', () => {
     });
   });
 
-  it('stores the saved selection as a list and the overrides as given', () => {
+  it('stores the saved selection as a list and only the true rate overrides', () => {
     const draft = annualPresetDraft({
       companies: new Set(['Harbor Point Health', 'Northfield Community Schools']),
-      rates: { Administration: 95, Technical: '120' },
+      rates: { Administration: 95, Technical: '130' },
+      departments,
     });
     expect(draft.options).toEqual({
       companies: ['Harbor Point Health', 'Northfield Community Schools'],
-      rates: { Administration: 95, Technical: '120' },
+      rates: { Technical: '130' },
     });
   });
 });

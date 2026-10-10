@@ -32,9 +32,7 @@ Local state: `companyValue: AgencyValue | ''`, `showLicenses: boolean` (default 
   [skus](<officeWindows/Reporting Office Windows - skus.md>),
   [reportRows](<officeWindows/Reporting Office Windows - reportRows.md>),
   [selectedAgency](<officeWindows/Reporting Office Windows - selectedAgency.md>),
-  [OfficeTable](<officeWindows/Reporting Office Windows - OfficeTable.md>),
-  [WindowsTable](<officeWindows/Reporting Office Windows - WindowsTable.md>),
-  [ReportHeading](<officeWindows/Reporting Office Windows - ReportHeading.md>),
+  [LicensingTables](<officeWindows/Reporting Office Windows - LicensingTables.md>),
   [SkuSettingsButton](<officeWindows/Reporting Office Windows - SkuSettingsButton.md>),
   [SkuSettingsDialog](<officeWindows/Reporting Office Windows - SkuSettingsDialog.md>),
   [DeviceListDialog](<officeWindows/Reporting Office Windows - DeviceListDialog.md>),
@@ -42,7 +40,7 @@ Local state: `companyValue: AgencyValue | ''`, `showLicenses: boolean` (default 
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
-  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>)
@@ -63,17 +61,18 @@ Local state: `companyValue: AgencyValue | ''`, `showLicenses: boolean` (default 
 - `officeRows` is `groupOfficeInstalls(officeBreakdown, manual.visibleSkus)` memoised on both;
   `osRows` is `installedOnly(osBreakdown)` recomputed each render.
 - `hasResults` needs not loading, a resolved company, and at least one row in either
-  breakdown. The Office table renders only when `officeBreakdown` has rows and the Windows
-  table only when `osRows` has rows.
+  breakdown. The body is then `LicensingTables`, given `hasOfficeInstalls` as
+  `officeBreakdown.length > 0` and the `osRows` with installs, so the Office table renders
+  only when there are Office installs and the Windows table only when `osRows` has rows.
 - The SKU settings button is enabled only once `manual.agencyKey` is set, that is after the
   first Generate.
 - The export hook receives the two breakdowns as `{ windows_installs, office_installs }` and
   `manual.values`, the agency's saved map, rather than the on-screen rows; both tables read
   their licence figures from that same map.
-- `showLicenses` is passed to both tables and to the export hook, so hiding the licence
-  columns on screen also hides them in the Word and PDF output.
+- `showLicenses` is passed to `LicensingTables` and to the export hook, so hiding the
+  licence columns on screen also hides them in the Word and PDF output.
 - `ReportProgress` shows a 20-line log tail with the caption "Loading...".
-- Schedule opens `ScheduleDialog` through `useScheduleDialog`. The draft comes from
+- Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog`. The draft comes from
   `officeWindowsPresetDraft` once `hasResults`: report type `office_windows`, the reported
   agency's key and name (a group member is stored under its group's key), `format: 'docx'`
   as the starting point for the dialog's Format radio, which replaces it on save, and the

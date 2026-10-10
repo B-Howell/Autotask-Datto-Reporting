@@ -17,7 +17,7 @@ the agency or group name or `All Agencies`.
 ## Interface
 
 `HddTickets` takes no props and is the module's default export. It keeps no local state; the
-dropdown value and the generated label live in the store so they survive navigation.
+dropdown value and the generated value and label live in the store so they survive navigation.
 
 ## Uses
 
@@ -28,7 +28,7 @@ dropdown value and the generated label live in the store so they survive navigat
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
-  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [AgencySelect](<../../components/report/Reporting Report Component - AgencySelect.md>) (with `ALL_AGENCIES`),
   [ReportProgress](<../../components/report/Reporting Report Component - ReportProgress.md>),
@@ -43,8 +43,8 @@ dropdown value and the generated label live in the store so they survive navigat
 ## Key Behavior
 
 - The agency dropdown has `includeAll`. Choosing the all-agencies sentinel calls
-  `fetchHddTickets([], 'All Agencies')`; otherwise the value is resolved and the ids of
-  `membersOf(agency)` are sent with the agency's name as the label.
+  `fetchHddTickets(companyValue, [], 'All Agencies')`; otherwise the value is resolved and
+  the ids of `membersOf(agency)` are sent with the dropdown value and the agency's name.
 - `hasResults` and `noResults` both require a finished run (`generatedLabel` set, not
   loading) and differ on `deviceCount`. The empty state names the label in its message.
 - While loading, `ReportProgress` shows the hook's log lines under "Loading HDD ticket data".
@@ -52,13 +52,13 @@ dropdown value and the generated label live in the store so they survive navigat
   metadata uses `reportType: 'hdd_tickets'`, `format: 'xlsx'` and the agency label as
   `agencyName`. No `agencyId` is recorded.
 - The table heading uses `deviceCount` from the server rather than `devices.length`.
-- Schedule opens `ScheduleDialog` through `useScheduleDialog`. The page keeps only the
-  generated label, so the agency to store is found by matching that label against the
-  effective agencies' names. A match gives the draft `{ reportType: 'hdd_tickets',
-  agencyKey: String(valueFor(agency)), agencyName: agency.name, options: {} }`. The
-  `All Agencies` label matches nothing, and because a preset must name one agency the page
-  passes no `onSchedule` for that run, so `ReportActions` renders no Schedule button. Before
-  any run the button is present and disabled, as on the other pages.
+- Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog`. The
+  store's `generatedValue` (the dropdown value the results were run for) is resolved with
+  `resolveAgencyValue`, and a resolved agency gives the draft `{ reportType: 'hdd_tickets',
+  agencyKey: String(valueFor(agency)), agencyName: agency.name, options: {} }` once
+  `hasResults`. The all-agencies sentinel resolves to nothing, and because a preset must name
+  one agency the page passes no `onSchedule` for that run, so `ReportActions` renders no
+  Schedule button. Before any run the button is present and disabled, as on the other pages.
 
 ## Cleanup Notes
 

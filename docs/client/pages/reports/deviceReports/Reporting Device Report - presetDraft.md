@@ -21,8 +21,8 @@ composition and lets the mapping be tested without rendering.
 | `exportColumns` | `GridColDef<DeviceRow>[]` | The visible columns in display order, as the workbook export receives them. |
 
 Returns null when `selectedCompany` is null; otherwise `{ reportType: 'devices', agencyKey:
-String(selectedCompany), agencyName, options: { columns } }` where `columns` is each column's
-`headerName` (an empty string when a column has none).
+String(selectedCompany), agencyName, options: { columns } }` where `columns` is the
+`headerName` of each column that has one.
 
 ## Uses
 
@@ -40,8 +40,8 @@ String(selectedCompany), agencyName, options: { columns } }` where `columns` is 
   for a group, which is what the server's preset validation and the scheduled run expect.
 - Column order is the chooser's order, not the schema's, so a reordered sheet is mailed
   reordered.
-- A column without a `headerName` contributes `''`; the renderer then finds no such header and
-  drops it, which matches what the on-screen export does with it.
+- A column without a `headerName` has nothing the renderer could select by, so it is left out
+  rather than stored as an empty name.
 - Only columns are stored. The page's missing-field filter has no preset option, so a
   scheduled run always covers every row.
 

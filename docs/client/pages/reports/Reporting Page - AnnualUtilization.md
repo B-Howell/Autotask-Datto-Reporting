@@ -25,9 +25,10 @@ Local state: `startMonth: Dayjs | null` (from `defaultStartMonth`), `settingsOpe
 ## Uses
 
 - [useAnnualReport](<annualUtilization/Reporting Annual Utilization - useAnnualReport.md>),
-  [annualUtilizationStore](<../../store/Reporting Store - annualUtilizationStore.md>)
-- [utilization API](<../../api/Reporting API - utilization.md>) for `fetchUtilizationEntries`
-  and the `UtilizationReport` type
+  [useAnnualExport](<annualUtilization/Reporting Annual Utilization - useAnnualExport.md>),
+  [annualUtilizationStore](<../../store/Reporting Store - annualUtilizationStore.md>),
+  [tenantStore](<../../store/Reporting Store - tenantStore.md>) for `ratedDepartments`
+- The `UtilizationReport` type from the [API types](<../../api/Reporting API - types.md>)
 - Annual modules: [excelExport](<annualUtilization/Reporting Annual Utilization - excelExport.md>),
   [fiscalYear](<annualUtilization/Reporting Annual Utilization - fiscalYear.md>),
   [gridModels](<annualUtilization/Reporting Annual Utilization - gridModels.md>),
@@ -43,10 +44,10 @@ Local state: `startMonth: Dayjs | null` (from `defaultStartMonth`), `settingsOpe
 - Report components [ReportPage](<../../components/report/Reporting Report Component - ReportPage.md>),
   [ReportToolbar](<../../components/report/Reporting Report Component - ReportToolbar.md>),
   [ReportActions](<../../components/report/Reporting Report Component - ReportActions.md>),
-  [ScheduleDialog](<../../components/report/Reporting Report Component - ScheduleDialog.md>),
+  [ReportScheduleDialog](<../../components/report/Reporting Report Component - ReportScheduleDialog.md>),
   [useScheduleDialog](<../../components/report/Reporting Report Component - useScheduleDialog.md>),
   [ErrorBanner](<../../components/report/Reporting Report Component - ErrorBanner.md>)
-- [saveReport](<../../utils/Reporting Util - saveReport.md>), `dayjs` types
+- `dayjs` types
 
 ## Used By
 
@@ -63,21 +64,20 @@ Local state: `startMonth: Dayjs | null` (from `defaultStartMonth`), `settingsOpe
   and any other tab is a company name rendered by `AgencyDetailTable`.
 - The spreadsheet grid is `gridForTab(tab, ...)`, memoised on tab, summary, rows, entries and
   detail, so switching view mode does not recompute it.
-- Export takes the hook's `workbookInput` (built by
-  [workbookInput](<annualUtilization/Reporting Annual Utilization - workbookInput.md>)) and
-  needs `utilData` for the filename. If the hook's `entriesFor` is null, the entries load failed
-  inside the job, so the page fetches them with `fetchUtilizationEntries(start, end)` once more
-  and substitutes them; the workbook always has the raw sheet. A period with genuinely zero
-  entries has a range key and is not refetched on every export. Metadata: `agencyName: 'All Agencies'`, `reportType: 'annual_utilization'`.
+- Export to Excel and Save to app call the function from `useAnnualExport`, which is given
+  the whole `useAnnualReport` result and reads its `utilData`, `workbookInput` and
+  `entriesFor` (the refetch of a failed raw-entry load lives there).
 - The toolbar summary reads `<selected> of <all> agencies` and `hrs(grandTotal)` hours, with a
   gear button that opens the settings dialog (view mode, rates, company selection).
 - There is no `ReportProgress` here; progress for this report is shown by the running-report
   bar only.
-- Schedule opens `ScheduleDialog` through `useScheduleDialog`. Once `utilData` is loaded the
-  draft comes from `annualPresetDraft` with the store's `selectedCompanies` and its raw `rates`
-  (the overrides only, read from the store rather than `useAnnualReport`, whose `rates` already
-  carry the tenant defaults). A null selection and empty overrides are left out of the
-  options so the scheduled run keeps following the tenant settings.
+- Schedule opens the dialog through `useScheduleDialog` and `ReportScheduleDialog`. Once
+  `utilData` is loaded the draft comes from `annualPresetDraft` with the store's
+  `selectedCompanies`, the store's `rates` and the tenant's `ratedDepartments`. The store's
+  map holds every department once the settings dialog has been used (it spreads the merged
+  rates back), so the factory keeps only the rates that differ from the department's
+  standard rate; a null selection and no real overrides leave the options empty so the
+  scheduled run keeps following the tenant settings.
 
 ## Cleanup Notes
 
