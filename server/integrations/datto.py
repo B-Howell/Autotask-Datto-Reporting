@@ -38,8 +38,7 @@ class TokenRequest:
 
 def current_token_request():
     """The token request from the credentials in effect; raises when any is blank."""
-    credentials.require(credentials.DATTO)
-    values = credentials.current()
+    values = credentials.require(credentials.DATTO)
     return TokenRequest(
         credentials.datto_token_url(), values["datto_api_key"], values["datto_api_secret"]
     )
@@ -60,8 +59,10 @@ class DattoTokenProvider:
             self._expires_at = 0.0
 
     def token(self):
-        # The lock keeps concurrent audit workers from each requesting their
-        # own token when the cached one expires.
+        # The lock is held across the token request on purpose: concurrent
+        # audit workers wait for one fetch instead of each requesting their
+        # own, and a save's invalidate() waits too, so the token it drops is
+        # the one just earned with the old values.
         with self._lock:
             now = time.time()
             if self._token and now < self._expires_at - _EXPIRY_SKEW_SECONDS:

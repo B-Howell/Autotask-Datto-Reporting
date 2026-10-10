@@ -33,8 +33,7 @@ class Connection:
 
 def current_connection():
     """The connection from the credentials in effect; raises when any is blank."""
-    credentials.require(credentials.AUTOTASK)
-    values = credentials.current()
+    values = credentials.require(credentials.AUTOTASK)
     return Connection(
         values["autotask_base_url"],
         {
@@ -130,11 +129,17 @@ class AutotaskClient:
 
     # ── picklists ──────────────────────────────────────────────────────────
 
+    def forget_picklists(self):
+        """Drop the cached labels; they belong to the tenant the old credentials reached."""
+        with self._picklists_lock:
+            self._picklists.clear()
+
     def picklists(self, entity):
         """{field name: {value: label}} for every picklist field on an entity.
 
-        Fetched once per process: the field schema is a large download and the
-        labels only change when an Autotask admin edits them.
+        Fetched once per entity and kept until the credentials change: the
+        field schema is a large download and the labels only change when an
+        Autotask admin edits them.
         """
         with self._picklists_lock:
             cached = self._picklists.get(entity)
@@ -155,14 +160,12 @@ class AutotaskClient:
         return self.picklists(entity).get(field_name, {})
 
 
-_client = None
-_client_lock = Lock()
+_client = AutotaskClient()
+# Picklist labels are per tenant, so new credentials (a different zone, say)
+# must not be served the labels the old ones fetched.
+credentials.on_change(_client.forget_picklists)
 
 
 def autotask():
-    """The process-wide client, built on first use; it reads the credentials per request."""
-    global _client
-    with _client_lock:
-        if _client is None:
-            _client = AutotaskClient()
-        return _client
+    """The process-wide client; it reads the credentials per request."""
+    return _client

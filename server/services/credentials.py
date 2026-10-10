@@ -210,17 +210,31 @@ def record_test(vendor, ok):
     repo.record_test(_names_for(vendor), ok)
 
 
-def is_configured(vendor):
-    values = current()
+def _configured(values, vendor):
     return all(values[name] for name in _names_for(vendor))
 
 
+def is_configured(vendor):
+    return _configured(current(), vendor)
+
+
+def _not_configured(vendors):
+    labels = " and ".join(_VENDOR_LABELS[vendor] for vendor in vendors)
+    return CredentialsMissing(f"{labels} credentials are not configured; open Settings")
+
+
+def require_all(vendors):
+    """The current values, or one `CredentialsMissing` naming every vendor with a blank field."""
+    values = current()
+    missing = [vendor for vendor in vendors if not _configured(values, vendor)]
+    if missing:
+        raise _not_configured(missing)
+    return values
+
+
 def require(vendor):
-    """Raise `CredentialsMissing` unless every field of the vendor is set."""
-    if not is_configured(vendor):
-        raise CredentialsMissing(
-            f"{_VENDOR_LABELS[vendor]} credentials are not configured; open Settings"
-        )
+    """The current values, or `CredentialsMissing` when any field of the vendor is blank."""
+    return require_all([vendor])
 
 
 def datto_api_base():

@@ -1,5 +1,6 @@
 import pytest
 
+from integrations import autotask
 from integrations.autotask import ID_CHUNK_SIZE, AutotaskClient, Connection
 from services import credentials
 
@@ -132,6 +133,22 @@ def test_a_rotated_secret_is_used_by_the_next_request(configured):
     client.query_page("Tickets", [])
 
     assert session.requests[-1][1]["Secret"] == "rotated-secret-not-real"
+
+
+def test_a_save_clears_the_picklist_cache(configured, monkeypatch):
+    fields = [{"name": "priority", "picklistValues": [{"value": "1", "label": "High"}]}]
+    session = FakeSession([], picklists=fields)
+    client = autotask.autotask()
+    monkeypatch.setattr(client, "_session", session)
+    client.picklist("Tickets", "priority")
+    client.picklist("Tickets", "priority")
+    assert len(session.requests) == 1
+
+    credentials.save({"autotask_base_url": "https://other.example.test/ATServicesRest"})
+    client.picklist("Tickets", "priority")
+
+    assert len(session.requests) == 2
+    assert session.requests[-1][0].startswith("https://other.example.test/")
 
 
 def test_a_request_without_credentials_names_the_settings_page(store):

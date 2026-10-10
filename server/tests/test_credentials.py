@@ -1,22 +1,12 @@
 import json
 
 import pytest
+from conftest import SAMPLE_AUTOTASK as AUTOTASK
+from conftest import SAMPLE_DATTO as DATTO
 
 from core import secrets
 from repositories import credentials as repo
 from services import credentials
-
-AUTOTASK = {
-    "autotask_username": "api-user",
-    "autotask_secret": "hunter2-not-a-real-secret",
-    "autotask_integration_code": "tracking-code-not-real",
-    "autotask_base_url": "https://webservices.example.test/ATServicesRest",
-}
-DATTO = {
-    "datto_api_key": "datto-key-not-real",
-    "datto_api_secret": "datto-secret-not-real",
-    "datto_platform": "example",
-}
 
 
 def _status(name):
@@ -181,6 +171,25 @@ def test_is_configured_needs_every_field_of_the_vendor(store, monkeypatch):
     assert credentials.is_configured("datto") is False
     credentials.save(DATTO)
     assert credentials.is_configured("datto") is True
+
+
+def test_require_returns_the_values_or_names_the_vendor(store):
+    with pytest.raises(credentials.CredentialsMissing) as missing:
+        credentials.require("datto")
+    assert str(missing.value) == "Datto credentials are not configured; open Settings"
+    credentials.save(DATTO)
+    assert credentials.require("datto") == credentials.current()
+
+
+def test_require_all_names_every_unconfigured_vendor_in_one_error(store):
+    with pytest.raises(credentials.CredentialsMissing) as missing:
+        credentials.require_all(["autotask", "datto"])
+    assert str(missing.value) == "Autotask and Datto credentials are not configured; open Settings"
+    credentials.save(DATTO)
+    with pytest.raises(credentials.CredentialsMissing, match="^Autotask credentials"):
+        credentials.require_all(["autotask", "datto"])
+    credentials.save(AUTOTASK)
+    assert credentials.require_all(["autotask", "datto"]) == credentials.current()
 
 
 def test_record_test_stamps_only_that_vendors_rows(store):

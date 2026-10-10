@@ -27,7 +27,7 @@ Datto rate-limits an account to 600 reads a minute and a full sync audits well o
 
 - `requests` and `requests.auth.HTTPBasicAuth`.
 - [config](<../Reporting Server - config.md>) for `datto_timeout`, `datto_min_request_interval`, `datto_max_workers`.
-- [credentials service](<../services/Reporting Service - credentials.md>) for `require`, `current()`, `datto_token_url()`, `datto_api_base()`, `on_change` and `DATTO`.
+- [credentials service](<../services/Reporting Service - credentials.md>) for `require` (which returns the current values), `datto_token_url()`, `datto_api_base()`, `on_change` and `DATTO`.
 
 ## Used By
 
@@ -40,7 +40,7 @@ Datto rate-limits an account to 600 reads a minute and a full sync audits well o
 ## Key Behavior
 
 - Credentials at call time: the token provider asks `token_request()` for the URL, key and secret only when it has no live token, and the client asks `api_base()` for the URL root on every GET, so nothing credential-derived outlives the values it came from. At import the module registers `_tokens.invalidate` with `credentials.on_change`, so a `save()` on the Settings page drops the cached token and the next request authenticates with the new key against the new platform, with no restart. A blank field raises `credentials.CredentialsMissing` (`Datto credentials are not configured; open Settings`) from the token fetch, before any HTTP call; [routers/common](<../routers/Reporting Router - common.md>) maps it to 503.
-- Token provider lock: `token()` holds a `Lock` for the whole check-and-refresh, so when the cached token expires, concurrent audit workers wait for one refresh instead of each posting for their own. The token is treated as expired `_EXPIRY_SKEW_SECONDS` (60) before the advertised `expires_in`, so a request that starts near the deadline does not go out with a token that dies in flight. The POST uses the password grant with the API key and secret as credentials and the documented public client as basic auth.
+- Token provider lock: `token()` holds a `Lock` for the whole check-and-refresh, so when the cached token expires, concurrent audit workers wait for one refresh instead of each posting for their own. `invalidate()` takes the same lock, so a save that lands during a fetch waits for it and drops the token that fetch earned with the old values. The token is treated as expired `_EXPIRY_SKEW_SECONDS` (60) before the advertised `expires_in`, so a request that starts near the deadline does not go out with a token that dies in flight. The POST uses the password grant with the API key and secret as credentials and the documented public client as basic auth.
 - Token fetch is outside the retry loop in `get`, so a rejected key or secret surfaces as the OAuth error itself rather than as three failed GETs.
 - Pacing: `_pace` keeps a monotonic timestamp of the last request behind `_pace_lock` and sleeps until `min_request_interval` has elapsed. The lock is shared across threads, so the interval bounds the whole process, not each worker. An interval of 0 or less disables pacing.
 - Retry: up to `attempts` (3) tries with a delay starting at 1 second and doubling. A `requests.RequestException` (timeout, connection error) retries; 429 and any 5xx retry, honouring a numeric `Retry-After` header as the delay; 401 and 403 call `invalidate()` and retry so the next try re-authenticates. Any other 4xx (such as 404) is returned immediately for the caller to interpret. When the last attempt fails the method logs a `[WARN]` with the caller's `tag` and returns None.

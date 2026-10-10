@@ -24,7 +24,8 @@ The seven fields carry the same variable names [config](<../Reporting Server - c
 | `on_change(callback)` | Registers a no-argument callable to run after `invalidate()`. |
 | `record_test(vendor, ok)` | Stamps the outcome of a connection test on that vendor's stored rows. |
 | `is_configured(vendor)` | True when every field of the vendor has a non-blank value in `current()`. |
-| `require(vendor)` | Raises `CredentialsMissing` (`<Vendor> credentials are not configured; open Settings`) unless `is_configured(vendor)`. The integrations call it before a request. |
+| `require(vendor)` | `current()` when every field of the vendor is set, else `CredentialsMissing` (`<Vendor> credentials are not configured; open Settings`). The integrations call it before a request and read the values it returns. |
+| `require_all(vendors)` | `current()` when every listed vendor is set, else one `CredentialsMissing` naming each vendor that is not (`Autotask and Datto credentials are not configured; open Settings`). `require` is `require_all` of one vendor. |
 | `CredentialsMissing` | `RuntimeError` subclass: a vendor call was attempted while one of its credentials is blank. |
 | `datto_api_base()`, `datto_token_url()` | `https://<platform>-api.centrastage.net` and `<base>/auth/oauth/token`, from the current `datto_platform`, exactly as config derives them from `DATTO_PLATFORM`. |
 
@@ -38,9 +39,9 @@ Validation failures raise `ValueError` with a message meant for the user: `Unkno
 
 ## Used By
 
-- [autotask integration](<../integrations/Reporting Integration - autotask.md>) (`require`, `current()` on every request) and [datto integration](<../integrations/Reporting Integration - datto.md>) (`require`, `current()`, `datto_token_url()` when a token is fetched, `datto_api_base` per request, `on_change` to drop the cached token).
+- [autotask integration](<../integrations/Reporting Integration - autotask.md>) (`require` on every request, `on_change` to drop the picklist cache) and [datto integration](<../integrations/Reporting Integration - datto.md>) (`require` and `datto_token_url()` when a token is fetched, `datto_api_base` per request, `on_change` to drop the cached token).
 - [routers/common](<../routers/Reporting Router - common.md>) maps `CredentialsMissing` to 503.
-- [sync service](<Reporting Service - sync.md>) calls `require` for both vendors before starting a live sync.
+- [sync service](<Reporting Service - sync.md>) calls `require_all` for both vendors before starting a live sync.
 - [server/tests/test_credentials.py](../../../server/tests/test_credentials.py); the `store` and `configured` fixtures in [server/tests/conftest.py](../../../server/tests/conftest.py) serve every test that needs stored values.
 - The credentials router and the Settings page build on this module in later changes.
 

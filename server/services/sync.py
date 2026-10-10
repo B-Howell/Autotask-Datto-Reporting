@@ -30,11 +30,12 @@ _VENDORS = (credentials.AUTOTASK, credentials.DATTO)
 
 
 def _require_vendors():
-    """Raise unless every vendor a live sync calls is configured; demo mode calls none."""
-    if settings.demo_mode:
-        return
-    for vendor in _VENDORS:
-        credentials.require(vendor)
+    """Raise, naming every unconfigured vendor, unless a live sync can call both.
+
+    Demo mode calls neither vendor, so it never raises.
+    """
+    if not settings.demo_mode:
+        credentials.require_all(_VENDORS)
 
 
 def build_steps(now=None):

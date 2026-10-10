@@ -11,7 +11,7 @@
 | Name | Description |
 |---|---|
 | `ROUTERS` | Tuple of router modules mounted in order: health, agencies, devices, office_windows, tickets, sla, utilization, patch_management, hdd_tickets, jobs, sync, manual_inputs, saved_reports, presets, schedules, tenant. |
-| `_sync_scheduler()` | Coroutine: sleeps 5 seconds, starts a sync if no successful sync has ever been recorded, then starts one every `settings.sync_interval_hours`. A start the runner declines (one already running, or a vendor without credentials) is simply skipped until the next tick. |
+| `_sync_scheduler()` | Coroutine: sleeps 5 seconds, starts a sync if no successful sync has ever been recorded, then starts one every `settings.sync_interval_hours`. A start the runner declines (one already running, or a vendor without credentials) is skipped until the next tick. |
 | `_schedule_ticker()` | Coroutine: sleeps 10 seconds, then runs `schedule_runner.runner.tick()` through `asyncio.to_thread` every `settings.schedule_poll_seconds`, printing `[WARN] schedule tick failed: ...` and carrying on if a tick raises. |
 | `lifespan(_app)` | Async context manager: `sqlite.init_db()` and `schedule_runner.sweep_interrupted()` on startup, creates the sync scheduler and the schedule ticker tasks, cancels both on shutdown and then waits up to one second for the schedule runner's thread. |
 | `create_app()` | Returns the configured `FastAPI` instance. |

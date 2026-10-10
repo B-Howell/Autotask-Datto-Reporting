@@ -2,6 +2,7 @@ import dataclasses
 import time
 
 import pytest
+from conftest import SAMPLE_DATTO
 
 from core import streams
 from services import sync
@@ -26,7 +27,12 @@ def _wait_until_idle(runner):
     raise AssertionError("the sync thread did not finish")
 
 
-def test_a_sync_is_skipped_when_a_vendor_is_unconfigured(store, recorded_runs, monkeypatch):
+def _last_sync_line():
+    lines, _ = streams.get_buffer(sync.STREAM).since(0)
+    return lines[-1]
+
+
+def test_a_sync_is_skipped_naming_every_unconfigured_vendor(store, recorded_runs, monkeypatch):
     _live_mode(monkeypatch)
     runner = sync.SyncRunner()
 
@@ -34,9 +40,20 @@ def test_a_sync_is_skipped_when_a_vendor_is_unconfigured(store, recorded_runs, m
 
     assert recorded_runs == []
     assert runner.status()["running"] is False
-    lines, _ = streams.get_buffer(sync.STREAM).since(0)
-    assert (
-        lines[-1] == "[WARN] Sync skipped: Autotask credentials are not configured; open Settings"
+    assert _last_sync_line() == (
+        "[WARN] Sync skipped: Autotask and Datto credentials are not configured; open Settings"
+    )
+
+
+def test_a_sync_is_skipped_when_one_vendor_is_unconfigured(store, recorded_runs, monkeypatch):
+    _live_mode(monkeypatch)
+    store.save(SAMPLE_DATTO)
+
+    assert sync.SyncRunner().start() is False
+
+    assert recorded_runs == []
+    assert _last_sync_line() == (
+        "[WARN] Sync skipped: Autotask credentials are not configured; open Settings"
     )
 
 
