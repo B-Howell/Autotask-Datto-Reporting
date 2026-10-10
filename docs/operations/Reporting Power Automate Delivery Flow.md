@@ -51,3 +51,7 @@ The server does not talk to Exchange. It posts a message to this flow, and the f
 - The message keys are lowercase (`name`, `contentBytes`); the Select action is what renames them to the `Name` and `ContentBytes` the mail connector expects, so the server never has to know the connector's spelling.
 - Attachments are base64 in the body. A 20 MB workbook becomes about 27 MB of JSON, which is inside the trigger's limit; anything larger should be split into separate schedules.
 - Rotating the URL (regenerating the trigger) is the way to revoke access; update `.env` and restart the server.
+
+## Testing without a flow
+
+Any local HTTP server that answers a POST with 202 stands in for the flow: start the server with `DELIVERY_WEBHOOK_URL` pointing at it, run a schedule from the Scheduled Reports page, and have the stand-in print the message's `to`, `cc`, `subject` and `body` and base64-decode each attachment to disk. The decoded attachment should be byte-for-byte the file that `GET /api/saved-reports/{id}/download` returns for the run's saved report, and the body should carry `<br>` where the schedule's body had line breaks.

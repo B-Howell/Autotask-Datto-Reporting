@@ -169,6 +169,11 @@ cd client
 npm run renderer
 ```
 
+Scheduled delivery also needs `DELIVERY_WEBHOOK_URL` in `server/.env` (see
+[the Power Automate flow](docs/operations/Reporting%20Power%20Automate%20Delivery%20Flow.md))
+and `SCHEDULE_TIMEZONE`; without the URL a run still renders and saves the
+file but reports a delivery error.
+
 Checks: `ruff check . && pytest` in `server/`; `npm run lint && npm run
 typecheck && npm test && npm run build` in `client/`. Screenshots are
 regenerated with `python tools/screenshots.py` against a running demo stack

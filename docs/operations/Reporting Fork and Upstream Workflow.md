@@ -10,10 +10,10 @@ The public repository is upstream. A deployment is a private fork with `upstream
 
 | Deployment-specific value | Lives in | Tracked upstream? |
 |---|---|---|
-| Vendor credentials, Autotask zone, Datto platform, sync interval, data directory | `server/.env` | no (`.env.example` is) |
+| Vendor credentials, Autotask zone, Datto platform, sync interval, data directory, delivery flow URL, renderer URL, schedule timezone | `server/.env` | no (`.env.example` is) |
 | Client list, agency groups, logos, billing rates, picker year floors | `server/data/agencies.json`, `server/data/tenant.json`, `server/data/logos/` | no (`tenant.example.json` is) |
 | Picklist ids, SLA targets, role tiers, fiscal month | `server/report_rules_local.py` | no (`report_rules_local.example.py` is) |
-| Licence counts, saved reports | the SQLite file and `saved_reports/` under `server/data/` | no |
+| Licence counts, presets, schedules, run history, saved reports | the SQLite file and `saved_reports/` under `server/data/` | no |
 
 Logos must be PNG files and should be kept to roughly 600 by 200 pixels: the exporters read the size from the PNG header and embed the file at its native resolution, scaled down only for display, so a very large image inflates every Word and PDF export, and a file in any other format is skipped with a console warning.
 
