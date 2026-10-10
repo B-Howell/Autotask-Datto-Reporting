@@ -21,8 +21,6 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Hook - useOfficeWindowsData.md](<Reporting Hook - useOfficeWindowsData.md>)
 - [Reporting Hook - usePatchManagementData.md](<Reporting Hook - usePatchManagementData.md>)
 - [Reporting Hook - usePolling.md](<Reporting Hook - usePolling.md>)
-- [Reporting Hook - usePolling.md](<Reporting Hook - usePolling.md>)
-- [Reporting Hook - usePolling.md](<Reporting Hook - usePolling.md>)
 - [Reporting Hook - useReportingData.md](<Reporting Hook - useReportingData.md>)
 - [Reporting Hook - useServerJob.md](<Reporting Hook - useServerJob.md>)
 - [Reporting Hook - useSlaData.md](<Reporting Hook - useSlaData.md>)

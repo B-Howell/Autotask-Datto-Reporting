@@ -25,13 +25,11 @@ Exports the `ScheduleFormValues` and `SchedulePayload` types. `scheduleDraft.ts`
 | `agencyWidePresetDraft` | `(reportType, options = {}) => PresetDraft` | A draft for a report covering every agency: null key, empty name. |
 | `isEmailAddress` | `(text) => boolean` | True when the text contains an `@`. |
 | `hasFormatChoice` | `(draft) => boolean` | True when the report can go out as Word or PDF, today only `office_windows`. |
-| `hasFormatChoice` | `(draft) => boolean` | True when the report can go out as Word or PDF, today only `office_windows`. |
-| `hasFormatChoice` | `(draft) => boolean` | True when the report can go out as Word or PDF, today only `office_windows`. |
 
 ## Uses
 
 - `react` (`useState`, `useCallback`)
-- [API types](<../../api/Reporting API - types.md>): `PresetInput`, `ScheduleInput`, `PresetReportType`, `EffectiveAgency`, `OfficeWindowsFormat` (the `format` value's type), `OfficeWindowsFormat` (the `format` value's type), `OfficeWindowsFormat` (the `format` value's type)
+- [API types](<../../api/Reporting API - types.md>): `PresetInput`, `ScheduleInput`, `PresetReportType`, `EffectiveAgency`, `OfficeWindowsFormat` (the `format` value's type)
 - [scheduleDraft](../../../../client/src/components/report/scheduleDraft.ts) for the defaults and the address splitter; it takes `valueFor` from the [agencyGroups util](<../../utils/Reporting Util - agencyGroups.md>) to key an agency draft
 
 ## Used By

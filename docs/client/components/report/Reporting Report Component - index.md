@@ -19,8 +19,6 @@ Report pages compose the same handful of building blocks. This barrel lets them 
 | `ErrorBanner` | ErrorBanner | component |
 | `EmptyState` | EmptyState | component |
 | `LoadingRow` | LoadingRow | component |
-| `LoadingRow` | LoadingRow | component |
-| `LoadingRow` | LoadingRow | component |
 | `DataTable`, `DataColumn` | DataTable | component, type |
 | `DonutChart`, `ChartLegend`, `DonutSlice` | DonutChart | components, type |
 | `SettingsDialog` | SettingsDialog | component |

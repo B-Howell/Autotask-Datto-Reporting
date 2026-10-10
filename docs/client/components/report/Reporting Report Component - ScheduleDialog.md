@@ -23,8 +23,6 @@ The dialog is built from three field components in the same folder:
 - [RecipientsField](../../../../client/src/components/report/RecipientsField.tsx): one text line of addresses, with the `email` input mode set on the inner `<input>` through `slotProps.htmlInput` (MUI's `TextField` would otherwise drop it on the wrapper) and a caption that defaults to the separator rule ("Separate addresses with commas or semicolons"). The To field keeps that caption; the CC field passes "Optional" instead. The field runs `invalidAddresses` over its own value: an entry without an `@` turns it red and replaces the caption with `Not an email address: <entry>`, the same rule the server applies, so the mistake is visible before Save.
 - [DayHourFields](../../../../client/src/components/report/DayHourFields.tsx): two selects in a row, their label ids from `useId` so two dialogs on one page never share one. Day of month lists 1 to 31 with the caption "31 means the last day of the month" (the server clamps to the month's length); Hour lists 0 to 23 rendered through `formatHour` from the [dates util](<../../utils/Reporting Util - dates.md>) as `07:00` with the caption "in the server's schedule timezone". Both report through one `onChange(patch)` so the dialog passes the form's `update` straight in.
 - [FormatRadioGroup](<Reporting Report Component - FormatRadioGroup.md>): the Word-or-PDF choice, mounted only when `hasFormatChoice(draft)` says the report can go out as either.
-- [FormatRadioGroup](<Reporting Report Component - FormatRadioGroup.md>): the Word-or-PDF choice, mounted only when `hasFormatChoice(draft)` says the report can go out as either.
-- [FormatRadioGroup](<Reporting Report Component - FormatRadioGroup.md>): the Word-or-PDF choice, mounted only when `hasFormatChoice(draft)` says the report can go out as either.
 
 ## Uses
 
@@ -58,4 +56,4 @@ The dialog is built from three field components in the same folder:
 
 ## Source
 
-[client/src/components/report/ScheduleDialog.tsx](../../../../client/src/components/report/ScheduleDialog.tsx), [client/src/components/report/RecipientsField.tsx](../../../../client/src/components/report/RecipientsField.tsx), [client/src/components/report/DayHourFields.tsx](../../../../client/src/components/report/DayHourFields.tsx); the format radio has [its own page](<Reporting Report Component - FormatRadioGroup.md>); the format radio has [its own page](<Reporting Report Component - FormatRadioGroup.md>); the format radio has [its own page](<Reporting Report Component - FormatRadioGroup.md>)
+[client/src/components/report/ScheduleDialog.tsx](../../../../client/src/components/report/ScheduleDialog.tsx), [client/src/components/report/RecipientsField.tsx](../../../../client/src/components/report/RecipientsField.tsx), [client/src/components/report/DayHourFields.tsx](../../../../client/src/components/report/DayHourFields.tsx); the format radio has [its own page](<Reporting Report Component - FormatRadioGroup.md>)
