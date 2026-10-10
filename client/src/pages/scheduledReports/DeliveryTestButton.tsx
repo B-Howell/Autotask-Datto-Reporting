@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { schedulesApi } from '@/api';
-import { isEmailAddress } from '@/components/report/scheduleDraft';
+import { isEmailAddress } from '@/components/report';
 import useToastStore from '@/store/toastStore';
 import { errorMessage } from '@/utils/reportJob';
 

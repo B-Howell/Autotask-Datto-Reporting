@@ -361,3 +361,48 @@ export interface RendererHealth {
   ok: boolean;
   reportTypes: string[];
 }
+
+export type CredentialVendor = 'autotask' | 'datto';
+
+export type CredentialFieldName =
+  | 'autotask_username'
+  | 'autotask_secret'
+  | 'autotask_integration_code'
+  | 'autotask_base_url'
+  | 'datto_api_key'
+  | 'datto_api_secret'
+  | 'datto_platform';
+
+/** Where a credential's value in use comes from; `missing` when nothing supplies one. */
+export type CredentialSource = 'environment' | 'stored' | 'missing';
+
+/** One vendor credential as `GET /api/credentials` describes it; the value itself never travels. */
+export interface CredentialFieldStatus {
+  name: CredentialFieldName;
+  vendor: CredentialVendor;
+  secret: boolean;
+  configured: boolean;
+  source: CredentialSource;
+  /** The tail of a stored value, or empty when the value is too short to hint. */
+  last4: string;
+  updated_at: string | null;
+  last_tested_at: string | null;
+  last_test_ok: boolean | null;
+}
+
+export interface CredentialsStatus {
+  demoMode: boolean;
+  /** Where the master key that encrypts stored values was loaded from. */
+  keySource: 'environment' | 'file';
+  fields: CredentialFieldStatus[];
+}
+
+/** Field name to value; a blank value means "keep what is stored". */
+export type CredentialValues = Partial<Record<CredentialFieldName, string>>;
+
+export interface ConnectionTestOutcome {
+  ok: boolean;
+  message: string;
+}
+
+export type ConnectionTestResult = Record<CredentialVendor, ConnectionTestOutcome>;

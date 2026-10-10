@@ -4,7 +4,7 @@
 
 ## Purpose
 
-`DataSyncSection` is the middle card on the Settings page. Reports read from a local snapshot
+`DataSyncSection` is the third card on the Settings page. Reports read from a local snapshot
 cache that the server refreshes on a schedule (24 hours by default); this card lets a user
 force that refresh now and watch it run. All state comes from `useSyncStatus`, so the
 component is presentational: a button, a "Last synced" line, a progress bar while running, and

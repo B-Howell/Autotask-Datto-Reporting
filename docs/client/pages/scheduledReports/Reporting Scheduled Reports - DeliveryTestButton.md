@@ -17,7 +17,7 @@ outlined "Send test email" button and owns the dialog's open, address and sendin
 
 - `sendTestEmail` from the [schedules API](<../../api/Reporting API - schedules.md>).
 - [toastStore](<../../store/Reporting Store - toastStore.md>) for the outcome.
-- `isEmailAddress` from `scheduleDraft.ts`, documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>), and `errorMessage` from the [reportJob util](<../../utils/Reporting Util - reportJob.md>).
+- `isEmailAddress` from the [report component barrel](<../../components/report/Reporting Report Component - index.md>), documented under [useScheduleForm](<../../components/report/Reporting Report Component - useScheduleForm.md>), and `errorMessage` from the [reportJob util](<../../utils/Reporting Util - reportJob.md>).
 - Material UI `Dialog`, `TextField`, `Button`, the `Send` icon.
 
 ## Used By

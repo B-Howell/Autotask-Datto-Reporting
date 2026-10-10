@@ -18,6 +18,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 
 - [Reporting API - agencies.md](<Reporting API - agencies.md>)
 - [Reporting API - client.md](<Reporting API - client.md>)
+- [Reporting API - credentials.md](<Reporting API - credentials.md>)
 - [Reporting API - devices.md](<Reporting API - devices.md>)
 - [Reporting API - hddTickets.md](<Reporting API - hddTickets.md>)
 - [Reporting API - index.md](<Reporting API - index.md>)

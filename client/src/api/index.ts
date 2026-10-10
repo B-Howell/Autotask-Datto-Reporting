@@ -15,3 +15,4 @@ export * as savedReportsApi from './savedReports';
 export * as tenantApi from './tenant';
 export * as presetsApi from './presets';
 export * as schedulesApi from './schedules';
+export * as credentialsApi from './credentials';

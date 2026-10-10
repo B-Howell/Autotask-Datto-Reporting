@@ -27,6 +27,7 @@
 | `tenantApi` | namespace | [tenant](<Reporting API - tenant.md>) |
 | `presetsApi` | namespace | [presets](<Reporting API - presets.md>) |
 | `schedulesApi` | namespace | [schedules](<Reporting API - schedules.md>) |
+| `credentialsApi` | namespace | [credentials](<Reporting API - credentials.md>) |
 
 ## Uses
 
@@ -38,6 +39,7 @@
 - All stores under `docs/client/store/`, for example [agencyStore](<../store/Reporting Store - agencyStore.md>) and [reportJobStore](<../store/Reporting Store - reportJobStore.md>); [tenantStore](<../store/Reporting Store - tenantStore.md>) imports only the `TenantSettings` type, and [App](<../Reporting Client - App.md>) calls `tenantApi` on its behalf.
 - Components and pages that need response types, such as [RunningReportBar](<../components/Reporting Component - RunningReportBar.md>), [SavedReportViewer](<../components/Reporting Component - SavedReportViewer.md>) and [AgencySelect](<../components/report/Reporting Report Component - AgencySelect.md>).
 - [useScheduleDialog](<../components/report/Reporting Report Component - useScheduleDialog.md>) uses `presetsApi` and `schedulesApi` together.
+- [useCredentials](<../pages/settings/Reporting Settings - useCredentials.md>) uses `credentialsApi`.
 - Utils: [agencyGroups](<../utils/Reporting Util - agencyGroups.md>), [reportJob](<../utils/Reporting Util - reportJob.md>), [saveReport](<../utils/Reporting Util - saveReport.md>).
 
 ## Key Behavior
