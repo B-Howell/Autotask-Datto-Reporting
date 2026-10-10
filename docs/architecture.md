@@ -632,15 +632,25 @@ Nothing in the demo data comes from a real tenant.
 ## 13. Configuration and tenant rules
 
 `config.py` loads a frozen `Settings` dataclass once from the environment for
-the values that do not change while the process runs. The vendor
-credentials, the Autotask zone and the Datto platform are not among them:
-the credentials service resolves each one from its environment variable
-first and the encrypted store second, and the vendor clients read it on
-every request, so a key rotated on the Settings page is in use at once and
-nothing is required at startup. A report or sync that needs a missing
-credential stops before any request with a message naming the Settings
-page. The Datto REST base and OAuth endpoint are both derived from the
-platform, so there is one value to get right, not two that can disagree.
+the values that do not change while the process runs: demo mode, the Datto
+pacing, the sync interval, the data directory, the renderer's address, the
+delivery flow URL and the schedule timezone. The vendor credentials, the
+Autotask zone and the Datto platform are deliberately not among them. The
+server starts without any of them. The credentials service resolves each
+field at call time, from its environment variable first and the encrypted
+`credentials` table second, and the vendor clients ask it for the
+connection or the token request before every call, so a value saved on the
+Settings page is in use at once and a restart is never part of a rotation.
+
+A vendor call with a blank field never leaves the process. `require` raises
+`CredentialsMissing` naming the vendor; a report route answers it with HTTP
+503 and the message "Autotask credentials are not configured; open
+Settings", which the page shows in its error banner; and the background
+sync, which checks both vendors before it starts, writes "Sync skipped" as
+a warning to its stream and does nothing until they are complete. Demo mode
+calls neither vendor and never needs them. The Datto REST base and OAuth
+endpoint are both derived from the platform, so there is one value to get
+right, not two that can disagree.
 
 `report_rules.py` is the one place that holds the rules another MSP would
 change to run these reports against its own Autotask. Autotask picklist
@@ -689,6 +699,34 @@ honoured, and an uppercase name that does not is reported with a warning, so
 a typo in the local file shows up in the log instead of silently creating an
 unused rule. A missing local file is fine; a broken import inside a real one
 is raised, because that is a broken deployment, not an optional file.
+
+### Stored credentials
+
+The credentials entered on the Settings page are the only secrets the
+application writes for itself. Each is a row in the `credentials` table
+of the SQLite file holding a Fernet token, not the value, and the master key
+that opens the tokens is kept outside the database on purpose:
+`APP_SECRET_KEY` when the deployment sets it, otherwise `secret.key`,
+generated once in the data directory on first use and created with an
+exclusive open so two workers cannot write different keys. A copied
+database or backup is useless without the key, and losing the key loses
+nothing but the credentials, which are entered again.
+
+The API is write-only. `GET /api/credentials` reports each field's source
+(environment, stored or missing), the last four characters of a secret long
+enough to hint at, and when it was saved and last tested; no route returns a
+value. A save is a connection test first. `POST /api/credentials/test`
+builds throwaway vendor clients from the submitted values laid over the
+stored ones and makes one cheap call per vendor, an Autotask query capped at
+one record and a Datto token request; `PUT` runs the same test and refuses
+to store a vendor's values until that vendor accepts them, so a typo is
+caught on the page rather than by the next report. A blank field keeps the
+stored value, and a field set by the environment is read-only. A vendor's
+refusal may quote what it was sent, so every value in play is blanked from
+the message before it is cut to length, and the 422 for a malformed body
+omits the echo of the input that FastAPI would otherwise include. The
+[credential storage page](operations/Reporting%20Credential%20Storage.md)
+covers rotation and recovery.
 
 The rule for anything new is the same: a deployment-specific value must be
 read from `.env`, `data/` or `report_rules_local.py`, and adding one to
@@ -742,6 +780,8 @@ body cap included.
 | Failure | What happens | Where it shows |
 |---|---|---|
 | Vendor API down or credentials rejected | The fetch raises; the cache keeps the previous snapshot; `sync_state` records the error | Status bar row turns Failed with the message; `/api/sync/state` lists the scope with its error |
+| Vendor credentials not configured | `require` raises before any request; the report route answers 503 naming the vendor; the sync runner declines to start | Error banner on the report page says to open Settings; the sync stream on the Settings page shows "Sync skipped" |
+| Stored credentials unreadable (key changed or lost) | `decrypt` raises `SecretsError`; every route that resolves the credentials answers 503; the sync runner declines to start | Error banner naming `APP_SECRET_KEY` and the key file; the Settings page cannot load the credential status until the key is restored or the rows are cleared |
 | Datto rate limit | 429 is retried with backoff and `Retry-After` | Log stream shows the retry; the report slows rather than fails |
 | Token expiry mid-sync | 401 drops the cached token; the retry re-authenticates | Transparent |
 | Audit returns blanks for a device | Known Office, RAM and drive values are carried forward from the prior snapshot | Log line names the carried fields |
@@ -796,3 +836,9 @@ body cap included.
   the file for a report's data.
 - **Delivery flow**: the Power Automate flow that receives one message from
   the server and sends it as an email from the organisation's mailbox.
+- **Master key**: the Fernet key that encrypts stored credentials;
+  `APP_SECRET_KEY`, or `secret.key` in the data directory.
+- **Credentials table**: the `credentials` rows in the SQLite file, one
+  encrypted vendor field each, with the time it was saved and last tested.
+- **Connection test**: one cheap call per vendor with the submitted values
+  laid over the stored ones; a save stores nothing a vendor refused.

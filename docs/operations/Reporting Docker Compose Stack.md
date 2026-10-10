@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The application is self-hosted on one small box at the MSP, so the deployment unit is a single `docker compose up -d --build`. Compose builds all three images from the repository, wires them on a private network, and keeps the server's data directory on a named volume so the SQLite cache, the agency list and saved reports survive a redeploy.
+The application is self-hosted on one small box at the MSP, so the deployment unit is a single `docker compose up -d --build`. Compose builds all three images from the repository, wires them on a private network, and keeps the server's data directory on a named volume so the SQLite cache, the agency list, saved reports and the master key for stored credentials survive a redeploy.
 
 ## Interface
 
@@ -14,7 +14,7 @@ The application is self-hosted on one small box at the MSP, so the deployment un
 | `renderer` | `autotask-datto-reporting/renderer:latest`, built from `client/` with `Dockerfile.renderer` | `expose: 3100` only | runs `tsx renderer/server.ts` on `0.0.0.0:3100`; no volumes, no env file |
 | `client` | `autotask-datto-reporting/client:latest`, built from `client/` | host port 80 | depends on `server`; nginx proxies `/api/*` to `server:8000` |
 
-Volume: `reporting-data`, the server's `DATA_DIR`.
+Volume: `reporting-data`, the server's `DATA_DIR`. Besides the database, the agency list, the tenant settings and the saved reports it holds `secret.key`, the master key the server generates on first use when `APP_SECRET_KEY` is not set.
 
 ## Uses
 
@@ -35,6 +35,7 @@ Volume: `reporting-data`, the server's `DATA_DIR`.
 - `depends_on` on the server only orders startup; it does not wait for the renderer to be ready. The renderer is a Node process that listens within a second or two, and a delivery that runs before it is up fails that one run and is retried on its schedule, so there is no health check on it.
 - The health check runs with the Python already in the image and a five second timeout, so an unhealthy server shows up in `docker ps` without installing curl.
 - `restart: unless-stopped` on every service covers host reboots.
+- Back the volume up as a whole. The credentials entered on the Settings page are encrypted rows in the database, and `secret.key` on the same volume is the only thing that can read them; a backup of the database without the key is useless, and a volume lost or recreated without it means entering the credentials again, as the [credential storage page](<Reporting Credential Storage.md>) describes.
 - The commented image names are placeholders for a registry. Building on the host is the documented path because the deployment is one machine.
 - Port 80 is the only host-facing setting; the comment in the file tells an operator to change the left side of the mapping when 80 is taken.
 

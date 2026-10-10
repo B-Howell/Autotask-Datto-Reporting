@@ -17,6 +17,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 ### Documents and artifacts in this area
 
 - [Reporting CI Workflow.md](<Reporting CI Workflow.md>)
+- [Reporting Credential Storage.md](<Reporting Credential Storage.md>)
 - [Reporting Demo Compose Override.md](<Reporting Demo Compose Override.md>)
 - [Reporting Docker Compose Stack.md](<Reporting Docker Compose Stack.md>)
 - [Reporting Fork and Upstream Workflow.md](<Reporting Fork and Upstream Workflow.md>)

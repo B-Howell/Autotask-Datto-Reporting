@@ -109,6 +109,12 @@ The design decisions that matter, and why I made them:
   from an untracked `report_rules_local.py` laid over the documented
   `server/report_rules.py`. A private fork of this repository merges
   upstream without conflicts because upstream never touches those files.
+- **Vendor credentials can live in the app.** The Autotask and Datto keys
+  are entered on the Settings page, tested against the vendor before they
+  are saved, and stored as Fernet tokens under a master key kept outside the
+  database (`APP_SECRET_KEY`, or a key file the server generates). The
+  clients read them on every call, so a rotation is a form, not a redeploy,
+  and a value set in `.env` still wins.
 - **Demo mode.** `DEMO_MODE=1` swaps the vendor clients for deterministic
   generators that return rows in the real shapes and emit real progress, so
   the whole application runs, and can be demonstrated, with no accounts.
@@ -142,25 +148,29 @@ The server seeds its cache on first start; the app is at http://localhost.
 
 ### Real data
 
-1. Copy the environment file and fill it in. The comments say where each
-   value comes from in the vendor UIs. The vendor credentials can also be
-   entered later on the Settings page, where they are stored encrypted.
+1. Optional: copy the environment file and fill it in. The comments say
+   where each value comes from in the vendor UIs. Operators who prefer to
+   inject the vendor credentials this way can; a value set here is read-only
+   in the app.
 
    ```bash
    cp server/.env.example server/.env
    ```
 
-2. Add the clients to report on in Settings, pairing each Autotask company id
-   with its Datto site, or seed `server/data/agencies.json`.
-
-3. Run it:
+2. Run it:
 
    ```bash
    docker compose up -d --build
    ```
 
    `docker-compose.yml` mounts a volume at the server's data directory so the
-   database, agency list and saved reports survive redeploys.
+   database, agency list, saved reports and the master key survive redeploys.
+
+3. Open Settings, enter the Autotask and Datto credentials, press Test
+   connection, then Save. They are stored encrypted and in use at once.
+
+4. Add the clients to report on in Settings, pairing each Autotask company id
+   with its Datto site, or seed `server/data/agencies.json`.
 
 Running this for an organisation? Keep the deployment as a private fork and
 follow [the fork workflow](docs/operations/Reporting%20Fork%20and%20Upstream%20Workflow.md):
