@@ -18,13 +18,15 @@ Contents
 8. [The reports](#8-the-reports)
 9. [Client structure](#9-client-structure)
 10. [Exports](#10-exports)
-11. [Demo mode](#11-demo-mode)
-12. [Configuration and tenant rules](#12-configuration-and-tenant-rules)
-13. [Deployment](#13-deployment)
-14. [Quality gates and tests](#14-quality-gates-and-tests)
-15. [Failure modes and how they surface](#15-failure-modes-and-how-they-surface)
-16. [Trade-offs and what I would change](#16-trade-offs-and-what-i-would-change)
-17. [Glossary](#17-glossary)
+11. [Scheduled delivery](#11-scheduled-delivery)
+12. [Demo mode](#12-demo-mode)
+13. [Configuration and tenant rules](#13-configuration-and-tenant-rules)
+14. [Deployment boundary](#14-deployment-boundary)
+15. [Deployment](#15-deployment)
+16. [Quality gates and tests](#16-quality-gates-and-tests)
+17. [Failure modes and how they surface](#17-failure-modes-and-how-they-surface)
+18. [Trade-offs and what I would change](#18-trade-offs-and-what-i-would-change)
+19. [Glossary](#19-glossary)
 
 ## 1. The problem
 
@@ -47,7 +49,9 @@ month.
 
 This application replaces that process. It pulls from both APIs, joins the two
 views of each client, caches the result locally, and produces the reports on
-screen and as Excel, Word or PDF files.
+screen and as Excel, Word or PDF files. Any of those reports can also be
+scheduled, in which case it renders itself on a day of the month and goes out
+by email without anyone opening the app.
 
 ## 2. System overview
 
@@ -56,6 +60,8 @@ flowchart LR
     Browser["React client<br/>(Vite, TypeScript, MUI)"]
     Nginx["nginx<br/>static files + /api proxy"]
     API["FastAPI server"]
+    Renderer["Node renderer<br/>the client's exporters"]
+    Flow["Power Automate flow<br/>sends the email"]
     DB[("SQLite<br/>snapshot tables")]
     AT["Autotask PSA<br/>REST API"]
     DT["Datto RMM<br/>REST API"]
@@ -65,14 +71,19 @@ flowchart LR
     API <--> DB
     API -- id-cursor queries --> AT
     API -- paced, retried GETs --> DT
+    API -- report JSON --> Renderer
+    API -- message + attachment --> Flow
 ```
 
-Three processes in production: nginx serving the built client and proxying
-`/api`, the FastAPI server, and SQLite as a file inside the server's data
-volume. There is no queue, no cache server and no separate worker. The server
-is deliberately a single process because the workload is one MSP's monthly
-reporting, not a multi-tenant service; the complexity budget went into
-correctness of the data, not into horizontal scale.
+Three containers in production: nginx serving the built client and proxying
+`/api`, the FastAPI server, and the Node renderer that turns a report's data
+into a file when a schedule fires; SQLite is a file inside the server's data
+volume, not a process. There is no queue, no cache server and no worker
+process: scheduled runs happen on a thread inside the server, and the renderer
+is a stateless function behind HTTP. The server is deliberately a single
+process because the workload is one MSP's monthly reporting, not a
+multi-tenant service; the complexity budget went into correctness of the
+data, not into horizontal scale.
 
 Key properties:
 
@@ -84,9 +95,11 @@ Key properties:
   report as a job with a log stream, progress phases and cooperative
   cancellation, not as a request that returns quickly.
 - **Everything is configured from the environment.** Credentials, the Autotask
-  zone, the Datto platform, sync interval and CORS origins come from `.env`.
-  Nothing tenant-specific is baked into code paths, and the one module that
-  holds tenant rules is isolated and documented.
+  zone, the Datto platform, sync interval, CORS origins, the renderer's
+  address, the delivery flow URL and the schedule timezone come from `.env`.
+  Nothing tenant-specific is baked into code paths: presentation values live
+  in a data file, and the one module that holds tenant rules is overridden
+  from an untracked file (section 14).
 
 ## 3. The life of a report request
 
@@ -127,16 +140,18 @@ identifies a snapshot, the fetch pipeline, and the aggregate function.
 
 ```
 server/
-  main.py            create_app(): middleware, lifespan, router registration
+  main.py            create_app(): middleware, lifespan, sync scheduler, schedule ticker
   config.py          Settings dataclass loaded once from the environment
-  report_rules.py    tenant-specific ids and business rules (see section 12)
+  report_rules.py    tenant-specific ids and business rules (see section 13)
   routers/           HTTP only
-  services/          one module per report, plus sync, agencies, saved reports
+  services/          one module per report, plus sync, agencies, saved reports,
+                     tenant, presets, schedules, periods and the scheduled runner
   repositories/      SQLite schema, migrations, snapshot cache, small tables
-  integrations/      the Autotask and Datto clients
+  integrations/      the Autotask and Datto clients, the renderer, the delivery flow
   core/              log buffers, SSE streams, progress phases, job record
   demo/              deterministic generators standing in for the vendors
   tests/             pytest
+client/renderer/     the client's exporters under Node, behind a small HTTP front
 ```
 
 Dependencies point inward: routers import services, services import
@@ -181,8 +196,9 @@ screen, and the orchestration function reads as the description of the job.
 
 `repositories/sqlite.py` owns the one connection, the schema, migrations and
 the `replace_scope` primitive. `repositories/snapshots.py` is the read-through
-cache (section 6). `manual_inputs` and `saved_reports` are thin row-level
-modules for the two small tables that are not snapshots.
+cache (section 6). `manual_inputs`, `saved_reports`, `presets` and
+`schedules` are thin row-level modules for the small tables that are not
+snapshots.
 
 ### Core
 
@@ -275,7 +291,7 @@ thousand rows, there is one writer, and the stdlib `sqlite3` module needs no
 dependency, no service and no migration framework. A single connection opened
 with `check_same_thread=False` and a module-level lock serialises access from
 uvicorn's threadpool; that is a deliberate trade of concurrency for simplicity
-that is fine at this scale, and section 16 says when it would stop being fine.
+that is fine at this scale, and section 18 says when it would stop being fine.
 
 ## 7. Progress, streaming and cancellation
 
@@ -354,6 +370,9 @@ client/src/
   utils/        dates, Excel styling, PDF header, agency groups, file delivery
 ```
 
+Beside `src/`, `client/renderer/` is a Node entry point that imports the same
+export modules and serves them over HTTP for scheduled runs (section 11).
+
 The client is TypeScript in strict mode. Every server response has a type in
 `api/types.ts`, so a renamed field on the server fails the build instead of
 rendering as undefined.
@@ -398,7 +417,200 @@ metadata row, de-duplicating by filename so an export repeated the same day
 replaces its earlier copy. The Saved Reports page lists them, renders
 workbooks in place and hands PDFs to the browser's viewer.
 
-## 11. Demo mode
+Each builder is a pure function of an input object: the rows to print, the
+heading, and the images to embed, already loaded. The page assembles that
+input from the API payload and the saved figures in a small module of its own
+(`exportInput.ts`, `workbookInput.ts`). That split is what lets the same
+builders run outside the browser, which the next section is about.
+
+## 11. Scheduled delivery
+
+The reports exist so that each client gets a pack at the start of the month,
+and once the data pipeline worked the remaining manual step was the delivery
+itself: open the app, pick the agency, generate, export, attach, send, some
+thirty-five times. I wanted the pack to leave on its own, and to leave as the
+exact view the engineer had configured, with the same columns, the same
+Word-or-PDF choice and the same rates, rather than as a server-side
+approximation of it.
+
+### Presets, schedules and runs
+
+A **preset** is a report as configured on screen, stored so it can be
+rendered without a browser: the report type, the agency key (a company id or
+`group:<name>`; agency-wide reports such as SLA and utilization have none)
+and the options the exporter reads. The service cuts the options down to the
+keys the renderer's handler for that type actually uses, and type-checks
+them: the device columns, the licensing format and whether licence counts are
+shown, the annual report's company filter and rate overrides. Validation
+happens at save time on purpose. A preset that will fail at seven in the
+morning should fail in front of the person saving it. Presets are created
+from the Schedule button on each report page, which describes the report on
+screen as a draft; the dialog stores the preset first and the schedule
+second, and removes the preset again if the schedule is refused, so a failed
+save leaves nothing behind.
+
+A **schedule** attaches timing and recipients to a preset: a day of month, an
+hour, the To and CC lists, and a subject and body. The day and hour are read
+in the deployment's `SCHEDULE_TIMEZONE`; the next run is computed as a
+wall-clock time in that zone and converted to UTC afterwards, so a
+daylight-saving change between now and the run is reflected. A day past the
+end of a month runs on that month's last day, so "the 31st" means month end
+everywhere. Subject and body may carry `{agency}`, `{report}`, `{period}` and
+`{date}` placeholders, filled by a plain substitution rather than
+`str.format`, so a stray brace or an empty `{}` is left as typed instead of
+failing the run over a typo. The default subject is `{agency} {report}
+{period}`.
+
+A **run** is the record of one attempt: which schedule, what triggered it
+(the ticker, or the page's Run now button), when it started and finished, its
+status, the error if any, and the id of the saved report it produced. The
+Scheduled Reports page lists the schedules with their next and last run,
+follows the runner's log stream, and shows the history of the selected
+schedule. It also offers the two checks worth making before anyone waits for
+the first of the month: whether the renderer answers its health check, and a
+test message through the delivery flow.
+
+### Which period a run reports on
+
+A schedule fires early in a month, and what it sends is about time that has
+finished. The SLA report takes the previous month; the quarterly utilization
+takes the previous calendar quarter; the annual utilization takes the
+reporting year that the previous month falls in, so a run in the first month
+of a new reporting year still sends the year that just closed. Current-state
+reports (devices, licensing, patch, disk-space tickets) have no period; they
+say what the snapshot says on the day. The arithmetic reuses the utilization
+service's quarter and fiscal-year helpers rather than duplicating the
+calendar.
+
+### The renderer
+
+The exporters were already written, in TypeScript, for the browser: exceljs,
+docx and jsPDF code that knows every column, colour and heading of every
+report. Rewriting them in Python would have meant two implementations of each
+file that had to agree forever, and the first time they disagreed, the copy
+that mattered (the one a client received) would be the one nobody was
+looking at. So the scheduled path runs the same builders under Node. The
+renderer is a small HTTP service in `client/renderer/` that imports the
+export modules from the client source and keeps one handler per report type;
+the builders themselves are untouched, so a scheduled file and a downloaded
+one come from identical code and carry the same bytes.
+
+Two refactors made that possible. The builders used to reach into the page:
+they fetched the agency logo and the product icons over HTTP, and some
+assembled their input from component state. Both habits were removed. An
+input module per report turns the API payload plus the saved figures into
+exactly what the builder prints, and images are passed in as input rather
+than fetched inside. In the browser the icons come from `public/`; in the
+renderer they are read from disk, and the agency logo arrives in the request
+as base64, because the renderer has no tenant settings of its own.
+
+The contract is one POST of `{reportType, data, options, filename,
+logoBase64}` to `/render`, answered with the file bytes, their content type
+and a content-disposition carrying the filename; `/health` returns the report
+types it knows. The body is capped at 50 MB, and a larger one is answered 413
+before the connection is dropped, so the caller sees a status rather than a
+reset. The service checks only that `data` is an object: the payload is JSON
+the Python side built itself, so the per-report shape is a contract between
+the two, and a wrong shape fails inside the builder as a 500 that the run
+records.
+
+Two things the browser does are not reproduced. The patch PDF's donut is a
+rasterised copy of the on-screen chart, and there is no screen, so the
+scheduled PDF draws the legend alone. And where the browser merges a grouped
+agency's licensing and patch data into one report, the renderer covers a
+group's first member only and says so in the run log; the device and
+disk-space reports do handle groups, member by member.
+
+### The ticker and the runner
+
+Timing is deliberately plain. Once the server is up, a task on the event loop
+checks for due schedules once a minute, handing the one SQLite query to a
+worker thread because a snapshot swap can hold the database lock for a while
+and nothing on the event loop should wait for it. "Due" is `next_run_at <=
+now`, not equality, so a tick that arrives late, or a minute the server slept
+through, picks the run up rather than skipping it. Both sides are ISO-8601
+UTC strings with an offset compared as text, which is only correct because
+the schedules service is the sole writer of that column and always writes
+that format.
+
+Runs happen one at a time on a single daemon thread. The ticker and the
+page's Run now button both go through the same gate, so two reports never
+render at once and a manual run cannot overlap a scheduled one; while a run
+is in flight nothing starts, and whatever was due is picked up on the next
+tick after it finishes. The first thing a scheduled run does, before fetching
+anything, is advance its schedule's next run to the following occurrence, so
+a crash mid-run cannot leave the schedule due again on the next tick and
+send twice. The mirror image is that a failed run is not retried until next
+month, which is what I wanted: the failure is recorded on the run and on the
+schedule, the page shows it, and Run now is one click away. On startup the
+server sweeps any run row a previous process left open and closes it as
+interrupted; its schedule was already advanced, so it is recorded as an error
+rather than silently re-run.
+
+A run then does four things in order: gather the data through the same
+service calls the browser uses (cache first, so a run after the nightly sync
+is quick), render, save the file to Saved Reports under the filename the
+browser would have used (so a manual export of the same report on the same
+day replaces it rather than sitting beside it), and deliver. Every failure is
+recorded on the run and the schedule rather than raised.
+
+### Delivery
+
+I did not want the app to hold a mailbox. The MSP's mail is Microsoft 365,
+and sending from a shared reporting address properly means either the Graph
+API with an application registration and an admin-consented send permission,
+or SMTP with that mailbox's password stored on the server. Both put a
+credential that can send email as the organisation into a container I run. A
+Power Automate flow with an HTTP trigger avoids that: the flow is signed in
+as the reporting account inside Microsoft 365, an admin can change who the
+mail comes from without touching the app, and the app holds exactly one
+secret, the flow's signed trigger URL, in `.env`. Regenerating the trigger is
+how access is revoked.
+
+The message is one JSON document: `to` and `cc` as arrays, `subject`,
+`body`, and `attachments` as `{name, contentType, contentBytes}` with the
+file base64-encoded in the body. The flow's trigger schema declares exactly
+that shape, and a Select action inside the flow renames the keys to what the
+mail connector expects, so the server never learns the connector's spelling.
+The connector treats the body as HTML, so the server escapes the text and
+turns the schedule's line breaks into `<br>` before posting. A 20 MB workbook
+becomes about 27 MB of JSON, inside the trigger's limit. Any 2xx from the
+flow counts as delivered; the flow's own run history is the audit trail of
+the send.
+
+The trigger URL is the one thing the delivery module never logs. A failed
+request's exception text quotes the URL, signature included, so only the
+host and the kind of failure are passed on; a refusal is reduced to the
+flow's own error message, or a capped single line of the response, before it
+is stored on the run.
+
+### Failure modes
+
+If the renderer is down, the run fails at the render step with the address
+it tried; nothing is saved and nothing is sent. If the delivery flow is down
+or refuses the message, the file has already been saved to Saved Reports,
+the run is recorded as an error alongside that saved report's id, and
+nothing is resent: the file can be opened or forwarded by hand, and next
+month's run is unaffected. If a preset's agency has been removed from the
+agency list, the run fails with a message naming the agency and asking for
+the preset to be edited, and the renderer is never called. An invalid
+`SCHEDULE_TIMEZONE` is caught when a schedule is saved, as a 400 naming the
+variable, and again when a run tries to advance its schedule, where it lands
+on the run record. A deleted preset cannot strand a schedule, because the
+preset service refuses to delete one that a schedule still renders.
+
+### What I left out
+
+No Graph client and no SMTP: one flow, one URL. No automatic retries: a
+failed run is visible, its file is saved where the failure allowed, and a
+retry loop against a mail connector that may already have sent is worse than
+a person pressing Run now. Day-of-month schedules only: everything the MSP
+owes is monthly, quarterly or annual, and all three fit a day and an hour, so
+there are no weekly or cron-style schedules. One sender: the flow decides who
+the mail comes from, and a per-schedule sender would mean per-schedule
+credentials, which is the thing the design exists to avoid.
+
+## 12. Demo mode
 
 `DEMO_MODE=1` makes the application run end to end with no vendor accounts.
 The hook is a single branch in the snapshot repository: on a cache miss it
@@ -414,7 +626,7 @@ deployment's size so the screenshots and the performance characteristics are
 honest. `python -m demo.seed` runs the normal sync against the generators.
 Nothing in the demo data comes from a real tenant.
 
-## 12. Configuration and tenant rules
+## 13. Configuration and tenant rules
 
 `config.py` loads a frozen `Settings` dataclass once from the environment.
 Outside demo mode every credential, the Autotask zone and the Datto platform
@@ -423,14 +635,60 @@ rather than producing an authentication error minutes into a report. The
 Datto REST base and OAuth endpoint are both derived from the platform, so
 there is one setting to get right, not two that can disagree.
 
-`report_rules.py` is the one place another MSP would edit to run these
-reports against its own Autotask. Autotask picklist values (ticket sources,
-priorities, issue types, statuses) are numeric ids chosen per tenant; SLA
-targets, billing tiers and the fiscal calendar are contractual. Keeping them
-in a single documented module, with generic category labels, means the
-services themselves contain no tenant knowledge.
+`report_rules.py` is the one place that holds the rules another MSP would
+change to run these reports against its own Autotask. Autotask picklist
+values (ticket sources, priorities, issue types, statuses) are numeric ids
+chosen per tenant; SLA targets, billing tiers and the fiscal calendar are
+contractual. Keeping them in a single documented module, with generic
+category labels, means the services themselves contain no tenant knowledge.
+The next section explains how a deployment supplies its own values without
+editing that module.
 
-## 13. Deployment
+## 14. Deployment boundary
+
+This repository is public, and the deployment that runs it is a private fork.
+Everything that identifies the deployment therefore lives in files upstream
+never touches, so that `git merge upstream/main` in the fork is conflict-free
+by construction. There are three such homes, each with a tracked example
+beside it and each excluded by `.gitignore`.
+
+`server/.env` holds what the process needs to start: vendor credentials, the
+Autotask zone, the Datto platform, the sync interval, the data directory, the
+renderer's address, the delivery flow URL and the schedule timezone.
+`.env.example` documents each.
+
+`server/data/` holds what the application reads at run time and writes
+itself: the SQLite file (and with it the licence counts, presets, schedules
+and run history), `agencies.json` with the client list, the saved reports,
+and two things that used to be constants in client source: `tenant.json` and
+the `logos/` folder. `tenant.json` carries the presentation settings: the
+agency groups, the agency-to-logo mapping, the rated departments with their
+billing rates, and the year floors for the pickers; `tenant.example.json`
+shows the shape. The server lays it over built-in defaults and serves the
+result at `GET /api/tenant`, and the logos at `/api/tenant/logos/{filename}`
+with the name checked so it can only denote a file directly under that
+folder. The client reads the endpoint into a store, so the browser bundle
+contains nothing about the tenant, and the scheduled path reads the same
+file for the annual report's departments and for the logo it sends the
+renderer. The compose file mounts this directory as a volume so all of it
+survives a redeploy.
+
+`server/report_rules_local.py` overrides `report_rules.py`. The tracked
+module holds the picklist ids, SLA targets, role tiers and fiscal month with
+generic values; at import time it replaces any constant with the value of
+the same name from the local file. Only names that already exist are
+honoured, and an uppercase name that does not is reported with a warning, so
+a typo in the local file shows up in the log instead of silently creating an
+unused rule. A missing local file is fine; a broken import inside a real one
+is raised, because that is a broken deployment, not an optional file.
+
+The rule for anything new is the same: a deployment-specific value must be
+read from `.env`, `data/` or `report_rules_local.py`, and adding one to
+tracked source is a bug. The
+[fork workflow](operations/Reporting%20Fork%20and%20Upstream%20Workflow.md)
+has the setup steps.
+
+## 15. Deployment
 
 Three images. The client image is a two-stage build: Node builds the Vite
 bundle, nginx serves it and proxies `/api` to the server container over the
@@ -438,15 +696,17 @@ compose network. The server image is `python:3.11-slim` running uvicorn. The
 renderer image is `node:20-alpine` running the client's exporters through
 `tsx`, reachable by the server as `http://renderer:3100` and never published
 to the host. The compose file mounts a volume at the server's data directory
-so the SQLite file, the agency list and saved reports survive redeploys. A compose override
-runs the whole stack in demo mode with a one-command seed.
+so the SQLite file, the agency list, the tenant settings and logos, and the
+saved reports survive redeploys. A compose override runs the whole stack in
+demo mode with a one-command seed.
 
 The server refreshes every snapshot on a schedule (24 hours by default) and on
 demand from the settings page. Only one sync runs at a time; the runner holds
 the status the settings page polls and writes its log to a stream the page
-follows.
+follows. Scheduled report runs are the same shape on their own thread, with
+their own status, log stream and once-a-minute ticker (section 11).
 
-## 14. Quality gates and tests
+## 16. Quality gates and tests
 
 CI runs on every push and pull request: Ruff lint and format, Bandit and
 pip-audit on the server; ESLint, Prettier, `tsc --noEmit`, Vitest and a
@@ -461,8 +721,15 @@ stubbed session, the aggregate functions against recorded rows, and the
 client's agency grouping, job-store reconciliation and the two shared report
 controls. The device write-back has its own tests: field validation, grouping
 per device, and per-device failure reporting against a stubbed client.
+Scheduled delivery is tested at its seams: the next-run arithmetic across
+month ends, the placeholder substitution, the preset validation, the
+runner's one-at-a-time gate and its catch-up after a run, a whole run against
+a stubbed renderer and flow (a failed render, a failed delivery after the
+save, an agency that no longer resolves), the delivery message shape and what
+its error messages leave out, and the renderer's own handlers and HTTP front,
+body cap included.
 
-## 15. Failure modes and how they surface
+## 17. Failure modes and how they surface
 
 | Failure | What happens | Where it shows |
 |---|---|---|
@@ -474,8 +741,11 @@ per device, and per-device failure reporting against a stubbed client.
 | Page reloaded mid-report | Server job record is adopted by the status bar on the next poll | Progress continues from the server's view |
 | Empty scope (no tickets, no offenders) | Served as a cached empty snapshot via `sync_state` | No refetch; "data as of" still shown |
 | Bad date range | `ValueError` in the service maps to HTTP 400 with the reason | Error banner on the page |
+| Renderer unreachable during a scheduled run | The run fails at the render step; nothing is saved or sent; the schedule has already advanced | Run row marked error with the renderer's address; the Scheduled Reports page shows it against the schedule |
+| Delivery flow down or refusing the message | The file is already in Saved Reports; the run is recorded as an error with that saved report's id; nothing is resent | Run row marked error with the flow's message; the file can be opened from Saved Reports |
+| Server restarted mid-run | Open run rows are closed on the next start; the schedule was advanced first, so the run is not repeated | Run row marked error, "Interrupted by a restart" |
 
-## 16. Trade-offs and what I would change
+## 18. Trade-offs and what I would change
 
 - **One process, one SQLite file.** Right for one MSP's reporting; wrong for
   many tenants or many concurrent writers. The repository layer is the seam:
@@ -486,15 +756,20 @@ per device, and per-device failure reporting against a stubbed client.
   short and why cancellation is cooperative. A task queue would decouple the
   request from the work and allow true cancellation, at the cost of another
   process to run; I would add one before adding a second concurrent user.
-- **Exports are built client-side.** Simple and filter-aware, but a scheduled
-  "email every client their monthly pack" feature would need server-side
-  rendering of the same documents.
+- **Exports are built client-side, and again under Node.** Simple and
+  filter-aware in the browser; the scheduled path runs the same builders in a
+  Node container rather than rewriting them, which costs a third image and a
+  second runtime but keeps one implementation of every file.
+- **Delivery depends on a Power Automate flow.** It keeps mail credentials
+  out of the app, but it is a thing someone in the tenant has to own. A Graph
+  client would remove that dependency at the price of holding a credential
+  that can send mail as the organisation.
 - **Hostname is the join key** between Autotask and Datto. It is what both
   systems expose and it works for a managed estate where agents are installed
   by the MSP, but it is not a stable identifier; a device re-imaged under a
   new name shows as new.
 
-## 17. Glossary
+## 19. Glossary
 
 - **Agency**: a client of the MSP; an Autotask company paired with a Datto site.
 - **Configuration item (CI)**: Autotask's asset record for a device.
@@ -503,3 +778,13 @@ per device, and per-device failure reporting against a stubbed client.
 - **Phase**: a named stage of a report, carried on the `[PROGRESS]` line.
 - **Job**: the server's record of the report currently being generated.
 - **Sync**: the scheduled or manual refresh of every snapshot.
+- **Preset**: a report as configured on screen (type, agency, exporter
+  options), stored so a schedule can render it without a browser.
+- **Schedule**: a day of month, an hour, recipients and a message attached to
+  a preset; it owns the next run time.
+- **Run**: the record of one attempt to execute a schedule: trigger, timing,
+  status, error and the saved report it produced.
+- **Renderer**: the Node service that runs the client's exporters and returns
+  the file for a report's data.
+- **Delivery flow**: the Power Automate flow that receives one message from
+  the server and sends it as an email from the organisation's mailbox.

@@ -22,6 +22,7 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [live-progress.png](<live-progress.png>)
 - [patch-report.png](<patch-report.png>)
 - [Reporting Screenshot Inventory.md](<Reporting Screenshot Inventory.md>)
+- [scheduled-reports.png](<scheduled-reports.png>)
 - [sla-report.png](<sla-report.png>)
 - [ticket-report.png](<ticket-report.png>)
 - [utilization-report.png](<utilization-report.png>)

@@ -34,7 +34,9 @@ month, and what are they running" on its own.
 
 Reports run as tracked jobs with live progress, can be cancelled, survive a
 page reload, and are saved in the app for re-opening later. Several Autotask
-companies can be presented as one client.
+companies can be presented as one client. Any report can be scheduled: it
+renders itself on a day of the month and goes out by email through a Power
+Automate flow, with every run on record.
 
 ## Screenshots
 
@@ -51,6 +53,8 @@ site, device, user and engineer shown is invented; none is a real client.
 | Monthly ticket breakdown | Annual utilization by billing tier |
 | ![Patch](docs/screenshots/patch-report.png) | ![Live progress](docs/screenshots/live-progress.png) |
 | Patch status by workstation | A report in flight: phase progress and the server log |
+| ![Scheduled reports](docs/screenshots/scheduled-reports.png) | |
+| Scheduled reports: each schedule, its next run and its last result | |
 
 ## Architecture
 
@@ -61,11 +65,13 @@ flowchart LR
     API["FastAPI server<br/>routers, services, repositories"]
     Renderer["Node renderer<br/>the client's exporters, no browser"]
     Files["Report files<br/>xlsx, docx, pdf"]
+    Flow["Power Automate flow<br/>sends the email"]
     DB[("SQLite<br/>snapshot tables")]
     AT["Autotask PSA REST"]
     DT["Datto RMM REST"]
     Browser -- "HTTP + SSE" --> Nginx --> API
     API -- "JSON" --> Renderer --> Files
+    API -- "message + attachment" --> Flow
     API <--> DB
     API --> AT
     API --> DT
@@ -89,10 +95,20 @@ The design decisions that matter, and why I made them:
   the client walks results with an anchored `id > last` cursor and chunks id
   lookups; Datto rate-limits reads, so every call is paced, retried with
   backoff and re-authenticated on a 401. Services never see a URL.
-- **Everything deployment-specific is configuration.** Credentials, the
-  Autotask zone and the Datto platform come from `.env`. Tenant rules
-  (picklist ids, SLA targets, billing tiers, fiscal calendar) live in one
-  documented module, `server/report_rules.py`.
+- **Scheduled reports reuse the browser's exporters.** The Excel, Word and
+  PDF builders are pure functions of their input, so a small Node service
+  runs the same modules without a browser and hands the server the file. One
+  implementation per document, and a scheduled file is byte-for-byte what
+  the export button would have produced. A run advances its schedule before
+  it starts, so a crash cannot send twice, and the mail goes out through a
+  Power Automate flow so the app never holds a mailbox credential.
+- **Deployment values never live in tracked source.** Credentials, the
+  Autotask zone, the Datto platform and the delivery flow URL come from
+  `.env`; agency groups, logos and billing rates from `data/tenant.json`;
+  tenant rules (picklist ids, SLA targets, billing tiers, fiscal calendar)
+  from an untracked `report_rules_local.py` laid over the documented
+  `server/report_rules.py`. A private fork of this repository merges
+  upstream without conflicts because upstream never touches those files.
 - **Demo mode.** `DEMO_MODE=1` swaps the vendor clients for deterministic
   generators that return rows in the real shapes and emit real progress, so
   the whole application runs, and can be demonstrated, with no accounts.
@@ -183,13 +199,13 @@ regenerated with `python tools/screenshots.py` against a running demo stack
 
 ```
 server/
-  main.py            app factory, middleware, scheduler
+  main.py            app factory, middleware, sync scheduler, schedule ticker
   config.py          settings from the environment
   report_rules.py    tenant-specific ids and business rules
   routers/           HTTP only
-  services/          one module per report: fetch, aggregate, cache
+  services/          one module per report: fetch, aggregate, cache; presets, schedules, runs
   repositories/      SQLite schema, snapshot cache, small tables
-  integrations/      Autotask and Datto clients
+  integrations/      Autotask and Datto clients, the renderer, the delivery flow
   core/              log buffers, SSE streams, progress, job record
   demo/              generators and seed for demo mode
   tests/

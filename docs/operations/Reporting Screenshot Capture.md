@@ -22,9 +22,10 @@ python tools/screenshots.py --base http://localhost:3000
 | `shoot_tickets` | the monthly ticket breakdown |
 | `shoot_utilization` | annual utilization |
 | `shoot_patch` | patch status for a second demo agency |
+| `shoot_scheduled` | the Scheduled Reports page with three schedules the script creates over the API and removes afterwards |
 | `shoot_live_progress` | agency utilization mid-refresh, with the status bar and log panel populated |
 
-Helpers: `choose_agency` opens the agency combobox by its accessible name, `generate` clicks Generate and waits for the status bar to read Complete, `dismiss_status_bar` closes finished job rows one at a time, `capture` writes `docs/screenshots/<name>.png`.
+Helpers: `choose_agency` opens the agency combobox by its accessible name, `generate` clicks Generate and waits for the status bar to read Complete, `dismiss_status_bar` closes finished job rows one at a time, `capture` writes `docs/screenshots/<name>.png`, and `api` makes one call to the server through the client's `/api` proxy using the page's own request context, failing on any error status.
 
 ## Uses
 
@@ -44,6 +45,7 @@ Helpers: `choose_agency` opens the agency combobox by its accessible name, `gene
 - `dismiss_status_bar` re-queries the Dismiss button on each loop because each click removes a row and invalidates earlier locators.
 - The live progress capture clicks Refresh data rather than Generate so the server re-runs the fetch instead of serving the cache, then waits for a specific progress line from the demo generator before capturing. The demo generator sleeps briefly every ten workdays so that line is observable.
 - The script fails loudly on a timeout instead of writing a partial set, so a broken page cannot silently produce a stale image.
+- `shoot_scheduled` creates its presets and schedules through the API rather than the dialog, so the capture does not depend on a report having been generated first, and deletes them in a `finally` block so a failed capture leaves the demo database as it found it. The wait is on the recipient address in the last row, because a preset named after its report label would match twice.
 
 ## Cleanup Notes
 

@@ -18,3 +18,4 @@ The PNGs the README embeds. All are written by the [screenshot capture](<../oper
 - [utilization-report.png](utilization-report.png): annual utilization by billing tier. Active.
 - [patch-report.png](patch-report.png): patch status across a demo agency's workstations. Active.
 - [live-progress.png](live-progress.png): a report mid-run, with the status bar's phase progress and the server log panel streaming. Active.
+- [scheduled-reports.png](scheduled-reports.png): the Scheduled Reports page with three schedules the script creates over the API for the shot and removes afterwards (device inventory and licensing for one demo agency, SLA for all), each with its next run, plus the renderer status chip. Active.

@@ -19,6 +19,15 @@ OUT_DIR = Path(__file__).resolve().parent.parent / "docs" / "screenshots"
 VIEWPORT = {"width": 1440, "height": 900}
 DEMO_AGENCY = "Harbor Point Health"
 PATCH_AGENCY = "Northfield Community Schools"
+# The schedules created for the Scheduled Reports capture, removed afterwards:
+# (report type, its label, the agency or None for an agency-wide report,
+# options, day of month, hour).
+SCHEDULED_DEMO = [
+    ("devices", "Device inventory", DEMO_AGENCY, {}, 1, 7),
+    ("office_windows", "Office and Windows licensing", DEMO_AGENCY, {"format": "pdf"}, 1, 7),
+    ("sla", "SLA performance", None, {}, 3, 8),
+]
+SCHEDULE_RECIPIENT = "it.manager@example.com"
 
 
 def choose_agency(page: Page, name: str) -> None:
@@ -101,6 +110,63 @@ def shoot_patch(page: Page, base: str) -> None:
     capture(page, "patch-report")
 
 
+def api(page: Page, method: str, path: str, base: str, **kwargs):
+    """One call to the server through the client's /api proxy, failing on any error status."""
+    response = getattr(page.request, method)(f"{base}/api{path}", **kwargs)
+    if not response.ok:
+        raise RuntimeError(f"{method.upper()} {path} -> {response.status}: {response.text()}")
+    return response.json()
+
+
+def shoot_scheduled(page: Page, base: str) -> None:
+    """A few schedules stand in for a tenant's monthly pack; they are removed again afterwards."""
+    agency_ids = {a["name"]: a["id"] for a in api(page, "get", "/agencies", base)}
+    presets = []
+    schedules = []
+    try:
+        for report_type, label, agency, options, day, hour in SCHEDULED_DEMO:
+            preset = api(
+                page,
+                "post",
+                "/presets",
+                base,
+                data={
+                    "name": f"{agency} {label}" if agency else label,
+                    "report_type": report_type,
+                    "agency_key": str(agency_ids[agency]) if agency else None,
+                    "agency_name": agency or "",
+                    "options": options,
+                },
+            )
+            presets.append(preset["id"])
+            schedule = api(
+                page,
+                "post",
+                "/schedules",
+                base,
+                data={
+                    "preset_id": preset["id"],
+                    "day_of_month": day,
+                    "hour": hour,
+                    "recipients_to": [SCHEDULE_RECIPIENT],
+                    "subject": "{agency} {report} {period}" if agency else "{report} {period}",
+                    "body": "Please find the {report} for {period} attached.",
+                },
+            )
+            schedules.append(schedule["id"])
+        page.goto(f"{base}/scheduled")
+        page.get_by_text("Renderer ready").wait_for()
+        # The recipient appears once per row; the last row being up means the list has loaded.
+        page.get_by_text(SCHEDULE_RECIPIENT).nth(len(SCHEDULED_DEMO) - 1).wait_for()
+        page.wait_for_timeout(300)
+        capture(page, "scheduled-reports")
+    finally:
+        for schedule_id in schedules:
+            api(page, "delete", f"/schedules/{schedule_id}", base)
+        for preset_id in presets:
+            api(page, "delete", f"/presets/{preset_id}", base)
+
+
 def shoot_live_progress(page: Page, base: str) -> None:
     """A refresh re-runs the fetch, so the log panel and status bar are mid-run."""
     page.goto(f"{base}/reports/agency-utilization")
@@ -119,6 +185,7 @@ SHOTS = [
     shoot_tickets,
     shoot_utilization,
     shoot_patch,
+    shoot_scheduled,
     shoot_live_progress,
 ]
 
