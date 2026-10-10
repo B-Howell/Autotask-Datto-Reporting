@@ -22,11 +22,11 @@ This navigation block is maintained by the documentation tooling. Keep durable e
 - [Reporting Settings - ConnectionOutcomeChips.md](<Reporting Settings - ConnectionOutcomeChips.md>)
 - [Reporting Settings - CredentialField.md](<Reporting Settings - CredentialField.md>)
 - [Reporting Settings - CredentialsSection.md](<Reporting Settings - CredentialsSection.md>)
-- [Reporting Settings - DataSyncSection.md](<Reporting Settings - DataSyncSection.md>)
-- [Reporting Settings - VendorCredentialsCard.md](<Reporting Settings - VendorCredentialsCard.md>)
 - [Reporting Settings - credentialValues.md](<Reporting Settings - credentialValues.md>)
+- [Reporting Settings - DataSyncSection.md](<Reporting Settings - DataSyncSection.md>)
 - [Reporting Settings - useCredentials.md](<Reporting Settings - useCredentials.md>)
 - [Reporting Settings - useSyncStatus.md](<Reporting Settings - useSyncStatus.md>)
+- [Reporting Settings - VendorCredentialsCard.md](<Reporting Settings - VendorCredentialsCard.md>)
 - [Reporting Settings - vendors.md](<Reporting Settings - vendors.md>)
 
 <!-- END DOCUMENTATION HUB LINKS -->
