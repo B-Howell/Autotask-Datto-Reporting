@@ -1,4 +1,6 @@
 import dataclasses
+import json
+from pathlib import Path
 
 import pytest
 import requests
@@ -15,6 +17,9 @@ from services import connection_tests, credentials
 SECRET = SAMPLE_AUTOTASK["autotask_secret"]
 VALUES = {**SAMPLE_AUTOTASK, **SAMPLE_DATTO}
 DEMO_REFUSAL = "Demo mode simulates the vendor clients"
+# The bodies the client tests replay, recorded from these routes in this order.
+FIXTURES = Path(__file__).resolve().parents[2] / "client" / "src" / "test" / "fixtures"
+RECORDED = FIXTURES / "credentials"
 
 
 class Refusal:
@@ -107,7 +112,11 @@ def test_put_stores_tested_values_and_blank_fields_keep_what_is_stored(live, pro
     with TestClient(app) as client:
         saved = client.put("/api/credentials", json={"values": VALUES})
         assert saved.status_code == 200
-        entry = _field(saved.json(), "autotask_secret")
+        body = saved.json()
+        # The same overview GET answers, so the page can replace its status whole.
+        assert body["demoMode"] is False and body["keySource"] == "file"
+        assert [entry["name"] for entry in body["fields"]] == list(credentials.FIELDS)
+        entry = _field(body["fields"], "autotask_secret")
         assert entry["source"] == "stored" and entry["last4"] == SECRET[-4:]
         assert entry["last_test_ok"] is True
         assert SECRET not in saved.text
@@ -232,3 +241,41 @@ def test_delete_is_refused_in_demo_mode(store, monkeypatch):
         response = client.delete("/api/credentials")
     assert response.status_code == 409 and response.json()["detail"] == DEMO_REFUSAL
     assert credentials.current()["autotask_username"] == "u"
+
+
+def _shape(value):
+    """The keys and value types of a JSON body, so two bodies compare by contract, not content."""
+    if isinstance(value, dict):
+        return {key: _shape(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_shape(item) for item in value]
+    return type(value).__name__
+
+
+def _recorded(name):
+    return json.loads((RECORDED / f"{name}.json").read_text(encoding="utf-8"))
+
+
+def test_credentials_fixtures_match_the_routes(live, probes):
+    """The client tests mock the api with these recorded bodies; a route change must break them here.
+
+    The calls run in the order the bodies were recorded: an empty store, a
+    test with the Autotask values alone, a save of both vendors, a forget.
+    Timestamps differ between runs, so each body is compared by its keys and
+    value types, with the field names checked in order.
+    """
+    with TestClient(app) as client:
+        answers = {
+            "get": client.get("/api/credentials"),
+            "post-test": client.post("/api/credentials/test", json={"values": SAMPLE_AUTOTASK}),
+            "put": client.put("/api/credentials", json={"values": VALUES}),
+            "delete": client.delete("/api/credentials"),
+        }
+    for name, response in answers.items():
+        assert response.status_code == 200, name
+        body, recorded = response.json(), _recorded(name)
+        assert _shape(body) == _shape(recorded), name
+        if "fields" in body:
+            assert [entry["name"] for entry in body["fields"]] == [
+                entry["name"] for entry in recorded["fields"]
+            ], name

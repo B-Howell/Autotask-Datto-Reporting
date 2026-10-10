@@ -202,8 +202,8 @@ def test_save_tested_refuses_a_changed_vendor_that_is_still_incomplete(probes):
 
 
 def test_save_tested_stores_then_records_and_an_untouched_failure_does_not_block(probes):
-    fields = connection_tests.save_tested(VALUES)
-    secret = next(entry for entry in fields if entry["name"] == "autotask_secret")
+    assert connection_tests.save_tested(VALUES) is None
+    secret = _entry("autotask_secret")
     assert secret["source"] == "stored" and secret["last_test_ok"] is True
 
     probes.setattr(datto, "probe", _refusing(401, "Unauthorized"))

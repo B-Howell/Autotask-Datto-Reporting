@@ -7,8 +7,13 @@ import type {
   CredentialFieldName,
   CredentialFieldStatus,
   CredentialsStatus,
+  ForgottenCredentials,
 } from '@/api';
 import useToastStore from '@/store/toastStore';
+import forgottenBody from '@/test/fixtures/credentials/delete.json';
+import emptyBody from '@/test/fixtures/credentials/get.json';
+import testedBody from '@/test/fixtures/credentials/post-test.json';
+import savedBody from '@/test/fixtures/credentials/put.json';
 import CredentialsSection from './CredentialsSection';
 
 // The request functions are mocked; `ApiError` and `isUnreadable` stay real.
@@ -26,47 +31,47 @@ vi.mock('@/api', async (importOriginal) => {
   };
 });
 
-const SAVED = '2026-10-09T19:00:00+00:00';
-const TESTED = '2026-10-10T08:30:00+00:00';
+// Bodies recorded from the server routes; every field entry a case needs
+// starts from one of them, with only its variation laid over.
+const empty = emptyBody as CredentialsStatus;
+const saved = savedBody as CredentialsStatus;
+const bothTested = testedBody as ConnectionTestResult;
+const forgotten = forgottenBody as ForgottenCredentials;
 
-const field = (
-  name: CredentialFieldName,
-  overrides: Partial<CredentialFieldStatus> = {}
-): CredentialFieldStatus => ({
-  name,
-  vendor: name.startsWith('autotask') ? 'autotask' : 'datto',
-  secret: !['autotask_username', 'autotask_base_url', 'datto_platform'].includes(name),
-  configured: false,
-  source: 'missing',
-  last4: '',
-  updated_at: null,
-  last_tested_at: null,
-  last_test_ok: null,
+const TESTED = '2026-10-10T08:30:00+00:00';
+const atLocal = (stamp: string | null) => new Date(String(stamp)).toLocaleString();
+
+const recorded = (status: CredentialsStatus, name: CredentialFieldName): CredentialFieldStatus => {
+  const entry = status.fields.find((f) => f.name === name);
+  if (!entry) throw new Error(`${name} is not in the recorded status`);
+  return entry;
+};
+
+/** The field as the empty store reports it, with a variation laid over. */
+const field = (name: CredentialFieldName, overrides: Partial<CredentialFieldStatus> = {}) => ({
+  ...recorded(empty, name),
   ...overrides,
 });
 
-const stored = (
-  name: CredentialFieldName,
-  last4: string,
-  overrides: Partial<CredentialFieldStatus> = {}
-) =>
-  field(name, {
-    configured: true,
-    source: 'stored',
-    last4,
-    updated_at: SAVED,
-    last_tested_at: TESTED,
-    last_test_ok: false,
-    ...overrides,
-  });
+/** The field as the save reports it, with a later failed test laid over. */
+const stored = (name: CredentialFieldName, overrides: Partial<CredentialFieldStatus> = {}) => ({
+  ...recorded(saved, name),
+  last_tested_at: TESTED,
+  last_test_ok: false,
+  ...overrides,
+});
+
+const secret = recorded(saved, 'autotask_secret');
+const SAVED_AT = atLocal(secret.updated_at);
 
 const status: CredentialsStatus = {
-  demoMode: false,
+  ...empty,
   keySource: 'environment',
   fields: [
     field('autotask_username', { configured: true, source: 'environment' }),
-    stored('autotask_secret', '1234'),
-    stored('autotask_integration_code', ''),
+    stored('autotask_secret'),
+    // A stored secret too short to show a tail.
+    stored('autotask_integration_code', { last4: '' }),
     field('autotask_base_url'),
     field('datto_api_key'),
     field('datto_api_secret'),
@@ -77,14 +82,9 @@ const status: CredentialsStatus = {
 const withDattoTested = (last_test_ok: boolean): CredentialsStatus => ({
   ...status,
   fields: status.fields.map((f) =>
-    f.name === 'datto_platform' ? stored('datto_platform', '', { last_test_ok }) : f
+    f.name === 'datto_platform' ? stored('datto_platform', { last_test_ok }) : f
   ),
 });
-
-const bothTested: ConnectionTestResult = {
-  autotask: { ok: true, message: 'Signed in as ops' },
-  datto: { ok: false, message: 'Datto credentials are incomplete' },
-};
 
 const mocked = vi.mocked(credentialsApi);
 
@@ -122,17 +122,13 @@ describe('CredentialsSection', () => {
     expect(autotask.getByText('Set by the environment, read-only')).toBeInTheDocument();
     expect(autotask.getByLabelText('Secret')).toHaveAttribute('type', 'password');
     expect(
-      autotask.getByText(`Stored, ends with 1234, saved ${new Date(SAVED).toLocaleString()}`)
+      autotask.getByText(`Stored, ends with ${secret.last4}, saved ${SAVED_AT}`)
     ).toBeInTheDocument();
     expect(autotask.getByLabelText('Integration code')).toHaveAttribute('type', 'password');
-    expect(
-      autotask.getByText(`Stored, saved ${new Date(SAVED).toLocaleString()}`)
-    ).toBeInTheDocument();
+    expect(autotask.getByText(`Stored, saved ${SAVED_AT}`)).toBeInTheDocument();
     expect(autotask.getByLabelText('Zone API URL')).toHaveAttribute('type', 'text');
     expect(autotask.getByText('Not configured')).toBeInTheDocument();
-    expect(
-      autotask.getByText(`Last test failed, ${new Date(TESTED).toLocaleString()}`)
-    ).toBeInTheDocument();
+    expect(autotask.getByText(`Last test failed, ${atLocal(TESTED)}`)).toBeInTheDocument();
 
     const datto = card('Datto');
     expect(datto.getByLabelText('API key')).toHaveAttribute('type', 'password');
@@ -173,9 +169,7 @@ describe('CredentialsSection', () => {
     );
     await waitFor(() => expect(datto.getByLabelText('Platform')).toHaveValue(''));
     expect(useToastStore.getState().message).toBe('Credentials saved');
-    expect(
-      datto.getByText(`Last test passed, ${new Date(TESTED).toLocaleString()}`)
-    ).toBeInTheDocument();
+    expect(datto.getByText(`Last test passed, ${atLocal(TESTED)}`)).toBeInTheDocument();
     expect(datto.getByRole('button', { name: 'Save' })).toBeDisabled();
     expect(datto.queryByRole('status')).toBeNull();
   });
@@ -191,15 +185,13 @@ describe('CredentialsSection', () => {
     fireEvent.click(autotask.getByRole('button', { name: 'Test connection' }));
 
     const chips = within(await autotask.findByRole('status'));
-    expect(chips.getByText('Autotask: Signed in as ops')).toBeInTheDocument();
+    expect(chips.getByText('Autotask: Connected')).toBeInTheDocument();
     expect(chips.getByText('Datto: Datto credentials are incomplete')).toBeInTheDocument();
     expect(mocked.testCredentials).toHaveBeenCalledWith({
       autotask_base_url: 'https://example.invalid',
     });
     expect(autotask.getByLabelText('Zone API URL')).toHaveValue('https://example.invalid');
-    expect(
-      card('Datto').getByText(`Last test failed, ${new Date(TESTED).toLocaleString()}`)
-    ).toBeInTheDocument();
+    expect(card('Datto').getByText(`Last test failed, ${atLocal(TESTED)}`)).toBeInTheDocument();
   });
 
   it('marks the pressed button busy, disables every button and leaves inputs editable', async () => {
@@ -284,12 +276,8 @@ describe('CredentialsSection', () => {
     ).toBeInTheDocument();
     expect(mocked.forgetCredentials).not.toHaveBeenCalled();
 
-    const nothingStored: CredentialsStatus = {
-      ...status,
-      fields: status.fields.map((f) => field(f.name)),
-    };
-    mocked.forgetCredentials.mockResolvedValue({ ...nothingStored, forgotten: true });
-    mocked.fetchCredentials.mockResolvedValueOnce(nothingStored);
+    mocked.forgetCredentials.mockResolvedValue(forgotten);
+    mocked.fetchCredentials.mockResolvedValueOnce(empty);
     fireEvent.click(dialog.getByRole('button', { name: 'Forget' }));
 
     expect(await screen.findByRole('region', { name: 'Autotask' })).toBeInTheDocument();

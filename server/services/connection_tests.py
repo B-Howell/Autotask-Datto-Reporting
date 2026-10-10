@@ -127,7 +127,8 @@ def save_tested(values):
     """Test, then store: a changed vendor that fails its test blocks the whole save.
 
     The outcomes are recorded after the write, so a row written by this save
-    carries its own result. Returns the status entries after the save.
+    carries its own result. Returns nothing: the caller reads the status it
+    wants afterwards, so this module shapes no response.
     """
     changes = credentials.changes(values)
     outcomes = _probe_all(credentials.merged_from(changes))
@@ -136,4 +137,3 @@ def save_tested(values):
             raise _refusal(vendor, outcomes[vendor])
     credentials.store_changes(changes)
     _record(outcomes, outcomes)
-    return credentials.status()

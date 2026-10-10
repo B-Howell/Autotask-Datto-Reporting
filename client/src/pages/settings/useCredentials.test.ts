@@ -2,8 +2,12 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, credentialsApi } from '@/api';
 import type * as api from '@/api';
-import type { CredentialsStatus } from '@/api';
+import type { ConnectionTestResult, CredentialsStatus, ForgottenCredentials } from '@/api';
 import useToastStore from '@/store/toastStore';
+import forgottenBody from '@/test/fixtures/credentials/delete.json';
+import emptyBody from '@/test/fixtures/credentials/get.json';
+import testedBody from '@/test/fixtures/credentials/post-test.json';
+import savedBody from '@/test/fixtures/credentials/put.json';
 import useCredentials from './useCredentials';
 
 // The request functions are mocked; `ApiError` and `isUnreadable` stay real.
@@ -21,37 +25,11 @@ vi.mock('@/api', async (importOriginal) => {
   };
 });
 
-const STAMP = '2026-10-09T19:00:00+00:00';
-const missing: CredentialsStatus = {
-  demoMode: false,
-  keySource: 'file',
-  fields: [
-    {
-      name: 'datto_platform',
-      vendor: 'datto',
-      secret: false,
-      configured: false,
-      source: 'missing',
-      last4: '',
-      updated_at: null,
-      last_tested_at: null,
-      last_test_ok: null,
-    },
-  ],
-};
-const stored: CredentialsStatus = {
-  ...missing,
-  fields: [
-    {
-      ...missing.fields[0],
-      configured: true,
-      source: 'stored',
-      updated_at: STAMP,
-      last_tested_at: STAMP,
-      last_test_ok: true,
-    },
-  ],
-};
+// Bodies recorded from the server routes; the server test suite keeps them current.
+const missing = emptyBody as CredentialsStatus;
+const stored = savedBody as CredentialsStatus;
+const tested = testedBody as ConnectionTestResult;
+const forgotten = forgottenBody as ForgottenCredentials;
 
 const mocked = vi.mocked(credentialsApi);
 
@@ -115,25 +93,21 @@ describe('useCredentials', () => {
 
   it('tests the given values, busy until the status is reloaded, and hands back both vendors', async () => {
     const { result } = await loaded();
-    const outcome = {
-      autotask: { ok: false, message: 'Autotask credentials are incomplete' },
-      datto: { ok: true, message: 'Signed in' },
-    };
-    let answer: (value: typeof outcome) => void = () => undefined;
+    let answer: (value: ConnectionTestResult) => void = () => undefined;
     mocked.testCredentials.mockImplementationOnce(
-      () => new Promise<typeof outcome>((resolve) => (answer = resolve))
+      () => new Promise<ConnectionTestResult>((resolve) => (answer = resolve))
     );
     // The server stamps the outcome on the stored rows, so the reload sees it.
     mocked.fetchCredentials.mockResolvedValueOnce(stored);
-    let pending: Promise<typeof outcome> = Promise.resolve(outcome);
+    let pending: Promise<ConnectionTestResult> = Promise.resolve(tested);
     act(() => {
       pending = result.current.test({ datto_platform: 'zinfandel' });
     });
     expect(result.current.busy).toBe(true);
     expect(mocked.fetchCredentials).toHaveBeenCalledTimes(1);
     await act(async () => {
-      answer(outcome);
-      await expect(pending).resolves.toEqual(outcome);
+      answer(tested);
+      await expect(pending).resolves.toEqual(tested);
     });
     expect(result.current.busy).toBe(false);
     expect(mocked.testCredentials).toHaveBeenCalledWith({ datto_platform: 'zinfandel' });
@@ -167,10 +141,9 @@ describe('useCredentials', () => {
 
   it('forgets the stored values, busy until the status is reloaded, and toasts', async () => {
     const { result } = await loaded();
-    let answer: (value: typeof forgotten) => void = () => undefined;
-    const forgotten = { ...missing, forgotten: true as const };
+    let answer: (value: ForgottenCredentials) => void = () => undefined;
     mocked.forgetCredentials.mockImplementationOnce(
-      () => new Promise<typeof forgotten>((resolve) => (answer = resolve))
+      () => new Promise<ForgottenCredentials>((resolve) => (answer = resolve))
     );
     mocked.fetchCredentials.mockResolvedValueOnce(missing);
     let pending: Promise<void> = Promise.resolve();
@@ -195,7 +168,7 @@ describe('useCredentials', () => {
     const { result } = renderHook(() => useCredentials());
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(result.current.unreadable).toBe(true);
-    mocked.forgetCredentials.mockResolvedValue({ ...missing, forgotten: true });
+    mocked.forgetCredentials.mockResolvedValue(forgotten);
     mocked.fetchCredentials.mockResolvedValueOnce(missing);
     await act(() => result.current.forget());
     expect(result.current.error).toBeNull();

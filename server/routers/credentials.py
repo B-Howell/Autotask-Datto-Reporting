@@ -50,11 +50,18 @@ def test_credentials(body: CredentialValues):
     return call_or_http_error(lambda: connection_tests.test_connection(body.values))
 
 
+def _save(values):
+    # The service stores and records; the overview is built here, so a save
+    # answers the same shape as GET and the page can replace its status whole.
+    connection_tests.save_tested(values)
+    return _overview()
+
+
 @router.put("")
 def save_credentials(body: CredentialValues):
-    """Save the submitted values once every vendor they change accepts them."""
+    """Save the submitted values once every vendor they change accepts them; answers the GET shape."""
     _refuse_in_demo_mode()
-    return call_or_http_error(lambda: connection_tests.save_tested(body.values))
+    return call_or_http_error(lambda: _save(body.values))
 
 
 def _forget():

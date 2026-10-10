@@ -17,7 +17,7 @@ write.
 |---|---|---|---|
 | `fetchCredentials` | `GET /api/credentials` | none | `Promise<CredentialsStatus>` |
 | `testCredentials` | `POST /api/credentials/test` | `values: CredentialValues` | `Promise<ConnectionTestResult>`, one `{ ok, message }` per vendor |
-| `saveCredentials` | `PUT /api/credentials` | `values: CredentialValues` | `Promise<CredentialsStatus>`, the status after the save |
+| `saveCredentials` | `PUT /api/credentials` | `values: CredentialValues` | `Promise<CredentialsStatus>`, the same `{ demoMode, keySource, fields }` as `fetchCredentials`, as it stands after the save |
 | `forgetCredentials` | `DELETE /api/credentials` | none | `Promise<ForgottenCredentials>`, `{ forgotten: true }` with the status once every stored row is gone |
 | `isUnreadable` | none | `err: unknown` | `true` when `err` is the 503 `ApiError` that `fetchCredentials` raises for stored values the key cannot read |
 
@@ -58,7 +58,7 @@ write.
 
 ## Cleanup Notes
 
-- Covered through `useCredentials.test.ts` and `CredentialsSection.test.tsx`, which mock this namespace.
+- Covered through `useCredentials.test.ts` and `CredentialsSection.test.tsx`, which mock this namespace and answer with the bodies recorded under `client/src/test/fixtures/credentials/` (see the [tooling inventory](<../Reporting Client Tooling and Asset Inventory.md>)).
 
 ## Source
 
